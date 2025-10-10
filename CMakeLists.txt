@@ -8,6 +8,17 @@ target_compile_features(compiler_flags INTERFACE cxx_std_17)
 add_subdirectory(solver)
 add_subdirectory(utils)
 
-add_executable(${PROJECT_NAME} main.cpp)
+find_package(Armadillo REQUIRED)
 
-target_link_libraries(${PROJECT_NAME})
+if(Armadillo_FOUND AND NOT TARGET Armadillo::Armadillo)
+  add_library(Armadillo::Armadillo INTERFACE IMPORTED)
+  set_target_properties(
+    Armadillo::Armadillo
+    PROPERTIES
+      INTERFACE_LINK_LIBRARIES "${ARMADILLO_LIBRARIES}"
+      INTERFACE_INCLUDE_DIRECTORIES "${ARMADILLO_INCLUDE_DIRS}"
+  )
+endif()
+
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} Armadillo::Armadillo)

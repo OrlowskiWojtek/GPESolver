@@ -6,7 +6,7 @@
  *
  *  All instructions are meant to by static, without extra variables.
  */
-class UnitConverter{
+class UnitConverter {
 public:
     static double ene_eV_to_au(double eV);
     static double ene_meV_to_au(double meV);
