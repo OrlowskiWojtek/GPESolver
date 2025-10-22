@@ -2,8 +2,8 @@
       implicit double precision(a-b,d-h,o-z)
       implicit double complex(c)
       ! declare variables !
-      parameter(N=80,ny=80,nz=12)
-c     parameter(N=34,ny=21,nz=12)
+      parameter(N=10,ny=10,nz=3)
+c     parameter(N=34,ny=21,nz=12) ! commented out
       allocatable cpsi(:,:,:)
       allocatable cpsin(:,:,:)
       allocatable cpsii(:,:,:)
@@ -21,8 +21,7 @@ c     parameter(N=34,ny=21,nz=12)
       common/skladowe/e1,e2,e3,e4,e5
 
       ! initialize variables !
-      xlp=11000/.05292
-      ci=(0.d0,1.d0)
+      ci=(0.d0,1.d0) ! just imaginary double
       xncz(1)=.5e4
       allocate (cpsi(-N:N,-Ny:Ny,-Nz:Nz))   ! wavefunction
       allocate (cpsin(-N:N,-Ny:Ny,-Nz:Nz))  ! 
@@ -39,9 +38,7 @@ c*3.4
       nxs=n
       nys=n
       nzs=n
-      dx=xlp/(nxs-1)
       dx=60/.05292
-      dx=dx
       dz=350/.05292
       v=-200/27211.6
       xm(1)=163.929/5.486e-4
@@ -154,7 +151,7 @@ c calkowania gestosci, ktora na brzegi jest 0 tak czy inaczej
 
       if(iter.le.istart) then
       callcnd
-     >(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xlp,xm,dt,fi3d,fi3do,rdy)
+     >(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
       else
       t=t+dt
       i192=197
@@ -169,13 +166,13 @@ c calkowania gestosci, ktora na brzegi jest 0 tak czy inaczej
       vx(ix)=-b*x**2+aa*x**4
       enddo
       callcndt
-     >(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xlp,xm,dt,fi3d,fi3do,rdy)
+     >(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
       endif
 
       call norm(cpsin,n,ny,nz)
       cpsi=cpsin
       if(mod(iter,300).eq.0) then
-      wredna=energiacnd(cpsi,n,ny,nz,vx,vy,vz,xlp,xm,dt,fi3d,rdy)
+      wredna=energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
       w=xncz(1)/xnorma(1)
       eold=wredna
       do ix=-n,n
@@ -261,7 +258,7 @@ c     g=9.109e-31*9.8*(0.05292*1e-9)*6.242e18/27.2116
 
 
       subroutine cnd(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz
-     >,xlp,xm,dt,fi3d,fi3do,rdy)
+     >,xm,dt,fi3d,fi3do,rdy)
       implicit double precision(a,b,d-h,o-z)
       implicit double complex(c)
       dimension cpsi (-N:N,-Ny:Ny,-Nz:Nz)
@@ -342,7 +339,7 @@ c     g=9.109e-31*9.8*(0.05292*1e-9)*6.242e18/27.2116
 88    format(30g30.12)      
       end      
 
-      functionenergiacnd(cpsi,n,ny,nz,vx,vy,vz,xlp,xm,dt,fi3d,rdy)
+      function energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
       implicit double precision(a,b,d-h,o-z)
       implicit double complex(c)
       dimension cpsi (-N:N,-Ny:Ny,-Nz:Nz)
@@ -581,7 +578,7 @@ c     stop
       end
 
       subroutine cndt(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz
-     >,xlp,xm,dt,fi3d,fi3do,rdy)
+     >,xm,dt,fi3d,fi3do,rdy)
       implicit double precision(a,b,d-h,o-z)
       implicit double complex(c)
       dimension cpsi (-N:N,-Ny:Ny,-Nz:Nz)
