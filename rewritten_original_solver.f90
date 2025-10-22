@@ -28,14 +28,12 @@ program gaussian
     allocate (fi3do(-N:N,-Ny:Ny,-Nz:Nz))
     allocate (fi3d(-N:N,-Ny:Ny,-Nz:Nz))
     allocate (rdy(-N*2:N*2,-Ny*2:Ny*2,-Nz*2:Nz*2))
+
     pi=4*atan(1.0)
     wzl=120*4.1356e-12/27211.6
     wrl=60*4.1356e-12/27211.6
     y0=13500/.05292*0
     omega0=4.1357e-6/27.2116
-    nxs=n
-    nys=n
-    nzs=n
     dx=60/.05292
     dz=350/.05292
     v=-200/27211.6
