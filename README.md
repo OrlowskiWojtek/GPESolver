@@ -12,5 +12,8 @@ $$ i\hbar \partial_t \psi(\vb{r}, t) = \left[ \frac{-\hbar^2}{2m} + V(\vb{r}) + 
 
 
 ## TODOS:
-TODO: prepare equation description
+- prepare equation description
+- copy calculations - try to get simple results
+- write visualiser / plotter
+
 

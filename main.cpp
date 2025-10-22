@@ -3,4 +3,6 @@
 int main() {
     std::cout << "===Gross Pitaevski Solver===" << std::endl;
 
+    // test
+
 }

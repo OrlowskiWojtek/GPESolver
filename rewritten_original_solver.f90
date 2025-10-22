@@ -58,7 +58,7 @@ program gaussian
                 z=iz*dz
                 if(ix**2+iy**2+iz**2.gt.0) then
                     rdijk=1/sqrt((x-xp)**2+(y-yp)**2+(z-zp)**2)/4/pi
-! ! uwaga: rdy sluzy do liczenia warunku brzegowego
+! uwaga: rdy sluzy do liczenia warunku brzegowego
 ! calkowania gestosci, ktora na brzegi jest 0 tak czy inaczej
                 endif
                 rdy(ix,iy,iz)=rdijk
