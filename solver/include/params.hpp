@@ -40,6 +40,14 @@ struct PhysicalParameters {
     //! Mass of atom - using Dysprosium mass;
     double m;
 
+    //! Used in mexican hat potential in x direction.
+    //! x^4 term
+    double aa;
+
+    //! Used in mexican hat potential in x direction.
+    //! x^2 term
+    double b;
+
     //! Number of nodes in calculations - x direction.
     int nx;
 

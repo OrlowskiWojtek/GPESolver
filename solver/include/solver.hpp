@@ -1,6 +1,8 @@
 #ifndef GPE_SOLVER_HPP
 #define GPE_SOLVER_HPP
 
+#include "include/params.hpp"
+
 //! \todo Just meanwhile sollution, Rather will use blaze (CUDA parallelization, 3D arrays)
 #include <armadillo>
 using CMat3D    = arma::Cube<std::complex<double>>;
@@ -11,6 +13,8 @@ using Mat3D     = arma::Cube<double>;
 *
 */
 class GrossPitaevskiSolver{
+    PhysicalParameters params;
+
     //! Containers
     //! Wavefunction of single particle - copy for calculations.
     CMat3D cpsii;
