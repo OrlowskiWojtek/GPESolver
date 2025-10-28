@@ -1,9 +1,9 @@
 ! Bibliografia
 ! [1]: Mean-field regime of trapped dipolar Bose-Einstein condensates in one and two dimensions
-! [2]
 
-program gaussian
+program GPESolver
     USE OMP_LIB
+    use FFTSolver
     implicit double precision(a-b,d-h,o-z)
     implicit double complex(c)
     ! declare variables !
@@ -25,7 +25,7 @@ program gaussian
 
     ! initialize variables !
     ci=(0.d0,1.d0) ! just imaginary double
-    xncz(1)=.5e4
+    xncz(1)=.5e4 ! number of atoms
     allocate (cpsi(-N:N,-Ny:Ny,-Nz:Nz))   ! wavefunction
     allocate (cpsin(-N:N,-Ny:Ny,-Nz:Nz))
     allocate (cpsii(-N:N,-Ny:Ny,-Nz:Nz))
@@ -45,7 +45,7 @@ program gaussian
     eha=27211.6
 
     zred1=xm(1)**2/(xm(1))
-    add=131
+    add=131                 ! nie wiadomo co to znaczy
     cdd=12*pi*add/xm(1)     ! [1] zgodnie z podpisem powinno być epsilon_0 * epsilon_d^2 (pod równaniem 3)
     edd=1.5                 ! [1] zgodnie z podpisem powinno być dla jednostek zredukowanych
     a=add/edd               ! [1]
@@ -196,10 +196,10 @@ program gaussian
                 do iy=-ny,ny
                     x=ix*dx
                     y=iy*dx
-                    write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2
-                        !dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,   &
-                        !(ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,                          &
-                        !(gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
+                    write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2, fi3d(ix,iy,0)
+                    !dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,   &
+                    !(ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,                          &
+                    !(gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
                 enddo
             enddo
             do ix=-nz,nz
@@ -232,7 +232,8 @@ program gaussian
 988 format(30f30.12)
 989 format(30g30.12)
 89  format(5g17.8)
-end ! end program gaussian
+    call free_fft_memory()
+end program GPESolver
 
 subroutine norm(cpsi,n,ny,nz)
     implicit double precision(a,b,d-h,o-z)
@@ -661,59 +662,42 @@ subroutine cndt(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
 88  format(30g30.12)
 end
 
-! [2] - wyplute z chata GPT po podaniu lifi3
-! zrozumieć co tu się dzieję
-subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
-    use, intrinsic :: ISO_C_BINDING
+subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
+    use FFTSolver
     implicit none
-    integer, intent(in) :: n, ny, nz
-    real(8), intent(in) :: dx, dz, xnorma, xncz
-    complex(8), intent(in) :: cpsi(-n:n, -ny:ny, -nz:nz)
-    real(8), intent(out) :: fi3d(-n:n, -ny:ny, -nz:nz)
-
-    ! FFTW arrays and plan handles
-    complex(8), allocatable :: psi_r(:,:,:), psi_k(:,:,:)
-    complex(8), allocatable :: Vdip_k(:,:,:)
-    integer :: nx, ny2, nz2
-    type(C_PTR) :: plan_fwd, plan_bwd
-    real(8) :: dkx, dky, dkz, kx, ky, kz, k2
-    integer :: i, j, k, void
+    complex(8), intent(in) :: cpsi(-nx:nx, -ny:ny, -nz:nz)
+    real(8), intent(out) :: fi3d(-nx:nx, -ny:ny, -nz:nz)
+    integer, intent(in) :: nx, ny, nz
+    real(8), intent(in) :: dx, dz, xncz, xnorma
+    integer :: i,j,k
+    real(8) :: kx, ky, kz, k2
+    real(8) :: dkx, dky, dkz
 
     include 'fftw3.f03'
 
-    nx = 2*n + 1
-    ny2 = 2*ny + 1
-    nz2 = 2*nz + 1
+    call init_fft_memory(nx, ny, nz)
 
-    ! remove allocations to allocate only once
-    allocate(psi_r(nx, ny2, nz2))
-    allocate(psi_k(nx, ny2, nz2))
-    allocate(Vdip_k(nx, ny2, nz2))
-
-    ! === 1. Oblicz gęstość n(r) = |ψ|² ===
-    do i=1, nx
+    do i=1, nx2
         do j=1, ny2
             do k=1, nz2
-                psi_r(i,j,k) = dcmplx(abs(cpsi(i-n-1,j-ny-1,k-nz-1))**2, 0d0)
+                psi_r(i,j,k) = dcmplx(abs(cpsi(i-nx-1,j-ny-1,k-nz-1))**2, 0d0)
             end do
         end do
     end do
 
-    ! === 2. FFT[ n(r) ] ===
-    call fftw_plan_with_nthreads(8)
-    call dfftw_plan_dft_3d(plan_fwd, nx, ny2, nz2, psi_r, psi_k, FFTW_FORWARD, FFTW_ESTIMATE)
-    call dfftw_execute_dft(plan_fwd, psi_r, psi_k)
+    ! FFT -> psi_k
+    call fftw_execute_dft(plan_fwd, psi_r, psi_k)
 
-    ! === 3. Przygotuj transformację potencjału dipolowego === - transformacja potencjału dipolowego wyprowadzona analitycznie w [2]
-    dkx = 2.0d0 * 3.141592653589793d0 / (nx * dx)
+    dkx = 2.0d0 * 3.141592653589793d0 / (nx2 * dx)
     dky = 2.0d0 * 3.141592653589793d0 / (ny2 * dx)
     dkz = 2.0d0 * 3.141592653589793d0 / (nz2 * dz)
 
-    do i=0, nx-1
-        if (i <= n) then
+    ! Tworzenie jądra w przestrzeni k: Vdip_k
+    do i=0, nx2-1
+        if (i <= nx) then
             kx = i * dkx
         else
-            kx = (i - nx) * dkx
+            kx = (i - nx2) * dkx
         end if
         do j=0, ny2-1
             if (j <= ny) then
@@ -730,7 +714,8 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
 
                 k2 = kx**2 + ky**2 + kz**2
                 if (k2 > 1d-12) then
-                    Vdip_k(i+1,j+1,k+1) = (3d0 * kz**2/k2 - 1d0)
+                    !Vdip_k(i+1,j+1,k+1) = (3d0 * kz**2/k2 - 1d0)
+                    Vdip_k(i+1,j+1,k+1) = (1d0 / k2)
                 else
                     Vdip_k(i+1,j+1,k+1) = 0d0
                 end if
@@ -738,19 +723,20 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
         end do
     end do
 
-    ! === 4. Pomnóż w przestrzeni pędów ===
     psi_k = psi_k * Vdip_k
 
-    ! === 5. Odwróć FFT ===
-    call dfftw_plan_dft_3d(plan_bwd, nx, ny2, nz2, psi_k, psi_r, FFTW_BACKWARD, FFTW_ESTIMATE)
-    call dfftw_execute_dft(plan_bwd, psi_k, psi_r)
+    ! Powrót do przestrzeni r → fi3d
+    call fftw_execute_dft(plan_bwd, psi_k, psi_r)
 
-    ! === 6. Zapisz wynik (normalizacja FFTW) ===
-    fi3d = psi_r / dcmplx(nx*ny2*nz2, 0d0)
+    fi3 = psi_r / (nx2*ny2*nz2) ! FFT norm
 
-    ! === 7. Zwolnij pamięć i plany ===
-    call dfftw_destroy_plan(plan_fwd)
-    call dfftw_destroy_plan(plan_bwd)
-    deallocate(psi_r, psi_k, Vdip_k)
+    fi3d = 0
+    do i=-nx+1,nx-1
+        do j=-ny+1,ny-1
+            do k=-nz+1,nz-1
+                fi3d(i,j,k)=-(fi3(i,j,k+1)+fi3(i,j,k-1)-2*fi3(i,j,k))/dz**2
+            enddo
+        enddo
+    enddo
 
 end subroutine lifi3_fft
