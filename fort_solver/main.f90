@@ -41,7 +41,7 @@ program GPESolver
     dx=60/.05292
     dz=350/.05292
     v=-200/27211.6
-    xm(1)=163.929/5.486e-4
+    xm(1)=163.929/5.486e-4 ! mass of Erb 164 in Daltons
     eha=27211.6
 
     zred1=xm(1)**2/(xm(1))
@@ -154,7 +154,7 @@ program GPESolver
     enddo
     i192=192
     i498=1498
-    istart=1000
+    istart=2000
     do iter=0,imax
         if(iter.le.istart) then
             ! finding minimum state - initial calculations
@@ -179,12 +179,12 @@ program GPESolver
         call norm(cpsin,n,ny,nz)
         cpsi=cpsin
 
-        if(mod(iter,300).eq.0) then
-            print *, "Running calculations", iter
+        !if(mod(iter,300).eq.0) then
+        if(iter.eq.istart) then
             wredna=energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
             w=xncz(1)/xnorma(1)
             eold=wredna
-            print *, "writing  to file"
+            print *, "Writing  to file"
             do ix=-n,n
                 x=ix*dx
                 iy=0
@@ -206,6 +206,8 @@ program GPESolver
                 y=ix*dz
                 write(501,88)y*.05292,cdabs(cpsin(0,0,ix))**2
             enddo
+
+            return
             write(i192,88) iter*1.,wredna*eha,e1*eha,e2*eha,e3*eha,e4*eha,e5*eha,dt,t
             write(i498,*)
             write(i498,*)
@@ -308,7 +310,6 @@ subroutine cnd(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
     fi3do=fi3d
     fi3d=fi3do
 
-    ! TODO: dlaczego tutaj jest ta pętla
     do icn=1,1
         ene=0
         w=sqrt(xncz(1))
@@ -693,6 +694,7 @@ subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
     dkz = 2.0d0 * 3.141592653589793d0 / (nz2 * dz)
 
     ! Tworzenie jądra w przestrzeni k: Vdip_k
+    ! to trzeba napisać zgrabniej, najlepiej bez tych warunków
     do i=0, nx2-1
         if (i <= nx) then
             kx = i * dkx
@@ -714,8 +716,8 @@ subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
 
                 k2 = kx**2 + ky**2 + kz**2
                 if (k2 > 1d-12) then
-                    !Vdip_k(i+1,j+1,k+1) = (3d0 * kz**2/k2 - 1d0)
-                    Vdip_k(i+1,j+1,k+1) = (1d0 / k2)
+                    Vdip_k(i+1,j+1,k+1) = (3d0 * kz**2/k2 - 1d0)
+                    !Vdip_k(i+1,j+1,k+1) = (1d0 / k2)
                 else
                     Vdip_k(i+1,j+1,k+1) = 0d0
                 end if
@@ -728,15 +730,15 @@ subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
     ! Powrót do przestrzeni r → fi3d
     call fftw_execute_dft(plan_bwd, psi_k, psi_r)
 
-    fi3 = psi_r / (nx2*ny2*nz2) ! FFT norm
+    !fi3 = psi_r / (nx2*ny2*nz2) ! FFT norm
 
-    fi3d = 0
-    do i=-nx+1,nx-1
-        do j=-ny+1,ny-1
-            do k=-nz+1,nz-1
-                fi3d(i,j,k)=-(fi3(i,j,k+1)+fi3(i,j,k-1)-2*fi3(i,j,k))/dz**2
-            enddo
-        enddo
-    enddo
+    fi3d = fi3
+    !do i=-nx+1,nx-1
+    !    do j=-ny+1,ny-1
+    !        do k=-nz+1,nz-1
+    !            fi3d(i,j,k)=-(fi3(i,j,k+1)+fi3(i,j,k-1)-2*fi3(i,j,k))/dz**2
+    !        enddo
+    !    enddo
+    !enddo
 
 end subroutine lifi3_fft

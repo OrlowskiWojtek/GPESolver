@@ -21,4 +21,4 @@ if(Armadillo_FOUND AND NOT TARGET Armadillo::Armadillo)
 endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} Armadillo::Armadillo)
+target_link_libraries(${PROJECT_NAME} Armadillo::Armadillo GPSolver)

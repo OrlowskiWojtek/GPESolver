@@ -27,52 +27,64 @@ struct PhysicalParameters {
 
     //! Oscilator omega in z direction.
     double wzl;
-
     //! Oscilator omega in y direction.
     double wrl;
-
-    //! Center of simulation in y direction. Barely used.
-    double y0;
-
     //! Smallest trap frequency in system.
     double omega0;
-
-    //! Mass of atom - using Dysprosium mass;
+    //! Mass of atom;
     double m;
-
+    //! Number of used atoms;
+    double n_atoms;
     //! Used in mexican hat potential in x direction.
     //! x^4 term
     double aa;
-
     //! Used in mexican hat potential in x direction.
     //! x^2 term
     double b;
 
+    double gpp11;
+    double gamma;
+
+    //! dipol dipol interaction constant
+    double cdd;
+    //! still do not know \todo
+    double add;
+
     //! Number of nodes in calculations - x direction.
     int nx;
-
     //! Number of nodes in calculations - y direction.
     int ny;
-
     //! Number of nodes in calculations - z direction.
     int nz;
 
-    //! Used for boundary condition.
-    //!
-    //! Original comment: rdy sluzy do liczenia warunku brzegowego, calkowania gestosci, ktora na
-    //! brzegu jest 0 tak czy inaczej
-    Mat3D rdy;
+    //! Distance per node - x direction
+    int dx;
+    //! Distance per node - y direction.
+    int dy;
+    //! Distance per node - z direction.
+    int dz;
 
+    double get_x(int ix);
+    double get_y(int iy);
+    double get_z(int iz);
+    double get_r(int ix, int iy, int iz);
+
+    double get_dxdydz();
 private:
     void init_values();
-    void init_containers();
+    void init_r();
 
-    void init_rdy();
+    Mat3D r_matrix;
+    std::vector<double> x_vec;
+    std::vector<double> y_vec;
+    std::vector<double> z_vec;
+
+    double dxdydz;
 
     PhysicalParameters() {
         init_values();
-        init_containers();
     };
+
     static PhysicalParameters *instance;
 };
 

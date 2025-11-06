@@ -3,7 +3,6 @@
 ! [2]
 
 program gaussian
-    USE OMP_LIB
     implicit double precision(a-b,d-h,o-z)
     implicit double complex(c)
     ! declare variables !
@@ -154,7 +153,7 @@ program gaussian
     enddo
     i192=192
     i498=1498
-    istart=1000
+    istart=2000
     do iter=0,imax
         if(iter.le.istart) then
             ! finding minimum state - initial calculations
@@ -179,7 +178,7 @@ program gaussian
         call norm(cpsin,n,ny,nz)
         cpsi=cpsin
 
-        if(mod(iter,300).eq.0) then
+        if(mod(iter, 300).eq.0) then
             print *, "Running calculations", iter
             wredna=energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
             w=xncz(1)/xnorma(1)
@@ -196,10 +195,10 @@ program gaussian
                 do iy=-ny,ny
                     x=ix*dx
                     y=iy*dx
-                    write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2
-                        !dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,   &
-                        !(ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,                          &
-                        !(gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
+                    write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2,fi3d(ix,iy,0), &
+                        dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,       &
+                        (ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,                              &
+                        (gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
                 enddo
             enddo
             do ix=-nz,nz
@@ -246,7 +245,6 @@ subroutine norm(cpsi,n,ny,nz)
 
     ene=0
 
-    !$OMP PARALLEL DO
     do ix=-n+1,n-1
         do iy=-ny+1,ny-1
             do iz=-nz+1,nz-1
@@ -256,9 +254,7 @@ subroutine norm(cpsi,n,ny,nz)
             enddo
         enddo
     enddo
-    !$OMP END PARALLEL DO
 
-    !$OMP PARALLEL DO
     do ix=-n+1,n-1
         do iy=-ny+1,ny-1
             do iz=-nz+1,nz-1
@@ -266,7 +262,6 @@ subroutine norm(cpsi,n,ny,nz)
             enddo
         enddo
     enddo
-    !$OMP END PARALLEL DO
 end
 
 ! imaginary time evolution
@@ -661,8 +656,7 @@ subroutine cndt(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
 88  format(30g30.12)
 end
 
-! [2] - wyplute z chata GPT po podaniu lifi3
-! zrozumieć co tu się dzieję
+! [2]
 subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
     use, intrinsic :: ISO_C_BINDING
     implicit none
@@ -700,7 +694,6 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
     end do
 
     ! === 2. FFT[ n(r) ] ===
-    call fftw_plan_with_nthreads(8)
     call dfftw_plan_dft_3d(plan_fwd, nx, ny2, nz2, psi_r, psi_k, FFTW_FORWARD, FFTW_ESTIMATE)
     call dfftw_execute_dft(plan_fwd, psi_r, psi_k)
 

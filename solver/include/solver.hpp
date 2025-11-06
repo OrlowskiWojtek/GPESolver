@@ -13,24 +13,44 @@ using Mat3D     = arma::Cube<double>;
 *
 */
 class GrossPitaevskiSolver{
-    PhysicalParameters params;
+public:
+    GrossPitaevskiSolver();
+    void solve();
+
+private:
+    PhysicalParameters* params;
 
     //! Containers
-    //! Wavefunction of single particle - copy for calculations.
+    //! Wavefunction of bec - copy for calculations.
     CMat3D cpsii;
 
-    //! Wavefunction of single particle - copy for calculations.
+    //! Wavefunction of bec - copy for calculations.
     CMat3D cpsi;
 
-    //! Wavefunction of single particle - copy for calculations.
+    //! Wavefunction of bec - copy for calculations.
     CMat3D cpsin;
 
-    //! Map of potential (from dipole - dipole interaction)
+    //! Map of dipole-dipole potential (from dipole - dipole interaction)
     Mat3D fi3do;
 
-    //! Map of potential - copy
+    //! Map of dipole-dipole potential - copy
     Mat3D fi3d;
 
+    //! Map of external potential
+    Mat3D pote;
+
+    void calc_initial_state();
+
+    void init_containers();
+    void init_with_cos();
+    void init_potential();
+    void free_potential_well();
+    void imag_time_iter();
+
+    void calc_fi3d();
+
+    double pote_value(int ix, int iy, int iz);
+    double pote_released_value(int ix, int iy, int iz);
 };
 
 #endif
