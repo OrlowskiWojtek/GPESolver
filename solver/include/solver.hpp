@@ -2,11 +2,7 @@
 #define GPE_SOLVER_HPP
 
 #include "include/params.hpp"
-
-//! \todo Just meanwhile sollution, Rather will use blaze (CUDA parallelization, 3D arrays)
-#include <armadillo>
-using CMat3D    = arma::Cube<std::complex<double>>;
-using Mat3D     = arma::Cube<double>;
+#include "mat3d/stdmat3d.hpp"
 
 /*! Solver of time dependent Gross Pitaevski equation.
 *
@@ -22,22 +18,22 @@ private:
 
     //! Containers
     //! Wavefunction of bec - copy for calculations.
-    CMat3D cpsii;
+    StdMat3D<std::complex<double>> cpsii;
 
     //! Wavefunction of bec - copy for calculations.
-    CMat3D cpsi;
+    StdMat3D<std::complex<double>> cpsi;
 
     //! Wavefunction of bec - copy for calculations.
-    CMat3D cpsin;
+    StdMat3D<std::complex<double>> cpsin;
 
     //! Map of dipole-dipole potential (from dipole - dipole interaction)
-    Mat3D fi3do;
+    StdMat3D<double> fi3do;
 
     //! Map of dipole-dipole potential - copy
-    Mat3D fi3d;
+    StdMat3D<double> fi3d;
 
     //! Map of external potential
-    Mat3D pote;
+    StdMat3D<double> pote;
 
     void calc_initial_state();
 

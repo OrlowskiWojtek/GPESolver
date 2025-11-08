@@ -39,7 +39,7 @@ void GrossPitaevskiSolver::imag_time_iter() {
 
     //! WARNING: assumption dx = dy
     // \todo hide into imaginary step
-    for (int i = 1; i < nx -1; i++) {
+    for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
                 double v = pote(i, j, k);
@@ -62,8 +62,8 @@ void GrossPitaevskiSolver::imag_time_iter() {
             for (int k = 0; k < nz; k++) {
                 cpsii(i, j, k) =
                     cpsii(i, j, k) - NumericalParameters::imag_time_dt *
-                                         ((params->gpp11 - params->cdd / 3.) * std::norm(cpsi(i, j, k)) *
-                                              cpsi(i, j, k) * (w) +
+                                         ((params->gpp11 - params->cdd / 3.) *
+                                              std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * (w) +
                                           params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
                                               cpsi(i, j, k) * std::pow(w, 1.5));
             }
@@ -157,4 +157,5 @@ void GrossPitaevskiSolver::init_with_cos() {
 }
 
 void GrossPitaevskiSolver::calc_fi3d() {
+
 }

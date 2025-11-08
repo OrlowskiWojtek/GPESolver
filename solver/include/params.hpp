@@ -3,8 +3,7 @@
 
 //! \todo Just meanwhile sollution, Rather will use blaze (CUDA parallelization, 3D arrays)
 #include <armadillo>
-using CMat3D = arma::Cube<std::complex<double>>;
-using Mat3D  = arma::Cube<double>;
+#include "mat3d/stdmat3d.hpp"
 
 /*! Struct PhysicalParameters.
  *  \brief contains physical parameters of simulation.
@@ -74,7 +73,7 @@ private:
     void init_values();
     void init_r();
 
-    Mat3D r_matrix;
+    StdMat3D<double> r_matrix;
     std::vector<double> x_vec;
     std::vector<double> y_vec;
     std::vector<double> z_vec;
