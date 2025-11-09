@@ -15,7 +15,7 @@ public:
     void resize(size_t nx, size_t ny, size_t nz);
 
     // at operator
-    T &operator()(size_t nx, size_t ny, size_t nz);
+    inline T &operator()(size_t nx, size_t ny, size_t nz) noexcept;
 
 private:
     size_t _nx, _ny, _nz;
@@ -39,7 +39,7 @@ StdMat3D<T>::StdMat3D(size_t nx, size_t ny, size_t nz) {
     for (size_t i = 0; i < nx; i++) {
         data[i].resize(ny);
         for (size_t j = 0; j < ny; j++) {
-            data[i][j].resize(nz);
+            data[i][j].resize(nz, 0);
         }
     }
 }
@@ -54,13 +54,13 @@ void StdMat3D<T>::resize(size_t nx, size_t ny, size_t nz) {
     for (size_t i = 0; i < nx; i++) {
         data[i].resize(ny);
         for (size_t j = 0; j < ny; j++) {
-            data[i][j].resize(nz);
+            data[i][j].resize(nz, 0);
         }
     }
 }
 
 template <class T>
-T &StdMat3D<T>::operator()(size_t i, size_t j, size_t k) {
+inline T &StdMat3D<T>::operator()(size_t i, size_t j, size_t k) noexcept {
     return data[i][j][k];
 }
 

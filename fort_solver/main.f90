@@ -1,13 +1,12 @@
 ! Bibliografia
 ! [1]: Mean-field regime of trapped dipolar Bose-Einstein condensates in one and two dimensions
+! [2]
 
-program GPESolver
-    USE OMP_LIB
-    use FFTSolver
+program gaussian
     implicit double precision(a-b,d-h,o-z)
     implicit double complex(c)
     ! declare variables !
-    parameter(N=80,ny=80,nz=12)
+    parameter(N=40,ny=40,nz=12)
     allocatable cpsi(:,:,:)
     allocatable cpsin(:,:,:)
     allocatable cpsii(:,:,:)
@@ -18,14 +17,14 @@ program GPESolver
     dimension xnorma(2),xm(2),xncz(2),xnormak(2),ene(2),wd(2)
     dimension vx(-n:n),vy(-ny:ny),vz(-nz:nz)
     allocatable rdy(:,:,:)
-    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,y0,omega
+    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,omega
     common/loc/xnormak,ene,eod11,eod22,eod12,ix,iy,iz
     common/add/add,cdd,gamma
     common/skladowe/e1,e2,e3,e4,e5
 
     ! initialize variables !
     ci=(0.d0,1.d0) ! just imaginary double
-    xncz(1)=.5e4 ! number of atoms
+    xncz(1)=.5e4
     allocate (cpsi(-N:N,-Ny:Ny,-Nz:Nz))   ! wavefunction
     allocate (cpsin(-N:N,-Ny:Ny,-Nz:Nz))
     allocate (cpsii(-N:N,-Ny:Ny,-Nz:Nz))
@@ -36,16 +35,13 @@ program GPESolver
     pi=4*atan(1.0)
     wzl=120*4.1356e-12/27211.6  ! angular frequency in z dimension (omega_z)
     wrl=60*4.1356e-12/27211.6
-    y0=13500/.05292*0
-    omega0=4.1357e-6/27.2116
     dx=60/.05292
     dz=350/.05292
-    v=-200/27211.6
-    xm(1)=163.929/5.486e-4 ! mass of Erb 164 in Daltons
+    xm(1)=163.929/5.486e-4
     eha=27211.6
 
     zred1=xm(1)**2/(xm(1))
-    add=131                 ! nie wiadomo co to znaczy
+    add=131
     cdd=12*pi*add/xm(1)     ! [1] zgodnie z podpisem powinno być epsilon_0 * epsilon_d^2 (pod równaniem 3)
     edd=1.5                 ! [1] zgodnie z podpisem powinno być dla jednostek zredukowanych
     a=add/edd               ! [1]
@@ -70,9 +66,6 @@ program GPESolver
     enddo
 
     print *, "finished RDY"
-
-    iomega=0
-    omega=iomega*omega0
 
     psi=0
     xnorma=0
@@ -155,7 +148,7 @@ program GPESolver
     i192=192
     i498=1498
     istart=2000
-    do iter=0,imax
+    do iter=1,imax
         if(iter.le.istart) then
             ! finding minimum state - initial calculations
             call cnd(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
@@ -164,7 +157,7 @@ program GPESolver
             i192=197 ! file number
             i498=498
             t=0
-
+            return
             dt=1.0e10
             b=0 ! releases part of potential, quadratic term is left
             do ix=-n,n
@@ -179,12 +172,12 @@ program GPESolver
         call norm(cpsin,n,ny,nz)
         cpsi=cpsin
 
-        !if(mod(iter,300).eq.0) then
-        if(iter.eq.istart) then
+        if(mod(iter, 300).eq.0) then
+            print *, "Running calculations", iter
             wredna=energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
             w=xncz(1)/xnorma(1)
             eold=wredna
-            print *, "Writing  to file"
+            print *, "writing  to file"
             do ix=-n,n
                 x=ix*dx
                 iy=0
@@ -196,18 +189,17 @@ program GPESolver
                 do iy=-ny,ny
                     x=ix*dx
                     y=iy*dx
-                    write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2, fi3d(ix,iy,0)
-                    !dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,   &
-                    !(ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,                          &
-                    !(gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
+                    vvv = vx(ix) + vy(iy)
+                    write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2,fi3d(ix,iy,0), vvv, &
+                        dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,       &
+                        (ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,                              &
+                        (gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
                 enddo
             enddo
             do ix=-nz,nz
                 y=ix*dz
                 write(501,88)y*.05292,cdabs(cpsin(0,0,ix))**2
             enddo
-
-            return
             write(i192,88) iter*1.,wredna*eha,e1*eha,e2*eha,e3*eha,e4*eha,e5*eha,dt,t
             write(i498,*)
             write(i498,*)
@@ -234,8 +226,7 @@ program GPESolver
 988 format(30f30.12)
 989 format(30g30.12)
 89  format(5g17.8)
-    call free_fft_memory()
-end program GPESolver
+end ! end program gaussian
 
 subroutine norm(cpsi,n,ny,nz)
     implicit double precision(a,b,d-h,o-z)
@@ -243,13 +234,12 @@ subroutine norm(cpsi,n,ny,nz)
     dimension cpsi(-N:N,-Ny:Ny,-Nz:Nz)
     dimension xnorma(2),xm(2),ene(2),v(2),xncz(2),xnormak(2),wd(2)
     common/loc/xnormak,ene,eod11,eod22,eod12,iix,iiy,iiz
-    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,y0,omega
+    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,omega
     g=.1083e-21*0
     xnorma=0
 
     ene=0
 
-    !$OMP PARALLEL DO
     do ix=-n+1,n-1
         do iy=-ny+1,ny-1
             do iz=-nz+1,nz-1
@@ -259,9 +249,7 @@ subroutine norm(cpsi,n,ny,nz)
             enddo
         enddo
     enddo
-    !$OMP END PARALLEL DO
 
-    !$OMP PARALLEL DO
     do ix=-n+1,n-1
         do iy=-ny+1,ny-1
             do iz=-nz+1,nz-1
@@ -269,7 +257,6 @@ subroutine norm(cpsi,n,ny,nz)
             enddo
         enddo
     enddo
-    !$OMP END PARALLEL DO
 end
 
 ! imaginary time evolution
@@ -286,11 +273,10 @@ subroutine cnd(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
     dimension xnorma(2),xm(2),ene(2),v(2),xncz(2),xnormak(2),wd(2)
     dimension vx(-n:n),vy(-ny:ny),vz(-nz:nz)
     common/loc/xnormak,ene,eod11,eod22,eod12,iix,iiy,iiz
-    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,y0,omega
+    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,omega
     common/add/add,cdd,gamma
     !print *, "Enter cnd"
     g=.1083e-21*0
-    xnorma=0
     ci=(0.d0,1.d0)
     ene=0
     cpsin=cpsi
@@ -310,6 +296,7 @@ subroutine cnd(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
     fi3do=fi3d
     fi3d=fi3do
 
+    ! TODO: dlaczego tutaj jest ta pętla
     do icn=1,1
         ene=0
         w=sqrt(xncz(1))
@@ -317,7 +304,7 @@ subroutine cnd(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
             do iy=-ny+1,ny-1
                 do iz=-nz+1,nz-1
                     x=ix*dx
-                    y=iy*dx-y0
+                    y=iy*dx
                     z=iz*dz
                     vvv=vx(ix)+vy(iy)+vz(iz)
                     c1=-0.5/xm(1)/dx**2*(                                       &
@@ -362,7 +349,7 @@ function energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
     dimension xnorma(2),xm(2),ene(2),v(2),xncz(2),xnormak(2),wd(2)
     dimension vx(-n:n),vy(-ny:ny),vz(-nz:nz)
     common/loc/xnormak,ene,eod11,eod22,eod12,iix,iiy,iiz
-    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,y0,omega
+    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,omega
     common/add/add,cdd,gamma
     common/skladowe/e1,e2,e3,e4,e5
     g=.1083e-21*0
@@ -581,7 +568,7 @@ subroutine cndt(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
     dimension xnorma(2),xm(2),ene(2),v(2),xncz(2),xnormak(2),wd(2)
     dimension vx(-n:n),vy(-ny:ny),vz(-nz:nz)
     common/loc/xnormak,ene,eod11,eod22,eod12,iix,iiy,iiz
-    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,y0,omega
+    common/xnorma/xnorma,wrl,wzl,dx,xncz,ggp11,dz,ggp12,wd,omega
     common/add/add,cdd,gamma
     !print *, "Enter crank nicolson evolution"
     g=.1083e-21*0
@@ -663,43 +650,57 @@ subroutine cndt(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
 88  format(30g30.12)
 end
 
-subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
-    use FFTSolver
+! [2]
+subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
+    use, intrinsic :: ISO_C_BINDING
     implicit none
-    complex(8), intent(in) :: cpsi(-nx:nx, -ny:ny, -nz:nz)
-    real(8), intent(out) :: fi3d(-nx:nx, -ny:ny, -nz:nz)
-    integer, intent(in) :: nx, ny, nz
-    real(8), intent(in) :: dx, dz, xncz, xnorma
-    integer :: i,j,k
-    real(8) :: kx, ky, kz, k2
-    real(8) :: dkx, dky, dkz
+    integer, intent(in) :: n, ny, nz
+    real(8), intent(in) :: dx, dz, xnorma, xncz
+    complex(8), intent(in) :: cpsi(-n:n, -ny:ny, -nz:nz)
+    real(8), intent(out) :: fi3d(-n:n, -ny:ny, -nz:nz)
+
+    ! FFTW arrays and plan handles
+    complex(8), allocatable :: psi_r(:,:,:), psi_k(:,:,:)
+    complex(8), allocatable :: Vdip_k(:,:,:)
+    integer :: nx, ny2, nz2
+    type(C_PTR) :: plan_fwd, plan_bwd
+    real(8) :: dkx, dky, dkz, kx, ky, kz, k2
+    integer :: i, j, k, void
 
     include 'fftw3.f03'
 
-    call init_fft_memory(nx, ny, nz)
+    nx = 2*n + 1
+    ny2 = 2*ny + 1
+    nz2 = 2*nz + 1
 
-    do i=1, nx2
+    ! remove allocations to allocate only once
+    allocate(psi_r(nx, ny2, nz2))
+    allocate(psi_k(nx, ny2, nz2))
+    allocate(Vdip_k(nx, ny2, nz2))
+
+    ! === 1. Oblicz gęstość n(r) = |ψ|² ===
+    do i=1, nx
         do j=1, ny2
             do k=1, nz2
-                psi_r(i,j,k) = dcmplx(abs(cpsi(i-nx-1,j-ny-1,k-nz-1))**2, 0d0)
+                psi_r(i,j,k) = dcmplx(abs(cpsi(i-n-1,j-ny-1,k-nz-1))**2, 0d0)
             end do
         end do
     end do
 
-    ! FFT -> psi_k
-    call fftw_execute_dft(plan_fwd, psi_r, psi_k)
+    ! === 2. FFT[ n(r) ] ===
+    call dfftw_plan_dft_3d(plan_fwd, nx, ny2, nz2, psi_r, psi_k, FFTW_FORWARD, FFTW_ESTIMATE)
+    call dfftw_execute_dft(plan_fwd, psi_r, psi_k)
 
-    dkx = 2.0d0 * 3.141592653589793d0 / (nx2 * dx)
+    ! === 3. Przygotuj transformację potencjału dipolowego === - transformacja potencjału dipolowego wyprowadzona analitycznie w [2]
+    dkx = 2.0d0 * 3.141592653589793d0 / (nx * dx)
     dky = 2.0d0 * 3.141592653589793d0 / (ny2 * dx)
     dkz = 2.0d0 * 3.141592653589793d0 / (nz2 * dz)
 
-    ! Tworzenie jądra w przestrzeni k: Vdip_k
-    ! to trzeba napisać zgrabniej, najlepiej bez tych warunków
-    do i=0, nx2-1
-        if (i <= nx) then
+    do i=0, nx-1
+        if (i <= n) then
             kx = i * dkx
         else
-            kx = (i - nx2) * dkx
+            kx = (i - nx) * dkx
         end if
         do j=0, ny2-1
             if (j <= ny) then
@@ -717,7 +718,6 @@ subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
                 k2 = kx**2 + ky**2 + kz**2
                 if (k2 > 1d-12) then
                     Vdip_k(i+1,j+1,k+1) = (3d0 * kz**2/k2 - 1d0)
-                    !Vdip_k(i+1,j+1,k+1) = (1d0 / k2)
                 else
                     Vdip_k(i+1,j+1,k+1) = 0d0
                 end if
@@ -725,20 +725,18 @@ subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xncz, xnorma)
         end do
     end do
 
+    ! === 4. Pomnóż w przestrzeni pędów ===
     psi_k = psi_k * Vdip_k
 
-    ! Powrót do przestrzeni r → fi3d
-    call fftw_execute_dft(plan_bwd, psi_k, psi_r)
+    ! === 5. Odwróć FFT ===
+    call dfftw_plan_dft_3d(plan_bwd, nx, ny2, nz2, psi_k, psi_r, FFTW_BACKWARD, FFTW_ESTIMATE)
+    call dfftw_execute_dft(plan_bwd, psi_k, psi_r)
 
-    !fi3 = psi_r / (nx2*ny2*nz2) ! FFT norm
+    ! === 6. Zapisz wynik (normalizacja FFTW) ===
+    fi3d = psi_r / dcmplx(nx*ny2*nz2, 0d0)
 
-    fi3d = fi3
-    !do i=-nx+1,nx-1
-    !    do j=-ny+1,ny-1
-    !        do k=-nz+1,nz-1
-    !            fi3d(i,j,k)=-(fi3(i,j,k+1)+fi3(i,j,k-1)-2*fi3(i,j,k))/dz**2
-    !        enddo
-    !    enddo
-    !enddo
-
+    ! === 7. Zwolnij pamięć i plany ===
+    call dfftw_destroy_plan(plan_fwd)
+    call dfftw_destroy_plan(plan_bwd)
+    deallocate(psi_r, psi_k, Vdip_k)
 end subroutine lifi3_fft

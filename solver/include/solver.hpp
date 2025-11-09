@@ -43,7 +43,11 @@ private:
     void free_potential_well();
     void imag_time_iter();
 
+    void save_xy_cut_to_file();
+    void save_x_cut_to_file();
+
     void calc_fi3d();
+    void calc_norm();
 
     double pote_value(int ix, int iy, int iz);
     double pote_released_value(int ix, int iy, int iz);

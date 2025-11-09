@@ -5,19 +5,17 @@ project(GPESolver LANGUAGES Fortran)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Znajdź bibliotekę FFTW
 # Jeśli masz ją w niestandardowym miejscu, podaj: -DFFTW_ROOT=/ścieżka
-find_package(FFTW3 REQUIRED COMPONENTS double threads)
-find_package(OpenMP REQUIRED)
+find_package(FFTW3 REQUIRED COMPONENTS double)
+
 enable_language(Fortran)
 
 # Dodaj pliki źródłowe
 add_executable(GPESolver
     main.f90
-    fft_solver.f90
 )
 
 message("Found libraries:" ${FFTW3_LIBRARIES})
 
 # Linkowanie z FFTW
 target_include_directories(GPESolver PUBLIC ${FFTW3_INCLUDE_DIR})
-
-target_link_libraries(GPESolver PRIVATE ${FFTW3_LIBRARIES} OpenMP::OpenMP_Fortran)
+target_link_libraries(GPESolver PRIVATE ${FFTW3_LIBRARIES})

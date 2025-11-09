@@ -41,7 +41,7 @@ struct PhysicalParameters {
     //! x^2 term
     double b;
 
-    double gpp11;
+    double ggp11;
     double gamma;
 
     //! dipol dipol interaction constant
@@ -57,11 +57,11 @@ struct PhysicalParameters {
     int nz;
 
     //! Distance per node - x direction
-    int dx;
+    double dx;
     //! Distance per node - y direction.
-    int dy;
+    double dy;
     //! Distance per node - z direction.
-    int dz;
+    double dz;
 
     double get_x(int ix);
     double get_y(int iy);
