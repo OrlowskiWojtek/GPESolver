@@ -9,7 +9,7 @@ void PhysicalParameters::init_values() {
     wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
     wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
 
-    n_atoms   = 1000;
+    n_atoms   = 2000;
     double dd = UnitConverter::len_nm_to_au(1500.0);                        // TODO: do not know what it is - used in aa
     m         = UnitConverter::mass_Da_to_au(163.929); // mass of Erb 164
 

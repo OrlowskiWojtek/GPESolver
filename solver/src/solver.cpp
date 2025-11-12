@@ -65,11 +65,12 @@ void GrossPitaevskiSolver::imag_time_iter() {
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
-                cpsii(i, j, k) = cpsii(i, j, k) -
-                                 NumericalParameters::imag_time_dt *
-                                     ((params->ggp11-params->cdd/3) * std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
-                                      params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
-                                          cpsi(i, j, k) * std::pow(w, 1.5));
+                cpsii(i, j, k) =
+                    cpsii(i, j, k) - NumericalParameters::imag_time_dt *
+                                         ((params->ggp11 - params->cdd / 3) *
+                                              std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
+                                          params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
+                                              cpsi(i, j, k) * std::pow(w, 1.5));
             }
         }
     }
@@ -211,7 +212,8 @@ void GrossPitaevskiSolver::calc_fi3d() {
                 size_t idx = (i * ny + j) * nz + k;
 
                 if (k2 > 1e-12) {
-                    Vdip_k[idx][0] = (4. * M_PI / 3.) * (3.0 * kz * kz / k2 - 1.0);
+                    // Vdip_k[idx][0] = (4. * M_PI / 3.) * (3.0 * kz * kz / k2 - 1.0);
+                    Vdip_k[idx][0] = ( kz * kz / k2);
                     Vdip_k[idx][1] = 0.0;
                 } else {
                     Vdip_k[idx][0] = 0.0;
@@ -239,7 +241,7 @@ void GrossPitaevskiSolver::calc_fi3d() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                size_t idx    = (i * ny + j) * nz + k;
+                size_t idx     = (i * ny + j) * nz + k;
                 fi3d(i, j, k) = psi_r[idx][0] * norm_factor;
             }
         }
