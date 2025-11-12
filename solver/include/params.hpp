@@ -1,8 +1,6 @@
 #ifndef SOLVER_PARAMETERS_HPP
 #define SOLVER_PARAMETERS_HPP
 
-//! \todo Just meanwhile sollution, Rather will use blaze (CUDA parallelization, 3D arrays)
-#include <armadillo>
 #include "mat3d/stdmat3d.hpp"
 
 /*! Struct PhysicalParameters.

@@ -2,6 +2,8 @@
 #include "include/numerical_params.hpp"
 #include "include/params.hpp"
 #include <fftw3.h>
+#include <fstream>
+#include <iostream>
 
 GrossPitaevskiSolver::GrossPitaevskiSolver()
     : params(PhysicalParameters::getInstance()) {
@@ -29,7 +31,7 @@ void GrossPitaevskiSolver::imag_time_iter() {
     int nz = params->nz;
 
     // todo: push into double psi_norm();
-    double xnorma = 0;
+    xnorma = 0;
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
@@ -177,7 +179,7 @@ void GrossPitaevskiSolver::calc_fi3d() {
     size_t N = params->nx * params->ny * params->nz;
 
     // FFTW memory (aligned)
-    fftw_complex *psi_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+    fftw_complex *rho  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     fftw_complex *psi_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     fftw_complex *Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
 
@@ -187,14 +189,14 @@ void GrossPitaevskiSolver::calc_fi3d() {
             for (int k = 0; k < nz; ++k) {
                 size_t idx    = (i * ny + j) * nz + k;
                 double val    = std::norm(cpsi(i, j, k)); // |ψ|²
-                psi_r[idx][0] = val;
-                psi_r[idx][1] = 0.;
+                rho[idx][0] = val * params->n_atoms / xnorma;
+                rho[idx][1] = 0.;
             }
         }
     }
 
     // === 2. FFT[ n(r) ] ===
-    fftw_plan plan_fwd = fftw_plan_dft_3d(nx, ny, nz, psi_r, psi_k, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho, psi_k, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(plan_fwd);
 
     double dkx = 2. * M_PI / (params->nx * params->dx);
@@ -206,12 +208,12 @@ void GrossPitaevskiSolver::calc_fi3d() {
         for (int j = 0; j < ny; ++j) {
             double ky = (j <= (ny / 2)) ? j * dky : (j - ny) * dky;
             for (int k = 0; k < nz; ++k) {
-                double kz = (k <= (nz / 2)) ? k * dkz : (k - nz) * dkz;
+                double kz =  k * dkz;
 
                 double k2  = kx * kx + ky * ky + kz * kz;
                 size_t idx = (i * ny + j) * nz + k;
 
-                if (k2 > 1e-12) {
+                if (k2 > 1e-30) {
                     // Vdip_k[idx][0] = (4. * M_PI / 3.) * (3.0 * kz * kz / k2 - 1.0);
                     Vdip_k[idx][0] = ( kz * kz / k2);
                     Vdip_k[idx][1] = 0.0;
@@ -233,7 +235,7 @@ void GrossPitaevskiSolver::calc_fi3d() {
     }
 
     // === 5. Odwróć FFT ===
-    fftw_plan plan_bwd = fftw_plan_dft_3d(nx, ny, nz, psi_k, psi_r, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan plan_bwd = fftw_plan_dft_3d(nx, ny, nz, psi_k, rho, FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(plan_bwd);
 
     // === 6. Wynik (z normalizacją) ===
@@ -242,7 +244,7 @@ void GrossPitaevskiSolver::calc_fi3d() {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
                 size_t idx     = (i * ny + j) * nz + k;
-                fi3d(i, j, k) = psi_r[idx][0] * norm_factor;
+                fi3d(i, j, k) = rho[idx][0] * norm_factor;
             }
         }
     }
@@ -251,7 +253,7 @@ void GrossPitaevskiSolver::calc_fi3d() {
     fftw_destroy_plan(plan_fwd);
     fftw_destroy_plan(plan_bwd);
 
-    fftw_free(psi_r);
+    fftw_free(rho);
     fftw_free(psi_k);
     fftw_free(Vdip_k);
 }

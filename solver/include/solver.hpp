@@ -3,6 +3,7 @@
 
 #include "include/params.hpp"
 #include "mat3d/stdmat3d.hpp"
+#include <complex>
 
 /*! Solver of time dependent Gross Pitaevski equation.
 *
@@ -34,6 +35,8 @@ private:
 
     //! Map of external potential
     StdMat3D<double> pote;
+
+    double xnorma;
 
     void calc_initial_state();
 

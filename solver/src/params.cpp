@@ -9,7 +9,7 @@ void PhysicalParameters::init_values() {
     wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
     wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
 
-    n_atoms   = 2000;
+    n_atoms   = 5000;
     double dd = UnitConverter::len_nm_to_au(1500.0);                        // TODO: do not know what it is - used in aa
     m         = UnitConverter::mass_Da_to_au(163.929); // mass of Erb 164
 
@@ -26,12 +26,12 @@ void PhysicalParameters::init_values() {
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
 
-    nx = 80 * 2 + 1;
-    ny = 80 * 2 + 1;
+    nx = 40 * 2 + 1;
+    ny = 40 * 2 + 1;
     nz = 12 * 2 + 1;
 
-    dx = UnitConverter::len_nm_to_au(60);
-    dy = UnitConverter::len_nm_to_au(60);
+    dx = UnitConverter::len_nm_to_au(120);
+    dy = UnitConverter::len_nm_to_au(120);
     dz = UnitConverter::len_nm_to_au(350);
 
     dxdydz = dx * dy * dz;
