@@ -9,7 +9,7 @@ void PhysicalParameters::init_values() {
     wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
     wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
 
-    n_atoms   = 5000;
+    n_atoms   = 10000;
     double dd = UnitConverter::len_nm_to_au(1500.0);                        // TODO: do not know what it is - used in aa
     m         = UnitConverter::mass_Da_to_au(163.929); // mass of Erb 164
 
@@ -17,7 +17,7 @@ void PhysicalParameters::init_values() {
     b  = 0.5 * m * std::pow(wrl, 2);
 
     add    = 131.;
-    // 4 pi is mi_0 in atomic units
+    // 4 pi is mi_0 in atomic units 
     cdd    = 12. * M_PI * add / m;
 
     double edd = 1.5;       // ![1] zgodnie z podpisem powinno być dla jednostek zredukowanych

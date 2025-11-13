@@ -1,0 +1,5 @@
+#ifndef SOLVER_CONTEXT_HPP
+#define SOLVER_CONTEXT_HPP
+
+
+#endif

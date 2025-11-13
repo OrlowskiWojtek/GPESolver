@@ -14,7 +14,5 @@ $$ i\hbar \partial_t \psi(\vb{r}, t) = \left[ \frac{-\hbar^2}{2m} + V(\vb{r}) + 
 ## TODOS:
 - [ ] prepare equation description
 - [ ] copy calculations - try to get simple results
-- [/] make fft calculations - done on fortran with cos like potential
-- [ ] write visualiser / plotter (meaby live)
-- [ ]
-
+- [/] make fft calculations
+- [ ] write visualiser / plotter (meaby live) (3d isolines?)

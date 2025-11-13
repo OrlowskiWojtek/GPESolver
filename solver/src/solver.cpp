@@ -13,15 +13,25 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
 
 void GrossPitaevskiSolver::solve() {
     calc_initial_state();
+
+    free_potential_well();
+    calc_evolution();
 }
 
 void GrossPitaevskiSolver::calc_initial_state() {
     for (size_t iter = 0; iter < NumericalParameters::iter_imag_evo; iter++) {
         imag_time_iter();
     }
+}
 
-    save_x_cut_to_file();
-    save_xy_cut_to_file();
+void GrossPitaevskiSolver::calc_evolution(){
+    for (size_t iter = 0; iter < NumericalParameters::iter_real_evo; iter++) {
+        real_time_iter();
+        if(iter % 1000 == 0){
+            std::cout << "Saving to file" << iter << std::endl;
+            save_xy_cut_to_file(iter);
+        }
+    }
 }
 
 void GrossPitaevskiSolver::imag_time_iter() {
@@ -61,7 +71,7 @@ void GrossPitaevskiSolver::imag_time_iter() {
             }
         }
     }
-
+    // hide into something
     double w = params->n_atoms / xnorma;
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
@@ -77,7 +87,86 @@ void GrossPitaevskiSolver::imag_time_iter() {
     }
 
     cpsi = cpsii;
+    calc_norm();
+}
 
+void GrossPitaevskiSolver::real_time_iter() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    cpsin = cpsi;
+    cpsii = cpsi;
+
+    // todo: push into double psi_norm();
+    xnorma = 0;
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                xnorma += std::norm(cpsi(i, j, k));
+            }
+        }
+    }
+
+    xnorma *= params->get_dxdydz();
+
+    calc_fi3d();
+    std::complex<double> dt(0, -NumericalParameters::real_time_dt);
+
+    for (int iter = 0; iter < 2; iter++) {
+        for (int i = 1; i < nx - 1; i++) {
+            for (int j = 1; j < ny - 1; j++) {
+                for (int k = 1; k < nz - 1; k++) {
+                    double v = pote(i, j, k);
+                    std::complex<double> c1 =
+                        -0.5 / (params->m * std::pow(params->dx, 2)) *
+                            (cpsi(i - 1, j, k) + cpsi(i + 1, j, k) - 2. * cpsi(i, j, k)) -
+                        0.5 / (params->m * std::pow(params->dy, 2)) *
+                            (cpsi(i, j - 1, k) + cpsi(i, j + 1, k) - 2. * cpsi(i, j, k)) -
+                        0.5 / (params->m * std::pow(params->dz, 2)) *
+                            (cpsi(i, j, k - 1) + cpsi(i, j, k + 1) - 2. * cpsi(i, j, k)) +
+                        cpsi(i, j, k) * (v + params->cdd * fi3d(i, j, k)); // need old fi3d here
+
+                    std::complex<double> c2 =
+                        -0.5 / (params->m * std::pow(params->dx, 2)) *
+                            (cpsin(i - 1, j, k) + cpsin(i + 1, j, k) - 2. * cpsin(i, j, k)) -
+                        0.5 / (params->m * std::pow(params->dy, 2)) *
+                            (cpsin(i, j - 1, k) + cpsin(i, j + 1, k) - 2. * cpsin(i, j, k)) -
+                        0.5 / (params->m * std::pow(params->dz, 2)) *
+                            (cpsin(i, j, k - 1) + cpsin(i, j, k + 1) - 2. * cpsin(i, j, k)) +
+                        cpsin(i, j, k) * (v + params->cdd * fi3d(i, j, k));
+
+                    cpsii(i, j, k) = cpsi(i, j, k) + dt * (c1 + c2) / 2.;
+                }
+            }
+        }
+
+        double w = params->n_atoms / xnorma;
+        for (int i = 1; i < nx - 1; i++) {
+            for (int j = 1; j < ny - 1; j++) {
+                for (int k = 1; k < nz - 1; k++) {
+                    std::complex<double> c1 =
+                        ((params->ggp11 - params->cdd / 3) * std::norm(cpsi(i, j, k)) *
+                             cpsi(i, j, k) * w +
+                         params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * cpsi(i, j, k) *
+                             std::pow(w, 1.5));
+
+                    std::complex<double> c2 =
+                        ((params->ggp11 - params->cdd / 3) * std::norm(cpsin(i, j, k)) *
+                             cpsin(i, j, k) * w +
+                         params->gamma * std::pow(std::abs(cpsin(i, j, k)), 3) * cpsin(i, j, k) *
+                             std::pow(w, 1.5));
+
+                    cpsii(i, j, k) =
+                        cpsii(i, j, k) + dt * (c1 + c2) / 2.;
+                }
+            }
+        }
+
+        cpsin = cpsii;
+    }
+    
+    cpsi = cpsin;
     calc_norm();
 }
 
@@ -207,14 +296,14 @@ void GrossPitaevskiSolver::calc_fi3d() {
         for (int j = 0; j < ny; ++j) {
             double ky = (j <= (ny / 2)) ? j * dky : (j - ny) * dky;
             for (int k = 0; k < nz; ++k) {
-                double kz =  (k <= (nz / 2)) ? k * dkz : (k - nz) * dkz;
+                double kz = (k <= (nz / 2)) ? k * dkz : (k - nz) * dkz;
 
                 double k2  = kx * kx + ky * ky + kz * kz;
                 size_t idx = (i * ny + j) * nz + k;
 
                 if (k2 > 1e-30) {
                     // Vdip_k[idx][0] = (4. * M_PI / 3.) * (3.0 * kz * kz / k2 - 1.0);
-                    Vdip_k[idx][0] = ( 1. / k2);
+                    Vdip_k[idx][0] = (1. / k2);
                     Vdip_k[idx][1] = 0.0;
                 } else {
                     Vdip_k[idx][0] = 0.0;
@@ -226,11 +315,11 @@ void GrossPitaevskiSolver::calc_fi3d() {
 
     // === 4. Pomnóż w przestrzeni pędów: psi_k *= Vdip_k ===
     for (size_t idx = 0; idx < N; ++idx) {
-        std::complex<double> a(rho_r[idx][0], rho_r[idx][1]);
+        std::complex<double> a(rho_k[idx][0], rho_k[idx][1]);
         std::complex<double> b(Vdip_k[idx][0], Vdip_k[idx][1]);
         std::complex<double> c = a * b;
-        rho_r[idx][0]          = c.real();
-        rho_r[idx][1]          = c.imag();
+        rho_k[idx][0]          = c.real();
+        rho_k[idx][1]          = c.imag();
     }
 
     // === 5. Odwróć FFT ===
@@ -251,7 +340,8 @@ void GrossPitaevskiSolver::calc_fi3d() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 1; k < nz - 1; k++) {
-                fi3d(i, j, k) = -(fi3do(i,j,k-1) + fi3do(i,j,k+1) - 2 * fi3do(i,j,k)) / (std::pow(params->dz, 2));
+                fi3d(i, j, k) = -(fi3do(i, j, k - 1) + fi3do(i, j, k + 1) - 2 * fi3do(i, j, k)) /
+                                (std::pow(params->dz, 2));
             }
         }
     }
@@ -291,8 +381,8 @@ void GrossPitaevskiSolver::calc_norm() {
     }
 }
 
-void GrossPitaevskiSolver::save_xy_cut_to_file() {
-    std::ofstream file("cut.dat");
+void GrossPitaevskiSolver::save_xy_cut_to_file(int iter) {
+    std::ofstream file("cut"+std::to_string(iter)+".dat");
 
     int z_zero_idx = params->nz / 2 + 1;
 
@@ -322,4 +412,20 @@ void GrossPitaevskiSolver::save_x_cut_to_file() {
     }
 
     file.close();
+}
+
+void GrossPitaevskiSolver::free_potential_well() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    pote.resize(nx, ny, nz);
+
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                pote(i, j, k) = pote_released_value(i, j, k);
+            }
+        }
+    }
 }

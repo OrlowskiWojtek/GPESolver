@@ -39,14 +39,17 @@ private:
     double xnorma;
 
     void calc_initial_state();
+    void calc_evolution();
 
     void init_containers();
     void init_with_cos();
     void init_potential();
     void free_potential_well();
     void imag_time_iter();
+    void real_time_iter();
 
-    void save_xy_cut_to_file();
+    // \todo: temporary - remove iter
+    void save_xy_cut_to_file(int iter);
     void save_x_cut_to_file();
 
     void calc_fi3d();
