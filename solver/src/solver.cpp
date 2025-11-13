@@ -9,7 +9,6 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
     : params(PhysicalParameters::getInstance()) {
 
     init_containers();
-    save_x_cut_to_file();
 }
 
 void GrossPitaevskiSolver::solve() {
@@ -179,8 +178,8 @@ void GrossPitaevskiSolver::calc_fi3d() {
     size_t N = params->nx * params->ny * params->nz;
 
     // FFTW memory (aligned)
-    fftw_complex *rho  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
-    fftw_complex *psi_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+    fftw_complex *rho_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+    fftw_complex *rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     fftw_complex *Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
 
     // === 1. n(r) = |ψ|² ===
@@ -189,14 +188,14 @@ void GrossPitaevskiSolver::calc_fi3d() {
             for (int k = 0; k < nz; ++k) {
                 size_t idx    = (i * ny + j) * nz + k;
                 double val    = std::norm(cpsi(i, j, k)); // |ψ|²
-                rho[idx][0] = val * params->n_atoms / xnorma;
-                rho[idx][1] = 0.;
+                rho_r[idx][0] = val * params->n_atoms / xnorma;
+                rho_r[idx][1] = 0.;
             }
         }
     }
 
     // === 2. FFT[ n(r) ] ===
-    fftw_plan plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho, psi_k, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho_r, rho_k, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(plan_fwd);
 
     double dkx = 2. * M_PI / (params->nx * params->dx);
@@ -208,14 +207,14 @@ void GrossPitaevskiSolver::calc_fi3d() {
         for (int j = 0; j < ny; ++j) {
             double ky = (j <= (ny / 2)) ? j * dky : (j - ny) * dky;
             for (int k = 0; k < nz; ++k) {
-                double kz =  k * dkz;
+                double kz =  (k <= (nz / 2)) ? k * dkz : (k - nz) * dkz;
 
                 double k2  = kx * kx + ky * ky + kz * kz;
                 size_t idx = (i * ny + j) * nz + k;
 
                 if (k2 > 1e-30) {
                     // Vdip_k[idx][0] = (4. * M_PI / 3.) * (3.0 * kz * kz / k2 - 1.0);
-                    Vdip_k[idx][0] = ( kz * kz / k2);
+                    Vdip_k[idx][0] = ( 1. / k2);
                     Vdip_k[idx][1] = 0.0;
                 } else {
                     Vdip_k[idx][0] = 0.0;
@@ -227,15 +226,15 @@ void GrossPitaevskiSolver::calc_fi3d() {
 
     // === 4. Pomnóż w przestrzeni pędów: psi_k *= Vdip_k ===
     for (size_t idx = 0; idx < N; ++idx) {
-        std::complex<double> a(psi_k[idx][0], psi_k[idx][1]);
+        std::complex<double> a(rho_r[idx][0], rho_r[idx][1]);
         std::complex<double> b(Vdip_k[idx][0], Vdip_k[idx][1]);
         std::complex<double> c = a * b;
-        psi_k[idx][0]          = c.real();
-        psi_k[idx][1]          = c.imag();
+        rho_r[idx][0]          = c.real();
+        rho_r[idx][1]          = c.imag();
     }
 
     // === 5. Odwróć FFT ===
-    fftw_plan plan_bwd = fftw_plan_dft_3d(nx, ny, nz, psi_k, rho, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan plan_bwd = fftw_plan_dft_3d(nx, ny, nz, rho_k, rho_r, FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(plan_bwd);
 
     // === 6. Wynik (z normalizacją) ===
@@ -244,7 +243,15 @@ void GrossPitaevskiSolver::calc_fi3d() {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
                 size_t idx     = (i * ny + j) * nz + k;
-                fi3d(i, j, k) = rho[idx][0] * norm_factor;
+                fi3do(i, j, k) = rho_r[idx][0] * norm_factor;
+            }
+        }
+    }
+
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                fi3d(i, j, k) = -(fi3do(i,j,k-1) + fi3do(i,j,k+1) - 2 * fi3do(i,j,k)) / (std::pow(params->dz, 2));
             }
         }
     }
@@ -253,8 +260,8 @@ void GrossPitaevskiSolver::calc_fi3d() {
     fftw_destroy_plan(plan_fwd);
     fftw_destroy_plan(plan_bwd);
 
-    fftw_free(rho);
-    fftw_free(psi_k);
+    fftw_free(rho_r);
+    fftw_free(rho_k);
     fftw_free(Vdip_k);
 }
 
