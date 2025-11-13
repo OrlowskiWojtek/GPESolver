@@ -2,8 +2,10 @@
 #define GPE_SOLVER_HPP
 
 #include "include/params.hpp"
+#include "include/poisson_solver.hpp"
 #include "mat3d/stdmat3d.hpp"
 #include <complex>
+#include <memory>
 
 /*! Solver of time dependent Gross Pitaevski equation.
 *
@@ -37,6 +39,8 @@ private:
     StdMat3D<double> pote;
 
     double xnorma;
+
+    std::unique_ptr<PoissonSolver> poisson_solver;
 
     void calc_initial_state();
     void calc_evolution();

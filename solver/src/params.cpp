@@ -17,7 +17,7 @@ void PhysicalParameters::init_values() {
     b  = 0.5 * m * std::pow(wrl, 2);
 
     add    = 131.;
-    // 4 pi is mi_0 in atomic units 
+    // 4 pi is mi_0 in atomic units
     cdd    = 12. * M_PI * add / m;
 
     double edd = 1.5;       // ![1] zgodnie z podpisem powinno być dla jednostek zredukowanych

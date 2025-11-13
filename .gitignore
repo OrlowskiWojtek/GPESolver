@@ -2,3 +2,4 @@ build/
 build_fort/
 compile_commands.json
 .cache
+plotters/
