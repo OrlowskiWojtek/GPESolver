@@ -5,11 +5,12 @@
 
 PhysicalParameters *PhysicalParameters::instance = nullptr;
 
+//! \todo: separate into potential class / atoms params (?)
 void PhysicalParameters::init_values() {
     wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
     wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
 
-    n_atoms   = 10000;
+    n_atoms   = 5e4;
     double dd = UnitConverter::len_nm_to_au(1500.0);                        // TODO: do not know what it is - used in aa
     m         = UnitConverter::mass_Da_to_au(163.929); // mass of Erb 164
 
@@ -20,18 +21,18 @@ void PhysicalParameters::init_values() {
     // 4 pi is mi_0 in atomic units
     cdd    = 12. * M_PI * add / m;
 
-    double edd = 1.5;       // ![1] zgodnie z podpisem powinno być dla jednostek zredukowanych
+    double edd = 1.45;      // ![1] zgodnie z podpisem powinno być dla jednostek zredukowanych
     double a   = add / edd; // ![1]
 
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
 
-    nx = 40 * 2 + 1;
-    ny = 40 * 2 + 1;
+    nx = 18 * 2 + 1;
+    ny = 18 * 2 + 1;
     nz = 12 * 2 + 1;
 
-    dx = UnitConverter::len_nm_to_au(120);
-    dy = UnitConverter::len_nm_to_au(120);
+    dx = UnitConverter::len_nm_to_au(260);
+    dy = UnitConverter::len_nm_to_au(260);
     dz = UnitConverter::len_nm_to_au(350);
 
     dxdydz = dx * dy * dz;

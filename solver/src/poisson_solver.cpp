@@ -1,6 +1,7 @@
 #include "include/poisson_solver.hpp"
 #include "include/params.hpp"
 #include <cmath>
+#include <iostream>
 
 PoissonSolver::PoissonSolver()
     : p(PhysicalParameters::getInstance()) {
@@ -66,7 +67,7 @@ void PoissonSolver::execute(double norm) {
         for (int j = 0; j < ny; ++j) {
             for (int k = 0; k < nz; ++k) {
                 size_t idx    = (i * ny + j) * nz + k;
-                double val    = std::norm(rpsi(i, j, k)); // |ψ|²
+                double val    = std::norm(rpsi(i, j, k));
                 rho_r[idx][0] = val * p->n_atoms / norm;
                 rho_r[idx][1] = 0.;
             }

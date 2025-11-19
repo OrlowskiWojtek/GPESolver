@@ -11,12 +11,11 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
 
     init_containers();
     poisson_solver->prepare(&cpsi, &fi3d);
+    calc_norm();
 }
 
 void GrossPitaevskiSolver::solve() {
     calc_initial_state();
-
-    save_xy_cut_to_file(0);
 
     // free_potential_well();
     // calc_evolution();
@@ -25,6 +24,10 @@ void GrossPitaevskiSolver::solve() {
 void GrossPitaevskiSolver::calc_initial_state() {
     for (size_t iter = 0; iter < NumericalParameters::iter_imag_evo; iter++) {
         imag_time_iter();
+
+        if (iter % 100 == 0) {
+            save_xy_cut_to_file(iter);
+        }
     }
 }
 
@@ -44,16 +47,17 @@ void GrossPitaevskiSolver::imag_time_iter() {
     int nz = params->nz;
 
     // todo: push into double psi_norm();
-    xnorma = 0;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                xnorma += std::norm(cpsi(i, j, k));
-            }
-        }
-    }
+    calc_norm();
+    // xnorma = 0;
+    // for (int i = 1; i < nx - 1; i++) {
+    //     for (int j = 1; j < ny - 1; j++) {
+    //         for (int k = 1; k < nz - 1; k++) {
+    //             xnorma += std::norm(cpsi(i, j, k));
+    //         }
+    //     }
+    // }
 
-    xnorma *= params->get_dxdydz();
+    // xnorma *= params->get_dxdydz();
 
     calc_fi3d();
 
@@ -92,6 +96,7 @@ void GrossPitaevskiSolver::imag_time_iter() {
 
     cpsi = cpsii;
     calc_norm();
+    normalize();
 }
 
 void GrossPitaevskiSolver::real_time_iter() {
@@ -271,8 +276,7 @@ void GrossPitaevskiSolver::calc_norm() {
     int ny = params->ny;
     int nz = params->nz;
 
-    double xnorma = 0.;
-
+    xnorma = 0.;
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
@@ -282,6 +286,12 @@ void GrossPitaevskiSolver::calc_norm() {
     }
 
     xnorma *= params->get_dxdydz();
+}
+
+void GrossPitaevskiSolver::normalize() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
 
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
@@ -303,7 +313,7 @@ void GrossPitaevskiSolver::save_xy_cut_to_file(int iter) {
                  << std::norm(cpsi(i, j, z_zero_idx)) << "\t" << fi3d(i, j, z_zero_idx) << "\t"
                  << pote(i, j, z_zero_idx) << "\n";
         }
-        file << std::endl;
+        // file << std::endl;
     }
 
     file << std::flush;

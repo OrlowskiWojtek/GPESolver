@@ -58,6 +58,7 @@ private:
 
     void calc_fi3d();
     void calc_norm();
+    void normalize();
 
     double pote_value(int ix, int iy, int iz);
     double pote_released_value(int ix, int iy, int iz);
