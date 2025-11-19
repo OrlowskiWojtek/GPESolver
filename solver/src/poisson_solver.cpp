@@ -68,11 +68,14 @@ void PoissonSolver::execute(double norm) {
             for (int k = 0; k < nz; ++k) {
                 size_t idx    = (i * ny + j) * nz + k;
                 double val    = std::norm(rpsi(i, j, k));
-                rho_r[idx][0] = val * p->n_atoms / norm;
+                std::cout << val << std::endl;
+                rho_r[idx][0] = val * p->n_atoms / norm * p->get_dxdydz();
                 rho_r[idx][1] = 0.;
             }
         }
     }
+
+    std::cout << p->n_atoms / norm * p->get_dxdydz() << std::endl;
 
     fftw_execute(plan_fwd);
 
