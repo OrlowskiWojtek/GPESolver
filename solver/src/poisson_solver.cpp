@@ -1,13 +1,12 @@
 #include "include/poisson_solver.hpp"
 #include "include/params.hpp"
 #include <cmath>
-#include <iostream>
 
 PoissonSolver::PoissonSolver()
     : p(PhysicalParameters::getInstance()) {
-    int nx = p->nx;
-    int ny = p->ny;
-    int nz = p->nz;
+    int nx = 2 * p->nx;
+    int ny = 2 * p->ny;
+    int nz = 2 * p->nz;
     int N  = nx * ny * nz;
 
     rho_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
@@ -22,9 +21,9 @@ void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<doubl
     psi  = cpsi;
     fi3d = _fi3d;
 
-    int nx = p->nx;
-    int ny = p->ny;
-    int nz = p->nz;
+    int nx = 2 * p->nx;
+    int ny = 2 * p->ny;
+    int nz = 2 * p->nz;
 
     double dx = p->dx;
     double dy = p->dy;
@@ -57,25 +56,28 @@ void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<doubl
 }
 
 void PoissonSolver::execute(double norm) {
-    int nx = p->nx;
-    int ny = p->ny;
-    int nz = p->nz;
+    int nx = 2 * p->nx;
+    int ny = 2 * p->ny;
+    int nz = 2 * p->nz;
     int N  = nx * ny * nz;
 
     auto &rpsi = *psi;
     for (int i = 0; i < nx; ++i) {
         for (int j = 0; j < ny; ++j) {
             for (int k = 0; k < nz; ++k) {
-                size_t idx    = (i * ny + j) * nz + k;
-                double val    = std::norm(rpsi(i, j, k));
-                std::cout << val << std::endl;
-                rho_r[idx][0] = val * p->n_atoms / norm * p->get_dxdydz();
-                rho_r[idx][1] = 0.;
+                size_t idx = (i * ny + j) * nz + k;
+
+                if (i < nx / 2 && j < ny / 2 && k < nz / 2) {
+                    double val    = std::norm(rpsi(i, j, k));
+                    rho_r[idx][0] = val * p->n_atoms / norm;
+                    rho_r[idx][1] = 0.;
+                } else {
+                    rho_r[idx][0] = 0.;
+                    rho_r[idx][1] = 0.;
+                }
             }
         }
     }
-
-    std::cout << p->n_atoms / norm * p->get_dxdydz() << std::endl;
 
     fftw_execute(plan_fwd);
 
@@ -90,11 +92,15 @@ void PoissonSolver::execute(double norm) {
 
     fftw_execute(plan_bwd);
 
-    double norm_factor = 1.0 / static_cast<double>(nx * ny * nz);
+    double norm_factor = 1.0 / static_cast<double>(N);
     auto &rfi3d        = *fi3d;
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
+                if (i >= nx / 2 || j >= ny / 2 || k >= nz / 2) {
+                    continue;
+                }
+
                 size_t idx     = (i * ny + j) * nz + k;
                 rfi3d(i, j, k) = rho_r[idx][0] * norm_factor;
             }
