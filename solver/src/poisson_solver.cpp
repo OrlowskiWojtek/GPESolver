@@ -1,6 +1,11 @@
 #include "include/poisson_solver.hpp"
 #include "include/params.hpp"
 #include <cmath>
+#include <iostream>
+#include <thread>
+#include <fftw3.h>
+
+int PoissonSolver::FFTW_N_THREADS = std::thread::hardware_concurrency();
 
 PoissonSolver::PoissonSolver()
     : p(PhysicalParameters::getInstance()) {
@@ -13,8 +18,11 @@ PoissonSolver::PoissonSolver()
     rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
 
+    fftw_plan_with_nthreads(FFTW_N_THREADS);
     plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho_r, rho_k, FFTW_FORWARD, FFTW_MEASURE);
     plan_bwd = fftw_plan_dft_3d(nx, ny, nz, rho_k, rho_r, FFTW_BACKWARD, FFTW_MEASURE);
+
+    std::cout << "Planning FFTW with " << FFTW_N_THREADS << " threads" << std::endl;
 }
 
 void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<double> *_fi3d) {
