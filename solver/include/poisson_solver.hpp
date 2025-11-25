@@ -25,6 +25,8 @@ private:
     StdMat3D<std::complex<double>>* psi;
     StdMat3D<double>* fi3d;
 
+    static int FFTW_N_THREADS;
+
     fftw_plan plan_fwd;
     fftw_plan plan_bwd;
     
