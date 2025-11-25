@@ -9,8 +9,10 @@ add_subdirectory(utils)
 add_subdirectory(solver)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-find_package(FFTW3 REQUIRED COMPONENTS double)
+find_package(FFTW3 REQUIRED COMPONENTS double threads)
 
 add_executable(${PROJECT_NAME} main.cpp)
+
+message("Found libraries: " ${FFTW3_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME} GPSolver ${FFTW3_LIBRARIES})
