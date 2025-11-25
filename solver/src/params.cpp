@@ -27,13 +27,13 @@ void PhysicalParameters::init_values() {
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
 
-    nx = 18 * 2 + 1;
-    ny = 18 * 2 + 1;
-    nz = 12 * 2 + 1;
+    nx = 80 * 2 + 1;
+    ny = 80 * 2 + 1;
+    nz = 40 * 2 + 1;
 
-    dx = UnitConverter::len_nm_to_au(260);
-    dy = UnitConverter::len_nm_to_au(260);
-    dz = UnitConverter::len_nm_to_au(350);
+    dx = UnitConverter::len_nm_to_au(75);
+    dy = UnitConverter::len_nm_to_au(75);
+    dz = UnitConverter::len_nm_to_au(200);
 
     dxdydz = dx * dy * dz;
 
@@ -85,3 +85,5 @@ double PhysicalParameters::get_dxdydz() {
 double PhysicalParameters::get_r(int ix, int iy, int iz) {
     return r_matrix(ix, iy, iz);
 }
+
+

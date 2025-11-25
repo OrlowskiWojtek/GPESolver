@@ -17,15 +17,15 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
 void GrossPitaevskiSolver::solve() {
     calc_initial_state();
 
-    // free_potential_well();
-    // calc_evolution();
+    free_potential_well();
+    calc_evolution();
 }
 
 void GrossPitaevskiSolver::calc_initial_state() {
     for (size_t iter = 0; iter < NumericalParameters::iter_imag_evo; iter++) {
         imag_time_iter();
 
-        if (iter % 100 == 0) {
+        if (iter % 101 == 0) {
             save_xy_cut_to_file(iter);
         }
     }
@@ -35,7 +35,6 @@ void GrossPitaevskiSolver::calc_evolution() {
     for (size_t iter = 0; iter < NumericalParameters::iter_real_evo; iter++) {
         real_time_iter();
         if (iter % 1000 == 0) {
-            std::cout << "Saving to file" << iter << std::endl;
             save_xy_cut_to_file(iter);
         }
     }
@@ -46,7 +45,6 @@ void GrossPitaevskiSolver::imag_time_iter() {
     int ny = params->ny;
     int nz = params->nz;
 
-    // todo: push into double psi_norm();
     calc_norm();
     calc_fi3d();
 
@@ -68,7 +66,7 @@ void GrossPitaevskiSolver::imag_time_iter() {
             }
         }
     }
-    // hide into something
+
     double w = params->n_atoms / xnorma;
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
@@ -96,21 +94,10 @@ void GrossPitaevskiSolver::real_time_iter() {
     cpsin = cpsi;
     cpsii = cpsi;
 
-    // todo: push into double psi_norm();
-    xnorma = 0;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                xnorma += std::norm(cpsi(i, j, k));
-            }
-        }
-    }
-
-    xnorma *= params->get_dxdydz();
-
+    calc_norm();
     calc_fi3d();
-    std::complex<double> dt(0, -NumericalParameters::real_time_dt);
 
+    std::complex<double> dt(0, -NumericalParameters::real_time_dt);
     for (int iter = 0; iter < 2; iter++) {
         for (int i = 1; i < nx - 1; i++) {
             for (int j = 1; j < ny - 1; j++) {
@@ -165,6 +152,7 @@ void GrossPitaevskiSolver::real_time_iter() {
 
     cpsi = cpsin;
     calc_norm();
+    normalize();
 }
 
 void GrossPitaevskiSolver::init_containers() {
@@ -218,7 +206,6 @@ double GrossPitaevskiSolver::pote_released_value(int ix, int iy, int iz) {
     double y = params->get_y(iy);
     double z = params->get_z(iz);
 
-    //! \todo: change wrl and wzl
     double vx = params->aa * std::pow(x, 4);
     double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->wrl, 2);
     double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->wzl, 2);
@@ -254,6 +241,7 @@ void GrossPitaevskiSolver::init_with_cos() {
     }
 
     calc_norm();
+    normalize();
 }
 
 void GrossPitaevskiSolver::calc_fi3d() {
@@ -302,7 +290,6 @@ void GrossPitaevskiSolver::save_xy_cut_to_file(int iter) {
                  << std::norm(cpsi(i, j, z_zero_idx)) << "\t" << fi3d(i, j, z_zero_idx) << "\t"
                  << pote(i, j, z_zero_idx) << "\n";
         }
-        // file << std::endl;
     }
 
     file << std::flush;

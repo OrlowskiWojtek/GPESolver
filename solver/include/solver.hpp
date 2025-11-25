@@ -38,6 +38,7 @@ private:
     //! Map of external potential
     StdMat3D<double> pote;
 
+    // current norm of wavefunction
     double xnorma;
 
     std::unique_ptr<PoissonSolver> poisson_solver;
@@ -52,7 +53,6 @@ private:
     void imag_time_iter();
     void real_time_iter();
 
-    // \todo: temporary - remove iter
     void save_xy_cut_to_file(int iter);
     void save_x_cut_to_file();
 

@@ -2,10 +2,9 @@
 #include "include/params.hpp"
 #include <cmath>
 #include <iostream>
-#include <thread>
 #include <fftw3.h>
 
-int PoissonSolver::FFTW_N_THREADS = std::thread::hardware_concurrency();
+int PoissonSolver::FFTW_N_THREADS = 4;
 
 PoissonSolver::PoissonSolver()
     : p(PhysicalParameters::getInstance()) {

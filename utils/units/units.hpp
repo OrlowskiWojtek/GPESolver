@@ -16,9 +16,7 @@ public:
     static double len_nm_to_au(double nm);
     static double len_au_to_nm(double au);
 
-    //! Da - daltons (units aka 1/12 of C12)
     static double mass_Da_to_au(double Da);
-    //! Da - daltons (units)
     static double mass_au_to_Da(double au);
 };
 

@@ -1,7 +1,6 @@
 #ifndef STD_MAT_3D_HPP
 #define STD_MAT_3D_HPP
 
-#include <cstddef>
 #include <vector>
 
 template <class T>
@@ -9,17 +8,21 @@ class StdMat3D {
 public:
     // Constructors
     StdMat3D();
-    StdMat3D(size_t nx, size_t ny, size_t nz);
+    StdMat3D(int nx, int ny, int nz);
 
     // Resize
-    void resize(size_t nx, size_t ny, size_t nz);
+    void resize(int nx, int ny, int nz);
 
     // at operator
-    inline T &operator()(size_t nx, size_t ny, size_t nz) noexcept;
+    inline T &operator()(int nx, int ny, int nz) noexcept;
 
 private:
-    size_t _nx, _ny, _nz;
-    std::vector<std::vector<std::vector<T>>> data;
+    inline int get_index(int i, int j, int k) noexcept {
+        return (i * _ny + j) * _nz + k;
+    }
+
+    int _nx, _ny, _nz;
+    std::vector<T> data;
 };
 
 template <class T>
@@ -30,38 +33,26 @@ StdMat3D<T>::StdMat3D() {
 }
 
 template <class T>
-StdMat3D<T>::StdMat3D(size_t nx, size_t ny, size_t nz) {
+StdMat3D<T>::StdMat3D(int nx, int ny, int nz) {
     _nx = nx;
     _ny = ny;
     _nz = nz;
 
-    data.resize(nx);
-    for (size_t i = 0; i < nx; i++) {
-        data[i].resize(ny);
-        for (size_t j = 0; j < ny; j++) {
-            data[i][j].resize(nz, 0);
-        }
-    }
+    data.resize(nx * ny * nz, 0);
 }
 
 template <class T>
-void StdMat3D<T>::resize(size_t nx, size_t ny, size_t nz) {
+void StdMat3D<T>::resize(int nx, int ny, int nz) {
     _nx = nx;
     _ny = ny;
     _nz = nz;
 
-    data.resize(nx);
-    for (size_t i = 0; i < nx; i++) {
-        data[i].resize(ny);
-        for (size_t j = 0; j < ny; j++) {
-            data[i][j].resize(nz, 0);
-        }
-    }
+    data.resize(nx * ny * nz, 0);
 }
 
 template <class T>
-inline T &StdMat3D<T>::operator()(size_t i, size_t j, size_t k) noexcept {
-    return data[i][j][k];
+inline T &StdMat3D<T>::operator()(int i, int j, int k) noexcept {
+    return data[get_index(i, j, k)];
 }
 
 #endif
