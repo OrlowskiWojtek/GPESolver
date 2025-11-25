@@ -48,17 +48,6 @@ void GrossPitaevskiSolver::imag_time_iter() {
 
     // todo: push into double psi_norm();
     calc_norm();
-    // xnorma = 0;
-    // for (int i = 1; i < nx - 1; i++) {
-    //     for (int j = 1; j < ny - 1; j++) {
-    //         for (int k = 1; k < nz - 1; k++) {
-    //             xnorma += std::norm(cpsi(i, j, k));
-    //         }
-    //     }
-    // }
-
-    // xnorma *= params->get_dxdydz();
-
     calc_fi3d();
 
     //! WARNING: assumption dx = dy
