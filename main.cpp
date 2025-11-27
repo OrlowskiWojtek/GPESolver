@@ -2,7 +2,7 @@
 #include "solver/include/solver.hpp"
 #include <iostream>
 
-int main() {
+int main(int argc, char** argv) {
     std::cout << "===Gross Pitaevski Solver===" << std::endl;
 
     GrossPitaevskiSolver solver;

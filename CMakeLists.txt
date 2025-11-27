@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.07)
+cmake_minimum_required(VERSION 3.07...3.31)
 
 project(GrossPitaevskiSolver VERSION 1.0)
 
@@ -15,4 +15,4 @@ add_executable(${PROJECT_NAME} main.cpp)
 
 message("Found libraries: " ${FFTW3_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} GPSolver ${FFTW3_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} GPSolver ${FFTW3_LIBRARIES} compiler_flags)

@@ -1,8 +1,10 @@
 #include "include/poisson_solver.hpp"
 #include "include/params.hpp"
 #include <cmath>
-#include <iostream>
 #include <fftw3.h>
+#include <iostream>
+#include <omp.h>
+#include <stdexcept>
 
 int PoissonSolver::FFTW_N_THREADS = 4;
 
@@ -16,6 +18,13 @@ PoissonSolver::PoissonSolver()
     rho_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+
+    FFTW_N_THREADS = omp_get_max_threads();
+
+    int res = fftw_init_threads();
+    if (res == 0) {
+        throw std::runtime_error("FFTW thread initialization failed!");
+    }
 
     fftw_plan_with_nthreads(FFTW_N_THREADS);
     plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho_r, rho_k, FFTW_FORWARD, FFTW_MEASURE);
@@ -62,7 +71,7 @@ void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<doubl
     }
 }
 
-void PoissonSolver::execute(double norm) {
+void PoissonSolver::execute() {
     int nx = 2 * p->nx;
     int ny = 2 * p->ny;
     int nz = 2 * p->nz;
@@ -76,7 +85,7 @@ void PoissonSolver::execute(double norm) {
 
                 if (i < nx / 2 && j < ny / 2 && k < nz / 2) {
                     double val    = std::norm(rpsi(i, j, k));
-                    rho_r[idx][0] = val * p->n_atoms / norm;
+                    rho_r[idx][0] = val * p->n_atoms;
                     rho_r[idx][1] = 0.;
                 } else {
                     rho_r[idx][0] = 0.;

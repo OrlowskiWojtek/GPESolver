@@ -18,7 +18,7 @@ public:
     ~PoissonSolver();
 
     void prepare(StdMat3D<std::complex<double>>* psi, StdMat3D<double>* fi3d);
-    void execute(double norm);
+    void execute();
 private:
 
     PhysicalParameters* p;
