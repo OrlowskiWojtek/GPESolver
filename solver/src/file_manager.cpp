@@ -4,6 +4,9 @@
 FileManager::FileManager()
     : params(PhysicalParameters::getInstance()) {}
 
+void FileManager::set_data_pointer(StdMat3D<std::complex<double>>* data) {
+    cpsi_data = data;
+}
 
 void FileManager::save_params() {
     nlohmann::json j;
@@ -42,4 +45,50 @@ void FileManager::load_params() {
     params->nz      = j["nz"];
 }
 
+void FileManager::save_initial_state() {
+    std::ofstream file("initial_state.dat");
 
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    if(!cpsi_data) {
+        throw std::runtime_error("Data pointer not set.");
+    }
+
+    StdMat3D<std::complex<double>>& cpsi = *cpsi_data;
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                file << cpsi(i, j, k).real() << "\t" << cpsi(i, j, k).imag() << "\n";
+            }
+        }
+    }
+
+    file.close();
+}
+
+void FileManager::load_initial_state() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    if(!cpsi_data) {
+        throw std::runtime_error("Data pointer not set.");
+    }
+
+    std::ifstream file("initial_state.dat");
+
+    StdMat3D<std::complex<double>>& cpsi = *cpsi_data;
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                double re, im;
+                file >> re >> im;
+                cpsi(i, j, k) = std::complex<double>(re, im);
+            }
+        }
+    }
+
+    file.close();
+}

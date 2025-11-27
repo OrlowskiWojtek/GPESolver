@@ -1,6 +1,7 @@
 add_library(GPSolver
             src/params.cpp
             src/poisson_solver.cpp
+            src/file_manager.cpp
             src/solver.cpp)
 
 target_compile_options(GPSolver PRIVATE "-O3;-Wall")
