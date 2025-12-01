@@ -59,6 +59,7 @@ private:
 
     void init_containers();
     void init_with_cos();
+    void init_with_gauss();
     void init_potential();
     void free_potential_well();
     void imag_time_iter();

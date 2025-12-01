@@ -35,6 +35,8 @@ struct PhysicalParameters {
     //! Used in mexican hat potential in x direction.
     //! x^4 term
     double aa;
+    // Distance between potential minima
+    double dd;
     //! Used in mexican hat potential in x direction.
     //! x^2 term
     double b;
@@ -42,10 +44,9 @@ struct PhysicalParameters {
     double ggp11;
     double gamma;
 
-    //! dipol dipol interaction constant
     double cdd;
-    //! still do not know \todo
     double add;
+    double edd;
 
     //! Number of nodes in calculations - x direction.
     int nx;
@@ -61,14 +62,20 @@ struct PhysicalParameters {
     //! Distance per node - z direction.
     double dz;
 
+    bool load_initial_state;
+
     double get_x(int ix);
     double get_y(int iy);
     double get_z(int iz);
     double get_r(int ix, int iy, int iz);
 
     double get_dxdydz();
+
+    void print();
+    void set_default_values();
+    void init_parameters();
+
 private:
-    void init_values();
     void init_r();
 
     StdMat3D<double> r_matrix;
@@ -79,7 +86,6 @@ private:
     double dxdydz;
 
     PhysicalParameters() {
-        init_values();
     };
 
     static PhysicalParameters *instance;

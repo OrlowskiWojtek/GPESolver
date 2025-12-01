@@ -1,39 +1,19 @@
 #include "include/poisson_solver.hpp"
+#include "include/output.hpp"
 #include "include/params.hpp"
 #include <cmath>
 #include <fftw3.h>
-#include <iostream>
 #include <omp.h>
 #include <stdexcept>
 
 int PoissonSolver::FFTW_N_THREADS = 4;
 
 PoissonSolver::PoissonSolver()
-    : p(PhysicalParameters::getInstance()) {
-    int nx = 2 * p->nx;
-    int ny = 2 * p->ny;
-    int nz = 2 * p->nz;
-    int N  = nx * ny * nz;
-
-    rho_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
-    rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
-    Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
-
-    FFTW_N_THREADS = omp_get_max_threads();
-
-    int res = fftw_init_threads();
-    if (res == 0) {
-        throw std::runtime_error("FFTW thread initialization failed!");
-    }
-
-    fftw_plan_with_nthreads(FFTW_N_THREADS);
-    plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho_r, rho_k, FFTW_FORWARD, FFTW_MEASURE);
-    plan_bwd = fftw_plan_dft_3d(nx, ny, nz, rho_k, rho_r, FFTW_BACKWARD, FFTW_MEASURE);
-
-    std::cout << "Planning FFTW with " << FFTW_N_THREADS << " threads" << std::endl;
-}
+    : p(PhysicalParameters::getInstance()) {}
 
 void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<double> *_fi3d) {
+    prepare_transforms();
+
     psi  = cpsi;
     fi3d = _fi3d;
 
@@ -131,4 +111,28 @@ PoissonSolver::~PoissonSolver() {
     fftw_free(rho_r);
     fftw_free(rho_k);
     fftw_free(Vdip_k);
+}
+
+void PoissonSolver::prepare_transforms() {
+    int nx = 2 * p->nx;
+    int ny = 2 * p->ny;
+    int nz = 2 * p->nz;
+    int N  = nx * ny * nz;
+
+    rho_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+    rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+    Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+
+    FFTW_N_THREADS = omp_get_max_threads();
+
+    int res = fftw_init_threads();
+    if (res == 0) {
+        throw std::runtime_error("FFTW thread initialization failed!");
+    }
+
+    fftw_plan_with_nthreads(FFTW_N_THREADS);
+    plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho_r, rho_k, FFTW_FORWARD, FFTW_MEASURE);
+    plan_bwd = fftw_plan_dft_3d(nx, ny, nz, rho_k, rho_r, FFTW_BACKWARD, FFTW_MEASURE);
+
+    OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) + " threads.");
 }

@@ -17,11 +17,14 @@ public:
 
     void save_params();
     void save_initial_state();
+
+
 private:
-    static constexpr char PARAMS_FILENAME[] = "gpe_params.dat";
+    static constexpr char PARAMS_FILENAME[] = "gpe_params.json";
     static constexpr char INITIAL_STATE_FILENAME[] = "initial_state.dat";  
 
     StdMat3D<std::complex<double>>* cpsi_data;
+    void check_params();
 
     PhysicalParameters* params;
 };

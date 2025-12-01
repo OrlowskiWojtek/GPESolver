@@ -4,3 +4,4 @@ to_save/
 compile_commands.json
 .cache
 .dat
+*.gif

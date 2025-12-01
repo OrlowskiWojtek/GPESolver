@@ -1,36 +1,50 @@
 #include "include/solver.hpp"
 #include "include/numerical_params.hpp"
+#include "include/output.hpp"
 #include "include/params.hpp"
+#include "units.hpp"
 #include <fftw3.h>
 #include <fstream>
 #include <iostream>
 #include <omp.h>
 
+// todo: cleanup those functions
 GrossPitaevskiSolver::GrossPitaevskiSolver()
     : params(PhysicalParameters::getInstance())
     , poisson_solver(std::make_unique<PoissonSolver>())
     , file_manager(std::make_unique<FileManager>()) {
 
-    std::ofstream file("energy.dat");
-    file.close();
-
     try {
         file_manager->load_params();
     } catch (const std::exception &e) {
-        std::cerr << "Error loading params: " << e.what() << std::endl;
-        std::cerr << "Using default parameters." << std::endl;
+        OutputFormatter::printWarning("Could not load parameters from file:");
+        OutputFormatter::printWarning(e.what());
+        OutputFormatter::printInfo("Using default parameters.");
+        params->set_default_values();
     }
+
+    params->init_parameters();
+    params->print();
 
     init_containers();
     file_manager->set_data_pointer(&cpsi);
 
-    try {
-        file_manager->load_initial_state();
-    } catch (const std::exception &e) {
-        std::cerr << "Error loading initial state: " << e.what() << std::endl;
-        std::cerr << "Initializing with cosine function." << std::endl;
-        init_with_cos();
+    if (params->load_initial_state) {
+        try {
+            load_initial_state_from_file();
+        } catch (const std::exception &e) {
+            OutputFormatter::printWarning("Could not load initial state from file.");
+            OutputFormatter::printInfo("Initializing with cosine function.");
+            init_with_gauss();
+        }
+    } else {
+        init_with_gauss();
     }
+
+    std::ofstream file("energy.dat");
+    file.close();
+
+    // file_manager->save_params();
 
     poisson_solver->prepare(&cpsi, &fi3d);
     calc_norm();
@@ -41,22 +55,24 @@ void GrossPitaevskiSolver::solve() {
     calc_initial_state();
     save_initial_state_to_file();
 
-    // load_initial_state_from_file()
-
     free_potential_well();
     calc_evolution();
 }
 
 void GrossPitaevskiSolver::calc_initial_state() {
+    OutputFormatter::printInfo("Starting imaginary time evolution");
+
     for (size_t iter = 0; iter < NumericalParameters::iter_imag_evo; iter++) {
         imag_time_iter();
         calc_energy();
 
-        // if (iter % 100 == 0) {
-        //     save_xy_cut_to_file(iter);
-        //     save_ene_to_file(iter);
-        // }
+        if (iter % 100 == 0) {
+            save_xy_cut_to_file(iter);
+            save_ene_to_file(iter);
+        }
     }
+
+    OutputFormatter::printInfo("Imaginary time evolution completed");
 }
 
 void GrossPitaevskiSolver::calc_evolution() {
@@ -64,10 +80,10 @@ void GrossPitaevskiSolver::calc_evolution() {
         real_time_iter();
         calc_energy();
 
-        if (iter % 100 == 0) {
-            save_xy_cut_to_file(iter);
-            save_ene_to_file(iter);
-        }
+        // if (iter % 100 == 0) {
+        //     save_xy_cut_to_file(iter);
+        //     save_ene_to_file(iter);
+        // }
     }
 }
 
@@ -274,11 +290,43 @@ void GrossPitaevskiSolver::init_with_cos() {
 
                 double rrr = (static_cast<int>(params->nx / 2) * params->dx);
 
-                double cos_x = std::cos(2 * M_PI * x / rrr);
-                double cos_y = std::cos(2 * M_PI * y / rrr);
-                double cos_z = std::cos(1 * M_PI * z / rrr);
+                double cos_x = std::sin(2 * M_PI * x / rrr);
+                double cos_y = std::sin(2 * M_PI * y / rrr);
+                double cos_z = std::sin(1 * M_PI * z / rrr);
 
                 double val                = cos_x * cos_y * cos_z;
+                std::complex<double> cval = std::complex<double>(val, 0.);
+                cpsi(i, j, k)             = cval;
+                cpsii(i, j, k)            = cval;
+                cpsin(i, j, k)            = cval;
+            }
+        }
+    }
+
+    calc_norm();
+    normalize();
+}
+
+void GrossPitaevskiSolver::init_with_gauss() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double x = params->get_x(i) - params->dd;
+                double y = params->get_y(j);
+                double z = params->get_z(k);
+
+                double sigma_x = (params->nx * params->dx) / 10.;
+                double sigma_y = (params->ny * params->dy) / 10.;
+                double sigma_z = (params->nz * params->dz) / 10.;
+
+                double val = std::exp(-0.5 * (x * x) / (sigma_x * sigma_x)) *
+                             std::exp(-0.5 * (y * y) / (sigma_y * sigma_y)) *
+                             std::exp(-0.5 * (z * z) / (sigma_z * sigma_z));
+
                 std::complex<double> cval = std::complex<double>(val, 0.);
                 cpsi(i, j, k)             = cval;
                 cpsii(i, j, k)            = cval;
@@ -361,32 +409,36 @@ void GrossPitaevskiSolver::calc_energy() {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
                 // Kinetic energy
-                grad_psi_x = (cpsi(i + 1, j, k) - cpsi(i - 1, j, k)) / (2 * params->dx);
-                grad_psi_y = (cpsi(i, j + 1, k) - cpsi(i, j - 1, k)) / (2 * params->dy);
-                grad_psi_z = (cpsi(i, j, k + 1) - cpsi(i, j, k - 1)) / (2 * params->dz);
-                e_kin += (std::norm(grad_psi_x) + std::norm(grad_psi_y) + std::norm(grad_psi_z));
+                grad_psi_x = -(cpsi(i + 1, j, k) + cpsi(i - 1, j, k) - 2. * cpsi(i, j, k)) /
+                             (std::pow(params->dx, 2));
+                grad_psi_y = -(cpsi(i, j + 1, k) + cpsi(i, j - 1, k) - 2. * cpsi(i, j, k)) /
+                             (std::pow(params->dy, 2));
+                grad_psi_z = -(cpsi(i, j, k + 1) + cpsi(i, j, k - 1) - 2. * cpsi(i, j, k)) /
+                             (std::pow(params->dz, 2));
+                e_kin += ((grad_psi_x + grad_psi_y + grad_psi_z) * std::conj(cpsi(i, j, k))).real();
 
                 // Potential energy
                 e_pot += pote(i, j, k) * std::norm(cpsi(i, j, k));
 
                 // Interaction energy
-                e_int += (params->ggp11 - params->cdd / 3) * std::norm(cpsi(i, j, k)) *
-                         std::norm(cpsi(i, j, k));
+                e_int += 0.5 * params->ggp11 * std::norm(cpsi(i, j, k)) * std::norm(cpsi(i, j, k));
 
                 // Dipole-dipole interaction energy
-                e_ext += params->cdd * fi3d(i, j, k) * std::norm(cpsi(i, j, k));
+                e_ext += (0.5 * params->cdd * fi3d(i, j, k) -
+                          params->cdd / 3 * std::norm(cpsi(i, j, k))) *
+                         std::norm(cpsi(i, j, k));
 
                 // beyond mean-field energy
-                e_bmf += params->gamma * std::pow(std::abs(cpsi(i, j, k)), 5);
+                e_bmf += 2. / 5. * params->gamma * std::pow(std::abs(cpsi(i, j, k)), 5);
             }
         }
     }
 
-    e_kin *= params->get_dxdydz() / (2 * params->m);
-    e_pot *= params->get_dxdydz();
+    e_kin *= params->get_dxdydz() / (2 * params->m) * params->n_atoms;
+    e_pot *= params->get_dxdydz() * params->n_atoms;
     e_int *= params->get_dxdydz() * params->n_atoms;
-    e_ext *= params->get_dxdydz();
-    e_bmf *= params->get_dxdydz() * std::pow(params->n_atoms, 1.5);
+    e_ext *= params->get_dxdydz() * params->n_atoms;
+    e_bmf *= params->get_dxdydz() * std::pow(params->n_atoms, 2.5);
 
     e_total = e_kin + e_pot + e_int + e_ext + e_bmf;
 }
@@ -433,10 +485,12 @@ void GrossPitaevskiSolver::save_ene_to_file(int iter) {
 }
 
 void GrossPitaevskiSolver::load_initial_state_from_file() {
+    OutputFormatter::printInfo("Loading initial state from file.");
 
-    calc_norm();
-    normalize();
+    file_manager->load_initial_state();
 }
 
 void GrossPitaevskiSolver::save_initial_state_to_file() {
+    OutputFormatter::printInfo("Saving initial state to file.");
+    file_manager->save_initial_state();
 }

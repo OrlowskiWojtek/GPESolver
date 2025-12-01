@@ -21,6 +21,7 @@ public:
     void execute();
 private:
 
+    void prepare_transforms();
     PhysicalParameters* p;
     StdMat3D<std::complex<double>>* psi;
     StdMat3D<double>* fi3d;
