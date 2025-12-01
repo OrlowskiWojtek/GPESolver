@@ -315,13 +315,13 @@ void GrossPitaevskiSolver::init_with_gauss() {
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
-                double x = params->get_x(i) - params->dd;
+                double x = params->get_x(i) - UnitConverter::len_nm_to_au(1000.);
                 double y = params->get_y(j);
                 double z = params->get_z(k);
 
-                double sigma_x = (params->nx * params->dx) / 10.;
-                double sigma_y = (params->ny * params->dy) / 10.;
-                double sigma_z = (params->nz * params->dz) / 10.;
+                double sigma_x = (params->nx * params->dx) / 15.;
+                double sigma_y = (params->ny * params->dy) / 15.;
+                double sigma_z = (params->nz * params->dz) / 15.;
 
                 double val = std::exp(-0.5 * (x * x) / (sigma_x * sigma_x)) *
                              std::exp(-0.5 * (y * y) / (sigma_y * sigma_y)) *
