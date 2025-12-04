@@ -1,7 +1,7 @@
 #set output "fft_energy.png"
 
 set terminal qt persist
-file = "../build/energy.dat"
+file = "../build/data_3_bce/energy.dat"
 
 plot file using 1:7 with lines title "Energy vs Iteration", \
      file using 1:2 with lines title "Kinetic Energy vs Iteration", \

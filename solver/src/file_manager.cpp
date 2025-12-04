@@ -100,9 +100,9 @@ void FileManager::save_initial_state() {
 }
 
 void FileManager::load_initial_state() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
+    int nx; 
+    int ny; 
+    int nz; 
 
     if (!cpsi_data) {
         throw std::runtime_error("Data pointer not set.");
@@ -115,6 +115,10 @@ void FileManager::load_initial_state() {
     }
 
     file >> nx >> ny >> nz;
+
+    if (nx != params->nx || ny != params->ny || nz != params->nz) {
+        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
 
     StdMat3D<std::complex<double>> &cpsi = *cpsi_data;
     for (int i = 0; i < nx; i++) {
