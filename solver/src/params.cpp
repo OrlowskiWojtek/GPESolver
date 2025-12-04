@@ -98,6 +98,8 @@ void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Load initial state:");
     OutputFormatter::printBoxedMessage(load_initial_state ? "Yes" : "No");
+    OutputFormatter::printBoxedMessage("Calculation strategy:");
+    OutputFormatter::printBoxedMessage(calc_strategy.to_string());
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
     OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);

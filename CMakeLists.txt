@@ -7,6 +7,7 @@ target_compile_features(compiler_flags INTERFACE cxx_std_17)
 
 add_subdirectory(utils)
 add_subdirectory(solver)
+add_subdirectory(lib)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(FFTW3 REQUIRED COMPONENTS double threads)

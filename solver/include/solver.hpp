@@ -4,6 +4,7 @@
 #include "include/params.hpp"
 #include "include/poisson_solver.hpp"
 #include "include/file_manager.hpp"
+#include "include/context.hpp"
 #include "mat3d/stdmat3d.hpp"
 #include <complex>
 #include <memory>
@@ -39,16 +40,10 @@ private:
     //! Map of external potential
     StdMat3D<double> pote;
 
+    BECEnergies _enes;
+
     // current norm of wavefunction
     double xnorma;
-
-    // Energy terms
-    double e_kin;   //!< Kinetic energy
-    double e_pot;   //!< Potential energy
-    double e_int;   //!< Interaction energy
-    double e_ext;   //!< Dipole-dipole interaction energy
-    double e_bmf;   //!< Beyond mean-field energy
-    double e_total; //!< Total energy
 
     std::unique_ptr<PoissonSolver> poisson_solver;
     std::unique_ptr<FileManager> file_manager;
@@ -64,12 +59,6 @@ private:
     void free_potential_well();
     void imag_time_iter();
     void real_time_iter();
-
-    void save_xy_cut_to_file(int iter);
-    void save_ene_to_file(int iter);
-    void save_x_cut_to_file();
-    void load_initial_state_from_file();
-    void save_initial_state_to_file();
 
     void calc_fi3d();
     void calc_norm();

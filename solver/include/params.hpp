@@ -2,13 +2,47 @@
 #define SOLVER_PARAMETERS_HPP
 
 #include "mat3d/stdmat3d.hpp"
+#include <array>
+#include <iostream>
+#include <string>
+
+struct CalcStrategy {
+    enum class Type {
+        IMAGINARY_TIME,
+        REAL_TIME,
+        FULL
+    };
+
+    static constexpr std::array<const char*, 3> TypeNames = {
+        "IT",   //!< imaginary time evolution
+        "RT",   //!< real time evolution
+        "FS"    //!< full simulation (imaginary + real)
+    };
+
+    std::string to_string() {
+        return TypeNames[static_cast<size_t>(type)];
+    }
+
+    void from_string(const std::string& str) {
+        for (size_t i = 0; i < TypeNames.size(); ++i) {
+            if (str == TypeNames[i]) {
+                type = static_cast<Type>(i);
+                return;
+            }
+        }
+
+        type = CalcStrategy::Type::FULL;
+    }
+
+    Type type = CalcStrategy::Type::FULL;
+};
 
 /*! Struct PhysicalParameters.
  *  \brief contains physical parameters of simulation.
  *
  *  For now original names of parameters are kept.
  *  References for used values:
- *  [1] 
+ *  [1]
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;
@@ -62,6 +96,9 @@ struct PhysicalParameters {
     //! Distance per node - z direction.
     double dz;
 
+    //! Calculation strategy (options)
+    CalcStrategy calc_strategy;
+
     bool load_initial_state;
 
     double get_x(int ix);
@@ -85,8 +122,7 @@ private:
 
     double dxdydz;
 
-    PhysicalParameters() {
-    };
+    PhysicalParameters() {};
 
     static PhysicalParameters *instance;
 };

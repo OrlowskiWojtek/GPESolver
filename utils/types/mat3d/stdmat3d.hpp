@@ -13,6 +13,11 @@ public:
     // Resize
     void resize(int nx, int ny, int nz);
 
+    // Size of array
+    size_t size() const noexcept {
+        return N;
+    }
+
     // at operator
     inline T &operator()(int nx, int ny, int nz) noexcept;
 
@@ -20,7 +25,7 @@ public:
         return (i * _ny + j) * _nz + k;
     }
 
-    inline T& operator()(int idx) noexcept;
+    inline T &operator()(int idx) noexcept;
 
 private:
     int _nx, _ny, _nz;
@@ -29,7 +34,7 @@ private:
 };
 
 template <class T>
-T& StdMat3D<T>::operator()(int idx) noexcept {
+T &StdMat3D<T>::operator()(int idx) noexcept {
     return data[idx];
 }
 
@@ -47,7 +52,7 @@ StdMat3D<T>::StdMat3D(int nx, int ny, int nz) {
     _nx = nx;
     _ny = ny;
     _nz = nz;
-    N = nx * ny * nz;
+    N   = nx * ny * nz;
 
     data.resize(nx * ny * nz, 0);
 }
@@ -57,7 +62,7 @@ void StdMat3D<T>::resize(int nx, int ny, int nz) {
     _nx = nx;
     _ny = ny;
     _nz = nz;
-    N = nx * ny * nz;
+    N   = nx * ny * nz;
 
     data.resize(nx * ny * nz, 0);
 }
