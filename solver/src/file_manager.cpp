@@ -7,8 +7,6 @@
 FileManager::FileManager()
     : params(PhysicalParameters::getInstance()) {
 
-    ene_file.open(ENE_FILENAME, std::ios::out);
-
     init_filesystem();
 }
 
@@ -258,8 +256,6 @@ void FileManager::save_current_energies(int iter, BECEnergies &enes) {
 
     ene_file << iter << "\t" << enes.e_kin << "\t" << enes.e_pot << "\t" << enes.e_int << "\t"
              << enes.e_ext << "\t" << enes.e_bmf << "\t" << enes.e_total << std::endl;
-
-    ene_file.close();
 }
 
 void FileManager::save_checkpoint(int iter) {
@@ -299,6 +295,8 @@ void FileManager::save_checkpoint(int iter) {
 }
 
 void FileManager::init_filesystem() {
+    ene_file.open(ENE_FILENAME, std::ios::out);
+
     // Can't decide on a specific filesystem without external libraries,
     // now do nothing.
 }
