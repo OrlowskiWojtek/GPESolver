@@ -10,7 +10,10 @@ $$ i\hbar \partial_t \psi(\vb{r}, t) = \left[ \frac{-\hbar^2}{2m} + V(\vb{r}) + 
 
 ## Dependencies
 
+FFTW3 library is required for fast fourier transforms - [http://www.fftw.org/](http://www.fftw.org/)
 
 ## TODOS:
-TODO: prepare equation description
-
+- [ ] prepare equation description
+- [ ] copy calculations - try to get simple results
+- [/] make fft calculations
+- [ ] write visualiser / plotter (meaby live) (3d isolines?)

@@ -2,7 +2,7 @@
       implicit double precision(a-b,d-h,o-z)
       implicit double complex(c)
       ! declare variables !
-      parameter(N=10,ny=10,nz=3)
+      parameter(N=80,ny=80,nz=12)
 c     parameter(N=34,ny=21,nz=12) ! commented out
       allocatable cpsi(:,:,:)
       allocatable cpsin(:,:,:)
@@ -146,8 +146,8 @@ c calkowania gestosci, ktora na brzegi jest 0 tak czy inaczej
       enddo
       i192=192
       i498=1498
-      istart=8000
-      do iter=istart+1,imax
+      istart=2000
+      do iter=0,imax
 
       if(iter.le.istart) then
       callcnd
@@ -171,7 +171,7 @@ c calkowania gestosci, ktora na brzegi jest 0 tak czy inaczej
 
       call norm(cpsin,n,ny,nz)
       cpsi=cpsin
-      if(mod(iter,300).eq.0) then
+      if(iter.eq.istart) then
       wredna=energiacnd(cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,rdy)
       w=xncz(1)/xnorma(1)
       eold=wredna
@@ -187,9 +187,10 @@ c calkowania gestosci, ktora na brzegi jest 0 tak czy inaczej
       x=ix*dx
       y=iy*dx
       write(i498,989)x*.05292,y*.05292,cdabs(cpsi(ix,iy,0))**2,
-     >dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,
-     >(ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,
-     >(gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
+     >fi3d(ix,iy,0)
+c     >dreal(cdd*fi3d(ix,iy,0)-cdd/3*cdabs(cpsi(ix,iy,0))**2*w)*eha,
+c     >(ggp11*cdabs(cpsi(ix,iy,0))**2*w)*eha,
+c     >(gamma*cdabs(cpsi(ix,iy,0))**3*w**1.5)*eha
       enddo
       enddo
       do ix=-nz,nz
@@ -202,6 +203,7 @@ c     stop
       write(i498,*)
       write(501,*)
       write(499,*)
+      return
       endif
       if(mod(iter,300).eq.0) then
       open(124,file='ff.dat',action='write')

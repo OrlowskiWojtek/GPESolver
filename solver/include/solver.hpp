@@ -1,32 +1,75 @@
 #ifndef GPE_SOLVER_HPP
 #define GPE_SOLVER_HPP
 
-//! \todo Just meanwhile sollution, Rather will use blaze (CUDA parallelization, 3D arrays)
-#include <armadillo>
-using CMat3D    = arma::Cube<std::complex<double>>;
-using Mat3D     = arma::Cube<double>;
+#include "include/params.hpp"
+#include "include/poisson_solver.hpp"
+#include "include/file_manager.hpp"
+#include "include/context.hpp"
+#include "mat3d/stdmat3d.hpp"
+#include <complex>
+#include <memory>
 
 /*! Solver of time dependent Gross Pitaevski equation.
-*
-*
-*/
-class GrossPitaevskiSolver{
+ *
+ *
+ */
+class GrossPitaevskiSolver {
+public:
+    GrossPitaevskiSolver();
+    void solve();
+
+private:
+    PhysicalParameters *params;
+
     //! Containers
-    //! Wavefunction of single particle - copy for calculations.
-    CMat3D cpsii;
+    //! Wavefunction of bec - copy for calculations.
+    StdMat3D<std::complex<double>> cpsii;
 
-    //! Wavefunction of single particle - copy for calculations.
-    CMat3D cpsi;
+    //! Wavefunction of bec - copy for calculations.
+    StdMat3D<std::complex<double>> cpsi;
 
-    //! Wavefunction of single particle - copy for calculations.
-    CMat3D cpsin;
+    //! Wavefunction of bec - copy for calculations.
+    StdMat3D<std::complex<double>> cpsin;
 
-    //! Map of potential (from dipole - dipole interaction)
-    Mat3D fi3do;
+    //! Map of dipole-dipole potential (from dipole - dipole interaction)
+    StdMat3D<double> fi3do;
 
-    //! Map of potential - copy
-    Mat3D fi3d;
+    //! Map of dipole-dipole potential - copy
+    StdMat3D<double> fi3d;
 
+    //! Map of external potential
+    StdMat3D<double> pote;
+
+    BECEnergies _enes;
+
+    // current norm of wavefunction
+    double xnorma;
+
+    std::unique_ptr<PoissonSolver> poisson_solver;
+    std::unique_ptr<FileManager> file_manager;
+
+    void calc_initial_state();
+    void calc_evolution();
+    void calc_energy();
+
+    void init_containers();
+    void init_with_cos();
+    void init_with_gauss();
+    void init_potential();
+    void free_potential_well();
+    void imag_time_iter();
+    void real_time_iter();
+
+    void calc_fi3d();
+    void calc_norm();
+    void normalize();
+    void imag_iter_linear_step();
+    void imag_iter_nonlinear_step();
+    void real_iter_linear_step();
+    void real_iter_nonlinear_step();
+
+    double pote_value(int ix, int iy, int iz);
+    double pote_released_value(int ix, int iy, int iz);
 };
 
 #endif

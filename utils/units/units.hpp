@@ -15,6 +15,9 @@ public:
 
     static double len_nm_to_au(double nm);
     static double len_au_to_nm(double au);
+
+    static double mass_Da_to_au(double Da);
+    static double mass_au_to_Da(double au);
 };
 
 #endif

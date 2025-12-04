@@ -23,3 +23,11 @@ double UnitConverter::len_au_to_nm(double au) {
 double UnitConverter::len_nm_to_au(double nm) {
     return nm * 18.897261260649092;
 }
+
+double UnitConverter::mass_Da_to_au(double Da) {
+    return Da / 0.000548579909;
+}
+
+double UnitConverter::mass_au_to_Da(double au) {
+    return au * 0.000548579909;
+}
