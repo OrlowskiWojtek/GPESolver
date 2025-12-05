@@ -32,6 +32,38 @@ function load_from_binary(file_path::String)
     return IsoBCEContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
 end
 
+function load_from_text(file_path::String)
+    file    = open(file_path, "r")
+    nx      = parse(Int32, readline(file))
+    ny      = parse(Int32, readline(file))
+    nz      = parse(Int32, readline(file))
+
+    dx      = 200
+    dy      = 200
+    dz      = 500
+
+    array_3d = zeros(ComplexF64, nx, ny, nz)
+
+    for i in 1:nx
+        for j in 1:ny
+            for k in 1:nz
+                line = readline(file)
+                splitted = split(line, "\t")
+                real_part = parse(Float64, splitted[1])
+                imag_part = parse(Float64, splitted[2])
+                array_3d[i, j, k] = ComplexF64(real_part, imag_part)
+            end
+        end
+    end
+
+    x = collect(-div(nx, 2):div(nx, 2)) * dx
+    y = collect(-div(ny, 2):div(ny, 2)) * dy
+    z = collect(-div(nz, 2):div(nz, 2)) * dz
+
+    close(file)
+    return IsoBCEContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
+end
+
 function load_xy_cut(file_path::String)
     file = open(file_path, "r")
 

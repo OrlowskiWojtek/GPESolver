@@ -32,6 +32,10 @@ public:
         assert(message.length() < box_width - 2 &&
                "Message too long to fit in the box.");
 
+        if(message.length() % 2 == 0){
+            message += " ";
+        }
+
         std::cout << "|" 
                   << std::setw((box_width + message.length()) / 2) << std::right << message 
                   << std::setw((box_width - message.length()) / 2) << "|" << std::endl;

@@ -18,6 +18,7 @@ function plot_iso_bce(BCEContext::IsoBCEContext)
     transparency = true
     algorithm = :iso
     isovals = [0.2 * max_val, 0.5 * max_val, 0.8 * max_val]
+    alphas = [0.3, 0.5, 0.9]
 
     for (i, isovalue) in enumerate(isovals)
         volume!(ax,
@@ -27,8 +28,8 @@ function plot_iso_bce(BCEContext::IsoBCEContext)
                 rho,
                 algorithm = :iso,
                 isovalue = isovalue,
-                alpha = 0.8,
-                colormap = :plasma,
+                alpha = alphas[i],
+                colormap = :YlGn,
                 transparency = true,
                 isorange = 0.1 * max_val)
     end
