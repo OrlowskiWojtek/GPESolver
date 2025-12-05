@@ -50,9 +50,11 @@ void GrossPitaevskiSolver::solve() {
     case CalcStrategy::Type::IMAGINARY_TIME:
         calc_initial_state();
         file_manager->save_initial_state();
+        break;
     case CalcStrategy::Type::REAL_TIME:
         free_potential_well();
         calc_evolution();
+        break;
     case CalcStrategy::Type::FULL:
         calc_initial_state();
         file_manager->save_initial_state();
@@ -292,9 +294,9 @@ void GrossPitaevskiSolver::init_with_cos() {
 
                 double rrr = (static_cast<int>(params->nx / 2) * params->dx);
 
-                double cos_x = std::sin(2 * M_PI * x / rrr);
-                double cos_y = std::sin(2 * M_PI * y / rrr);
-                double cos_z = std::sin(1 * M_PI * z / rrr);
+                double cos_x = std::cos(2 * M_PI * x / rrr);
+                double cos_y = std::cos(2 * M_PI * y / rrr);
+                double cos_z = std::cos(1 * M_PI * z / rrr);
 
                 double val                = cos_x * cos_y * cos_z;
                 std::complex<double> cval = std::complex<double>(val, 0.);
@@ -321,9 +323,9 @@ void GrossPitaevskiSolver::init_with_gauss() {
                 double y = params->get_y(j);
                 double z = params->get_z(k);
 
-                double sigma_x = (params->nx * params->dx) / 15.;
-                double sigma_y = (params->ny * params->dy) / 15.;
-                double sigma_z = (params->nz * params->dz) / 15.;
+                double sigma_x = (params->nx * params->dx) / 10.;
+                double sigma_y = (params->ny * params->dy) / 10.;
+                double sigma_z = (params->nz * params->dz) / 10.;
 
                 double val = std::exp(-0.5 * (x * x) / (sigma_x * sigma_x)) *
                              std::exp(-0.5 * (y * y) / (sigma_y * sigma_y)) *
