@@ -4,13 +4,14 @@
 #include "units.hpp"
 #include <fstream>
 
-const char FileManager::PARAMS_FILENAME[] = "gpe_params.json";
-const char FileManager::INITIAL_STATE_FILENAME[] = "initial_state.dat";  
-const char FileManager::LAST_STATE_FILENAME[] = "last_state.bin";  
-const char FileManager::ENE_FILENAME[] = "energy.dat";
+const char FileManager::PARAMS_FILENAME[]        = "gpe_params.json";
+const char FileManager::INITIAL_STATE_FILENAME[] = "initial_state.dat";
+const char FileManager::LAST_STATE_FILENAME[]    = "last_state.bin";
+const char FileManager::ENE_FILENAME[]           = "energy.dat";
 
-const char FileManager::XY_CUT_FILENAME[] = "cut_xy_";
+const char FileManager::XY_CUT_FILENAME[]    = "cut_xy_";
 const char FileManager::CHECKPOUT_FILENAME[] = "checkpoint_";
+const char FileManager::FORT_MESH_FILENAME[] = "ff.dat";
 
 FileManager::FileManager()
     : params(PhysicalParameters::getInstance()) {
@@ -306,6 +307,71 @@ void FileManager::save_checkpoint(int iter) {
     OutputFormatter::printInfo("Saved checkpoint to " + std::string(CHECKPOUT_FILENAME) +
                                std::to_string(iter) + ".bin");
     file.close();
+}
+
+void FileManager::load_from_different_mesh() {
+    if (!cpsi_data) {
+        throw std::runtime_error("Data pointer not set.");
+    }
+
+    std::ifstream file(FORT_MESH_FILENAME);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open initial state file for reading.");
+    }
+
+    int nx;
+    int ny;
+    int nz;
+    file >> nx >> ny >> nz;
+
+    if (nx * 2 + 1 != params->nx || ny * 2 + 1 != params->ny || nz * 2 + 1 != params->nz) {
+        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    params->nx = 2 * nx + 1;
+    params->ny = 2 * ny + 1;
+    params->nz = 2 * nz + 1;
+
+    size_t nl = nx * ny * nz;
+    std::vector<std::vector<double>> dmin(nl, std::vector<double>(5)); // x,y,z, Re(psi), Im(psi)
+    for (int idx = 0; idx < nl; idx++) {
+        double x, y, z, fr, fi;
+        file >> x >> y >> z >> fr >> fi;
+        dmin[idx][0] = x;
+        dmin[idx][1] = y;
+        dmin[idx][2] = z;
+        dmin[idx][3] = fr;
+        dmin[idx][4] = fi;
+    }
+
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                double xs   = i * params->dx;
+                double ys   = j * params->dy;
+                double zs   = k * params->dz;
+                double rmin = 1e29;
+                int imin    = 0;
+
+                for (int i = 0; i < nl; ++i) {
+                    double rc = (xs - dmin[i][0]) * (xs - dmin[i][0]) +
+                                (ys - dmin[i][1]) * (ys - dmin[i][1]) +
+                                (zs - dmin[i][2]) * (zs - dmin[i][2]);
+
+                    if (rc < rmin) {
+                        rmin = rc;
+                        imin = i;
+                        if (rc < (std::pow(params->dx, 2) / 2)) {
+                            break;
+                        }
+                    }
+                }
+
+                (*cpsi_data)(i, j, k) = std::complex<double>(dmin[imin][3], dmin[imin][4]);
+            }
+        }
+    }
 }
 
 void FileManager::init_filesystem() {

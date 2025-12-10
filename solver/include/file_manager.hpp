@@ -7,6 +7,7 @@
 #include <complex>
 #include <fstream>
 
+// Idea: implement into strategy pattern
 class FileManager{
 public:
     FileManager();
@@ -38,6 +39,7 @@ private:
 
     static const char XY_CUT_FILENAME[];
     static const char CHECKPOUT_FILENAME[];
+    static const char FORT_MESH_FILENAME[];
 
     void init_filesystem();
 
