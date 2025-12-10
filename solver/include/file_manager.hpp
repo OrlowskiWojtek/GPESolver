@@ -23,6 +23,8 @@ public:
     void save_last_state();
     void load_last_state();
 
+    void load_from_different_mesh();
+
     void save_checkpoint(int iter);
 
     void save_xy_to_file(int iter);

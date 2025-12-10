@@ -51,6 +51,7 @@ private:
     void calc_initial_state();
     void calc_evolution();
     void calc_energy();
+    void run_speed_test();
 
     void init_containers();
     void init_with_cos();

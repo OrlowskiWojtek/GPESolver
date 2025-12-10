@@ -3,7 +3,6 @@
 #include "include/params.hpp"
 #include <cmath>
 #include <fftw3.h>
-#include <omp.h>
 #include <stdexcept>
 
 int PoissonSolver::FFTW_N_THREADS = 4;
@@ -123,7 +122,7 @@ void PoissonSolver::prepare_transforms() {
     rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
 
-    FFTW_N_THREADS = omp_get_max_threads();
+    FFTW_N_THREADS = p->fftw_n_threads;
 
     int res = fftw_init_threads();
     if (res == 0) {

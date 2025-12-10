@@ -1,8 +1,8 @@
 #include "include/file_manager.hpp"
 #include "include/output.hpp"
+#include "nlohmann/json.hpp"
 #include "units.hpp"
 #include <fstream>
-#include "nlohmann/json.hpp"
 
 FileManager::FileManager()
     : params(PhysicalParameters::getInstance()) {
@@ -34,6 +34,7 @@ void FileManager::save_params() {
     j["ny"]                 = params->ny;
     j["nz"]                 = params->nz;
     j["edd"]                = params->edd;
+    j["fftw_n_threads"]     = params->fftw_n_threads;
     j["calc_strategy"]      = params->calc_strategy.to_string();
 
     std::ofstream file(PARAMS_FILENAME);
@@ -62,6 +63,7 @@ void FileManager::load_params() {
     params->nx                 = j["nx"];
     params->ny                 = j["ny"];
     params->nz                 = j["nz"];
+    params->fftw_n_threads     = j["fftw_n_threads"];
     params->calc_strategy.from_string(j["calc_strategy"]);
 
     check_params();
@@ -100,9 +102,9 @@ void FileManager::save_initial_state() {
 }
 
 void FileManager::load_initial_state() {
-    int nx; 
-    int ny; 
-    int nz; 
+    int nx;
+    int ny;
+    int nz;
 
     if (!cpsi_data) {
         throw std::runtime_error("Data pointer not set.");
@@ -293,8 +295,8 @@ void FileManager::save_checkpoint(int iter) {
         file.write(reinterpret_cast<char *>(&imag), sizeof(double));
     }
 
-    OutputFormatter::printInfo("Saved checkpoint to " +
-                               std::string(CHECKPOUT_FILENAME) + std::to_string(iter) + ".bin");
+    OutputFormatter::printInfo("Saved checkpoint to " + std::string(CHECKPOUT_FILENAME) +
+                               std::to_string(iter) + ".bin");
     file.close();
 }
 

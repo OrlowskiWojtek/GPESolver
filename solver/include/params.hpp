@@ -3,27 +3,28 @@
 
 #include "mat3d/stdmat3d.hpp"
 #include <array>
-#include <iostream>
 #include <string>
 
 struct CalcStrategy {
     enum class Type {
         IMAGINARY_TIME,
         REAL_TIME,
-        FULL
+        FULL,
+        SPEED_TEST
     };
 
-    static constexpr std::array<const char*, 3> TypeNames = {
-        "IT",   //!< imaginary time evolution
-        "RT",   //!< real time evolution
-        "FS"    //!< full simulation (imaginary + real)
+    static constexpr std::array<const char *, 4> TypeNames = {
+        "IT", //!< imaginary time evolution
+        "RT", //!< real time evolution
+        "FS", //!< full simulation (imaginary + real)
+        "ST"  //!< speed test
     };
 
     std::string to_string() {
         return TypeNames[static_cast<size_t>(type)];
     }
 
-    void from_string(const std::string& str) {
+    void from_string(const std::string &str) {
         for (size_t i = 0; i < TypeNames.size(); ++i) {
             if (str == TypeNames[i]) {
                 type = static_cast<Type>(i);
@@ -98,6 +99,9 @@ struct PhysicalParameters {
 
     //! Calculation strategy (options)
     CalcStrategy calc_strategy;
+
+    // Number of threads used in FFTW calculations.
+    int fftw_n_threads = 1;
 
     bool load_initial_state;
 

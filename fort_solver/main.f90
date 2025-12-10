@@ -1,7 +1,3 @@
-! Bibliografia
-! [1]: Mean-field regime of trapped dipolar Bose-Einstein condensates in one and two dimensions
-! [2]
-
 program gaussian
     implicit double precision(a-b,d-h,o-z)
     implicit double complex(c)
@@ -651,10 +647,10 @@ subroutine cndt(cpsii,cpsin,cpsi,n,ny,nz,vx,vy,vz,xm,dt,fi3d,fi3do,rdy)
 end
 
 ! [2]
-subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
+subroutine lifi3_fft(fi3d, cpsi, nx, ny, nz, dx, dz, xnorma, xncz)
     use, intrinsic :: ISO_C_BINDING
     implicit none
-    integer, intent(in) :: n, ny, nz
+    integer, intent(in) :: nx, ny, nz
     real(8), intent(in) :: dx, dz, xnorma, xncz
     complex(8), intent(in) :: cpsi(-n:n, -ny:ny, -nz:nz)
     real(8), intent(out) :: fi3d(-n:n, -ny:ny, -nz:nz)
@@ -662,24 +658,24 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
     ! FFTW arrays and plan handles
     complex(8), allocatable :: psi_r(:,:,:), psi_k(:,:,:)
     complex(8), allocatable :: Vdip_k(:,:,:)
-    integer :: nx, ny2, nz2
+    integer :: nx2, ny2, nz2
     type(C_PTR) :: plan_fwd, plan_bwd
     real(8) :: dkx, dky, dkz, kx, ky, kz, k2
     integer :: i, j, k, void
 
     include 'fftw3.f03'
 
-    nx = 2*n + 1
+    nx2 = 2*nx + 1
     ny2 = 2*ny + 1
     nz2 = 2*nz + 1
 
     ! remove allocations to allocate only once
-    allocate(psi_r(nx, ny2, nz2))
-    allocate(psi_k(nx, ny2, nz2))
-    allocate(Vdip_k(nx, ny2, nz2))
+    allocate(psi_r(nx2, ny2, nz2))
+    allocate(psi_k(nx2, ny2, nz2))
+    allocate(Vdip_k(nx2, ny2, nz2))
 
     ! === 1. Oblicz gęstość n(r) = |ψ|² ===
-    do i=1, nx
+    do i=1, nx2
         do j=1, ny2
             do k=1, nz2
                 psi_r(i,j,k) = dcmplx(abs(cpsi(i-n-1,j-ny-1,k-nz-1))**2, 0d0)
@@ -688,15 +684,15 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
     end do
 
     ! === 2. FFT[ n(r) ] ===
-    call dfftw_plan_dft_3d(plan_fwd, nx, ny2, nz2, psi_r, psi_k, FFTW_FORWARD, FFTW_ESTIMATE)
+    call dfftw_plan_dft_3d(plan_fwd, nx2, ny2, nz2, psi_r, psi_k, FFTW_FORWARD, FFTW_ESTIMATE)
     call dfftw_execute_dft(plan_fwd, psi_r, psi_k)
 
     ! === 3. Przygotuj transformację potencjału dipolowego === - transformacja potencjału dipolowego wyprowadzona analitycznie w [2]
-    dkx = 2.0d0 * 3.141592653589793d0 / (nx * dx)
+    dkx = 2.0d0 * 3.141592653589793d0 / (nx2 * dx)
     dky = 2.0d0 * 3.141592653589793d0 / (ny2 * dx)
     dkz = 2.0d0 * 3.141592653589793d0 / (nz2 * dz)
 
-    do i=0, nx-1
+    do i=0, nx2-1
         if (i <= n) then
             kx = i * dkx
         else
@@ -717,7 +713,7 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
 
                 k2 = kx**2 + ky**2 + kz**2
                 if (k2 > 1d-12) then
-                    Vdip_k(i+1,j+1,k+1) = (3d0 * kz**2/k2 - 1d0)
+                    Vdip_k(i+1,j+1,k+1) = (kz * kz / k2)
                 else
                     Vdip_k(i+1,j+1,k+1) = 0d0
                 end if
@@ -729,11 +725,11 @@ subroutine lifi3_fft(fi3d, cpsi, n, ny, nz, dx, dz, xnorma, xncz)
     psi_k = psi_k * Vdip_k
 
     ! === 5. Odwróć FFT ===
-    call dfftw_plan_dft_3d(plan_bwd, nx, ny2, nz2, psi_k, psi_r, FFTW_BACKWARD, FFTW_ESTIMATE)
+    call dfftw_plan_dft_3d(plan_bwd, nx2, ny2, nz2, psi_k, psi_r, FFTW_BACKWARD, FFTW_ESTIMATE)
     call dfftw_execute_dft(plan_bwd, psi_k, psi_r)
 
     ! === 6. Zapisz wynik (normalizacja FFTW) ===
-    fi3d = psi_r / dcmplx(nx*ny2*nz2, 0d0)
+    fi3d = psi_r / dcmplx(nx2*ny2*nz2, 0d0)
 
     ! === 7. Zwolnij pamięć i plany ===
     call dfftw_destroy_plan(plan_fwd)

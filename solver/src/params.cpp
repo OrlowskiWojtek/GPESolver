@@ -23,6 +23,8 @@ void PhysicalParameters::set_default_values() {
     dy = UnitConverter::len_nm_to_au(150);
     dz = UnitConverter::len_nm_to_au(200);
 
+    fftw_n_threads = 4;
+
     init_parameters();
 }
 

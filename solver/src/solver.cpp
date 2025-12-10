@@ -3,10 +3,9 @@
 #include "include/output.hpp"
 #include "include/params.hpp"
 #include "units.hpp"
+#include <chrono>
 #include <fftw3.h>
-#include <omp.h>
 
-// todo: cleanup those functions
 GrossPitaevskiSolver::GrossPitaevskiSolver()
     : params(PhysicalParameters::getInstance())
     , poisson_solver(std::make_unique<PoissonSolver>())
@@ -61,6 +60,9 @@ void GrossPitaevskiSolver::solve() {
 
         free_potential_well();
         calc_evolution();
+        break;
+    case CalcStrategy::Type::SPEED_TEST:
+        run_speed_test();
         break;
     }
 }
@@ -447,4 +449,32 @@ void GrossPitaevskiSolver::calc_energy() {
     _enes.e_bmf *= params->get_dxdydz() * std::pow(params->n_atoms, 2.5);
 
     _enes.sum();
+}
+
+void GrossPitaevskiSolver::run_speed_test() {
+    OutputFormatter::printInfo("Starting speed test...");
+
+    params->set_default_values();
+    params->init_parameters();
+    params->print();
+    init_containers();
+    init_with_cos();
+    poisson_solver->prepare(&cpsi, &fi3d);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (size_t iter = 0; iter < NumericalParameters::iter_speed_test; iter++) {
+        imag_time_iter();
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+
+    OutputFormatter::printInfo("Speed test completed.");
+    OutputFormatter::printInfo("Total time for " +
+                               std::to_string(NumericalParameters::iter_speed_test) +
+                               " iterations: " + std::to_string(elapsed.count()) + " seconds.");
+    OutputFormatter::printInfo("Average time per iteration: " +
+                               std::to_string(elapsed.count() /
+                                              static_cast<double>(NumericalParameters::iter_speed_test)) +
+                               " seconds.");
 }
