@@ -3,7 +3,14 @@ cmake_minimum_required(VERSION 3.07...3.31)
 project(GrossPitaevskiSolver VERSION 1.0)
 
 add_library(compiler_flags INTERFACE)
-target_compile_features(compiler_flags INTERFACE cxx_std_17)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -O3 -ffast-math -funroll-loops")
+
+# Opcje dla konkretnych kompilatorów
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xCORE-AVX2 -qopt-zmm-usage=high -ipo")
+endif()
 
 add_subdirectory(utils)
 add_subdirectory(solver)

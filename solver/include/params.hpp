@@ -13,12 +13,7 @@ struct CalcStrategy {
         SPEED_TEST
     };
 
-    static constexpr std::array<const char *, 4> TypeNames = {
-        "IT", //!< imaginary time evolution
-        "RT", //!< real time evolution
-        "FS", //!< full simulation (imaginary + real)
-        "ST"  //!< speed test
-    };
+    static const std::array<const char *, 4> TypeNames;
 
     std::string to_string() {
         return TypeNames[static_cast<size_t>(type)];

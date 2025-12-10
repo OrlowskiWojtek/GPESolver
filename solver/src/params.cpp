@@ -6,6 +6,13 @@
 
 PhysicalParameters *PhysicalParameters::instance = nullptr;
 
+const std::array<const char *, 4> CalcStrategy::TypeNames = {
+    "IT", //!< imaginary time evolution
+    "RT", //!< real time evolution
+    "FS", //!< full simulation (imaginary + real)
+    "ST"  //!< speed test
+};
+
 void PhysicalParameters::set_default_values() {
     n_atoms = 4e4;
     m       = UnitConverter::mass_Da_to_au(163.929); // mass of Erb 164

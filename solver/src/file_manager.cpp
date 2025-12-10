@@ -4,6 +4,14 @@
 #include "units.hpp"
 #include <fstream>
 
+const char FileManager::PARAMS_FILENAME[] = "gpe_params.json";
+const char FileManager::INITIAL_STATE_FILENAME[] = "initial_state.dat";  
+const char FileManager::LAST_STATE_FILENAME[] = "last_state.bin";  
+const char FileManager::ENE_FILENAME[] = "energy.dat";
+
+const char FileManager::XY_CUT_FILENAME[] = "cut_xy_";
+const char FileManager::CHECKPOUT_FILENAME[] = "checkpoint_";
+
 FileManager::FileManager()
     : params(PhysicalParameters::getInstance()) {
 

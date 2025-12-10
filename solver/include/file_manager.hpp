@@ -31,13 +31,13 @@ public:
     void save_current_energies(int iter, BECEnergies& enes);
 
 private:
-    static constexpr char PARAMS_FILENAME[] = "gpe_params.json";
-    static constexpr char INITIAL_STATE_FILENAME[] = "initial_state.dat";  
-    static constexpr char LAST_STATE_FILENAME[] = "last_state.bin";  
-    static constexpr char ENE_FILENAME[] = "energy.dat";
+    static const char PARAMS_FILENAME[];
+    static const char INITIAL_STATE_FILENAME[];  
+    static const char LAST_STATE_FILENAME[];  
+    static const char ENE_FILENAME[];
 
-    static constexpr char XY_CUT_FILENAME[] = "cut_xy_";
-    static constexpr char CHECKPOUT_FILENAME[] = "checkpoint_";
+    static const char XY_CUT_FILENAME[];
+    static const char CHECKPOUT_FILENAME[];
 
     void init_filesystem();
 
