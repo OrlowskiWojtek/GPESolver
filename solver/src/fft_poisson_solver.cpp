@@ -1,21 +1,12 @@
-#include "include/poisson_solver.hpp"
+#include "include/fft_poisson_solver.hpp"
 #include "include/output.hpp"
 #include "include/params.hpp"
 #include <cmath>
 #include <fftw3.h>
-#include <stdexcept>
 
-int PoissonSolver::FFTW_N_THREADS = 4;
+PoissonSolver::PoissonSolver() {}
 
-PoissonSolver::PoissonSolver()
-    : p(PhysicalParameters::getInstance()) {}
-
-void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<double> *_fi3d) {
-    prepare_transforms();
-
-    psi  = cpsi;
-    fi3d = _fi3d;
-
+void PoissonSolver::prepare_containers() {
     int nx = 2 * p->nx;
     int ny = 2 * p->ny;
     int nz = 2 * p->nz;
@@ -27,6 +18,9 @@ void PoissonSolver::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<doubl
     double dkx = 2. * M_PI / (nx * dx);
     double dky = 2. * M_PI / (ny * dy);
     double dkz = 2. * M_PI / (nz * dz);
+
+    int N = nx * ny * nz;
+    Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
 
     for (int i = 0; i < nx; ++i) {
         double kx = (i <= (nx / 2)) ? i * dkx : (i - nx) * dkx;
@@ -104,9 +98,6 @@ void PoissonSolver::execute() {
 }
 
 PoissonSolver::~PoissonSolver() {
-    fftw_destroy_plan(plan_fwd);
-    fftw_destroy_plan(plan_bwd);
-
     fftw_free(rho_r);
     fftw_free(rho_k);
     fftw_free(Vdip_k);
@@ -120,18 +111,11 @@ void PoissonSolver::prepare_transforms() {
 
     rho_r  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
     rho_k  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
-    Vdip_k = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
-
-    FFTW_N_THREADS = p->fftw_n_threads;
-
-    int res = fftw_init_threads();
-    if (res == 0) {
-        throw std::runtime_error("FFTW thread initialization failed!");
-    }
 
     fftw_plan_with_nthreads(FFTW_N_THREADS);
     plan_fwd = fftw_plan_dft_3d(nx, ny, nz, rho_r, rho_k, FFTW_FORWARD, FFTW_MEASURE);
+    fftw_plan_with_nthreads(FFTW_N_THREADS);
     plan_bwd = fftw_plan_dft_3d(nx, ny, nz, rho_k, rho_r, FFTW_BACKWARD, FFTW_MEASURE);
 
-    OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) + " threads.");
+    OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) + " threads (Poisson).");
 }

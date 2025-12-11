@@ -1,4 +1,5 @@
 #include "include/solver.hpp"
+#include "include/fft_rt_split_solver.hpp"
 #include "include/numerical_params.hpp"
 #include "include/output.hpp"
 #include "include/params.hpp"
@@ -9,6 +10,7 @@
 GrossPitaevskiSolver::GrossPitaevskiSolver()
     : params(PhysicalParameters::getInstance())
     , poisson_solver(std::make_unique<PoissonSolver>())
+    , rt_split_solver(std::make_unique<RealTimeSplitSolver>())
     , file_manager(std::make_unique<FileManager>()) {
 
     try {
@@ -28,10 +30,11 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
 
     if (params->load_initial_state) {
         try {
-            file_manager->load_from_different_mesh();
-            params->init_parameters();
-            params->print();
-            init_containers();  
+            file_manager->load_initial_state();
+            // file_manager->load_from_different_mesh();
+            // params->init_parameters();
+            // params->print();
+            // init_containers();
         } catch (const std::exception &e) {
             OutputFormatter::printWarning("Could not load initial state from file.");
             OutputFormatter::printWarning(e.what());
@@ -42,8 +45,8 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
         init_with_gauss();
     }
 
-    file_manager->save_last_state();
     poisson_solver->prepare(&cpsi, &fi3d);
+    rt_split_solver->prepare(&cpsi, &fi3d);
 
     calc_norm();
     normalize();
@@ -157,78 +160,10 @@ void GrossPitaevskiSolver::imag_iter_nonlinear_step() {
 }
 
 void GrossPitaevskiSolver::real_time_iter() {
-    cpsin = cpsi;
-    cpsii = cpsi;
-
+    real_fft_potential_half_step();
     calc_fi3d();
-
-    for (int iter = 0; iter < 2; iter++) {
-        real_iter_linear_step();
-        real_iter_nonlinear_step();
-        cpsin = cpsii;
-    }
-
-    cpsi = cpsin;
-}
-
-void GrossPitaevskiSolver::real_iter_linear_step() {
-    std::complex<double> dt(0, -NumericalParameters::real_time_dt);
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                double v = pote(i, j, k);
-                std::complex<double> c1 =
-                    -0.5 / (params->m * std::pow(params->dx, 2)) *
-                        (cpsi(i - 1, j, k) + cpsi(i + 1, j, k) - 2. * cpsi(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dy, 2)) *
-                        (cpsi(i, j - 1, k) + cpsi(i, j + 1, k) - 2. * cpsi(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dz, 2)) *
-                        (cpsi(i, j, k - 1) + cpsi(i, j, k + 1) - 2. * cpsi(i, j, k)) +
-                    cpsi(i, j, k) * (v + params->cdd * fi3d(i, j, k)); // need old fi3d here
-
-                std::complex<double> c2 =
-                    -0.5 / (params->m * std::pow(params->dx, 2)) *
-                        (cpsin(i - 1, j, k) + cpsin(i + 1, j, k) - 2. * cpsin(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dy, 2)) *
-                        (cpsin(i, j - 1, k) + cpsin(i, j + 1, k) - 2. * cpsin(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dz, 2)) *
-                        (cpsin(i, j, k - 1) + cpsin(i, j, k + 1) - 2. * cpsin(i, j, k)) +
-                    cpsin(i, j, k) * (v + params->cdd * fi3d(i, j, k));
-
-                cpsii(i, j, k) = cpsi(i, j, k) + dt * (c1 + c2) / 2.;
-            }
-        }
-    }
-}
-
-void GrossPitaevskiSolver::real_iter_nonlinear_step() {
-    std::complex<double> dt(0, -NumericalParameters::real_time_dt);
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    double w = params->n_atoms;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                std::complex<double> c1 = ((params->ggp11 - params->cdd / 3) *
-                                               std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
-                                           params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
-                                               cpsi(i, j, k) * std::pow(w, 1.5));
-
-                std::complex<double> c2 = ((params->ggp11 - params->cdd / 3) *
-                                               std::norm(cpsin(i, j, k)) * cpsin(i, j, k) * w +
-                                           params->gamma * std::pow(std::abs(cpsin(i, j, k)), 3) *
-                                               cpsin(i, j, k) * std::pow(w, 1.5));
-
-                cpsii(i, j, k) = cpsii(i, j, k) + dt * (c1 + c2) / 2.;
-            }
-        }
-    }
+    real_fft_kinetic_step();
+    real_fft_potential_half_step();
 }
 
 void GrossPitaevskiSolver::init_containers() {
@@ -240,7 +175,6 @@ void GrossPitaevskiSolver::init_containers() {
 
     cpsii.resize(nx, ny, nz);
     cpsi.resize(nx, ny, nz);
-    cpsin.resize(nx, ny, nz);
 
     fi3do.resize(nx, ny, nz);
     fi3d.resize(nx, ny, nz);
@@ -309,7 +243,6 @@ void GrossPitaevskiSolver::init_with_cos() {
                 std::complex<double> cval = std::complex<double>(val, 0.);
                 cpsi(i, j, k)             = cval;
                 cpsii(i, j, k)            = cval;
-                cpsin(i, j, k)            = cval;
             }
         }
     }
@@ -341,7 +274,6 @@ void GrossPitaevskiSolver::init_with_gauss() {
                 std::complex<double> cval = std::complex<double>(val, 0.);
                 cpsi(i, j, k)             = cval;
                 cpsii(i, j, k)            = cval;
-                cpsin(i, j, k)            = cval;
             }
         }
     }
@@ -465,21 +397,70 @@ void GrossPitaevskiSolver::run_speed_test() {
     init_containers();
     init_with_cos();
     poisson_solver->prepare(&cpsi, &fi3d);
+    rt_split_solver->prepare(&cpsi, &fi3d);
 
     auto start = std::chrono::high_resolution_clock::now();
-    for (size_t iter = 0; iter < NumericalParameters::iter_speed_test; iter++) {
+    for (size_t iter = 0; iter < NumericalParameters::iter_imag_speed_test; iter++) {
         imag_time_iter();
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
+    auto end                              = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
 
-    OutputFormatter::printInfo("Speed test completed.");
+    OutputFormatter::printInfo("Imaginary time speed test completed.");
     OutputFormatter::printInfo("Total time for " +
-                               std::to_string(NumericalParameters::iter_speed_test) +
+                               std::to_string(NumericalParameters::iter_imag_speed_test) +
                                " iterations: " + std::to_string(elapsed.count()) + " seconds.");
-    OutputFormatter::printInfo("Average time per iteration: " +
-                               std::to_string(elapsed.count() /
-                                              static_cast<double>(NumericalParameters::iter_speed_test)) +
-                               " seconds.");
+    OutputFormatter::printInfo(
+        "Average time per iteration: " +
+        std::to_string(elapsed.count() /
+                       static_cast<double>(NumericalParameters::iter_imag_speed_test)) +
+        " seconds.");
+
+    start = std::chrono::high_resolution_clock::now();
+
+    for (size_t iter = 0; iter < NumericalParameters::iter_real_speed_test; iter++) {
+        real_time_iter();
+    }
+
+    end     = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    OutputFormatter::printInfo("Real time speed test completed.");
+    OutputFormatter::printInfo("Total time for " +
+                               std::to_string(NumericalParameters::iter_real_speed_test) +
+                               " iterations: " + std::to_string(elapsed.count()) + " seconds.");
+    OutputFormatter::printInfo(
+        "Average time per iteration: " +
+        std::to_string(elapsed.count() /
+                       static_cast<double>(NumericalParameters::iter_real_speed_test)) +
+        " seconds.");
+}
+
+void GrossPitaevskiSolver::real_fft_potential_half_step() {
+    int nx           = params->nx;
+    int ny           = params->ny;
+    int nz           = params->nz;
+    double w         = params->n_atoms;
+    double dt_factor = NumericalParameters::real_time_dt / 2.;
+
+    for (int i = 0; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double v_ext   = pote(i, j, k);
+                double density = std::norm(cpsi(i, j, k));
+
+                double v_int =
+                    (params->ggp11 - params->cdd / 3) * density * w +
+                    params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * std::pow(w, 1.5);
+
+                double total_potential = v_ext + params->cdd * fi3d(i, j, k) + v_int;
+
+                cpsi(i, j, k) *= std::exp(std::complex<double>(0.0, -dt_factor * total_potential));
+            }
+        }
+    }
+}
+
+void GrossPitaevskiSolver::real_fft_kinetic_step() {
+    rt_split_solver->execute();
 }

@@ -1,7 +1,9 @@
 add_library(GPSolver
             src/params.cpp
-            src/poisson_solver.cpp
             src/file_manager.cpp
+            src/fft_context.cpp
+            src/fft_poisson_solver.cpp
+            src/fft_rt_split_solver.cpp
             src/solver.cpp)
 
 target_link_libraries(GPSolver UnitsConverter Types json)

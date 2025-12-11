@@ -353,17 +353,11 @@ void FileManager::load_from_different_mesh() {
         }
     }
 
-    params->dx = x[1] - x[0];
-    params->dy = y[1] - y[0];
-    params->dz = z[1] - z[0];
+    params->dx = std::abs(x[1] - x[0]);
+    params->dy = std::abs(y[1] - y[0]);
+    params->dz = std::abs(z[1] - z[0]);
 
     OutputFormatter::printInfo("Loaded initial state from " + std::string(FORT_MESH_FILENAME));
-
-    // need to Reinitialize params
-}
-
-bool FileManager::find_closest_point(double x, double y, double z, int ix, int iy, int iz) {
-    return false;
 }
 
 void FileManager::init_filesystem() {

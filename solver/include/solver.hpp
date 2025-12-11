@@ -1,8 +1,9 @@
 #ifndef GPE_SOLVER_HPP
 #define GPE_SOLVER_HPP
 
+#include "include/fft_rt_split_solver.hpp"
 #include "include/params.hpp"
-#include "include/poisson_solver.hpp"
+#include "include/fft_poisson_solver.hpp"
 #include "include/file_manager.hpp"
 #include "include/context.hpp"
 #include "mat3d/stdmat3d.hpp"
@@ -28,9 +29,6 @@ private:
     //! Wavefunction of bec - copy for calculations.
     StdMat3D<std::complex<double>> cpsi;
 
-    //! Wavefunction of bec - copy for calculations.
-    StdMat3D<std::complex<double>> cpsin;
-
     //! Map of dipole-dipole potential (from dipole - dipole interaction)
     StdMat3D<double> fi3do;
 
@@ -46,6 +44,7 @@ private:
     double xnorma;
 
     std::unique_ptr<PoissonSolver> poisson_solver;
+    std::unique_ptr<RealTimeSplitSolver> rt_split_solver;
     std::unique_ptr<FileManager> file_manager;
 
     void calc_initial_state();
@@ -66,8 +65,8 @@ private:
     void normalize();
     void imag_iter_linear_step();
     void imag_iter_nonlinear_step();
-    void real_iter_linear_step();
-    void real_iter_nonlinear_step();
+    void real_fft_potential_half_step();
+    void real_fft_kinetic_step();
 
     double pote_value(int ix, int iy, int iz);
     double pote_released_value(int ix, int iy, int iz);
