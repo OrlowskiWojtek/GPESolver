@@ -1,16 +1,17 @@
-using CairoMakie
+#using CairoMakie
+using GLMakie
 
 include("context.jl")
 
-function plot_iso_bce(BCEContext::IsoBCEContext)
+function plot_iso_bce(BECContext::IsoBECContext)
     fig = Figure()
-    ax = Axis3(fig[1, 1], xlabel="X", ylabel="Y", zlabel="Z", title="Isosurface of BCE Structure", aspect = :data)
+    ax = Axis3(fig[1, 1], xlabel="X", ylabel="Y", zlabel="Z", title="Isosurface of BEC Structure", aspect = :data)
 
-    rho = abs.(BCEContext.psi)
+    rho = abs.(BECContext.psi)
     
-    x = BCEContext.x
-    y = BCEContext.y
-    z = BCEContext.z
+    x = BECContext.x
+    y = BECContext.y
+    z = BECContext.z
 
     max_val = maximum(rho)
     alpha = 0.8

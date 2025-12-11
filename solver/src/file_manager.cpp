@@ -325,53 +325,45 @@ void FileManager::load_from_different_mesh() {
     int nz;
     file >> nx >> ny >> nz;
 
-    if (nx * 2 + 1 != params->nx || ny * 2 + 1 != params->ny || nz * 2 + 1 != params->nz) {
+    if ((nx * 2 + 1) != params->nx || (ny * 2 + 1) != params->ny || (nz * 2 + 1) != params->nz) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
     }
 
     params->nx = 2 * nx + 1;
     params->ny = 2 * ny + 1;
     params->nz = 2 * nz + 1;
+    std::vector<double> x(params->nx);
+    std::vector<double> y(params->ny);
+    std::vector<double> z(params->nz);
+    x.resize(params->nx);
+    y.resize(params->ny);
+    z.resize(params->nz);
 
-    size_t nl = nx * ny * nz;
-    std::vector<std::vector<double>> dmin(nl, std::vector<double>(5)); // x,y,z, Re(psi), Im(psi)
-    for (int idx = 0; idx < nl; idx++) {
-        double x, y, z, fr, fi;
-        file >> x >> y >> z >> fr >> fi;
-        dmin[idx][0] = x;
-        dmin[idx][1] = y;
-        dmin[idx][2] = z;
-        dmin[idx][3] = fr;
-        dmin[idx][4] = fi;
-    }
+    for (int i = 0; i < params->nx; i++) {
+        for (int j = 0; j < params->ny; j++) {
+            for (int k = 0; k < params->nz; k++) {
+                double _x, _y, _z, fr, fi;
+                file >> _x >> _y >> _z >> fr >> fi;
 
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
-                double xs   = i * params->dx;
-                double ys   = j * params->dy;
-                double zs   = k * params->dz;
-                double rmin = 1e29;
-                int imin    = 0;
-
-                for (int i = 0; i < nl; ++i) {
-                    double rc = (xs - dmin[i][0]) * (xs - dmin[i][0]) +
-                                (ys - dmin[i][1]) * (ys - dmin[i][1]) +
-                                (zs - dmin[i][2]) * (zs - dmin[i][2]);
-
-                    if (rc < rmin) {
-                        rmin = rc;
-                        imin = i;
-                        if (rc < (std::pow(params->dx, 2) / 2)) {
-                            break;
-                        }
-                    }
-                }
-
-                (*cpsi_data)(i, j, k) = std::complex<double>(dmin[imin][3], dmin[imin][4]);
+                x[i] = _x;
+                y[j] = _y;
+                z[k] = _z;
+                (*cpsi_data)(i, j, k) = std::complex<double>(fr, fi);
             }
         }
     }
+
+    params->dx = x[1] - x[0];
+    params->dy = y[1] - y[0];
+    params->dz = z[1] - z[0];
+
+    OutputFormatter::printInfo("Loaded initial state from " + std::string(FORT_MESH_FILENAME));
+
+    // need to Reinitialize params
+}
+
+bool FileManager::find_closest_point(double x, double y, double z, int ix, int iy, int iz) {
+    return false;
 }
 
 void FileManager::init_filesystem() {

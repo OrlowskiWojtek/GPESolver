@@ -29,8 +29,12 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
     if (params->load_initial_state) {
         try {
             file_manager->load_from_different_mesh();
+            params->init_parameters();
+            params->print();
+            init_containers();  
         } catch (const std::exception &e) {
             OutputFormatter::printWarning("Could not load initial state from file.");
+            OutputFormatter::printWarning(e.what());
             OutputFormatter::printInfo("Initializing with cosine function.");
             init_with_gauss();
         }
@@ -39,8 +43,6 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
     }
 
     file_manager->save_last_state();
-
-    return;
     poisson_solver->prepare(&cpsi, &fi3d);
 
     calc_norm();

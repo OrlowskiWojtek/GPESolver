@@ -24,6 +24,7 @@ public:
     void save_last_state();
     void load_last_state();
 
+    //! Loading from differenet mesh results in changing grid size and grid spacing
     void load_from_different_mesh();
 
     void save_checkpoint(int iter);
@@ -42,6 +43,7 @@ private:
     static const char FORT_MESH_FILENAME[];
 
     void init_filesystem();
+    bool find_closest_point(double x, double y, double z, int ix, int iy, int iz);
 
     std::ofstream ene_file;
 

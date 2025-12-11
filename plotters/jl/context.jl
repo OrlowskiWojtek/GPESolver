@@ -8,7 +8,7 @@ struct CutContext
     dy::Float64
 end
 
-struct IsoBCEContext
+struct IsoBECContext
     psi::Array{ComplexF64,3}  # 3D array for the wavefunction data
     x::Vector{Float64}
     y::Vector{Float64}
@@ -20,3 +20,5 @@ struct IsoBCEContext
     dy::Float64
     dz::Float64
 end
+
+Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
