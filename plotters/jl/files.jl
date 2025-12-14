@@ -141,3 +141,29 @@ function load_from_fort(file_path::String)
     
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
 end
+
+
+function load_energies(filename::String)
+    iter = Int32[]
+    e_kin = Float64[]
+    e_pot = Float64[]
+    e_int = Float64[]
+    e_ext = Float64[]
+    e_bmf = Float64[]
+    e_tot = Float64[]
+
+    open(filename, "r") do file
+        for line in eachline(file)
+            parts = split(line)
+            push!(iter, parse(Int32, parts[1]))
+            push!(e_kin, parse(Float64, parts[2]))
+            push!(e_pot, parse(Float64, parts[3]))
+            push!(e_int, parse(Float64, parts[4]))
+            push!(e_ext, parse(Float64, parts[5]))
+            push!(e_bmf, parse(Float64, parts[6]))
+            push!(e_tot, parse(Float64, parts[7]))
+        end
+    end
+
+    return EnergiesContext(iter, e_kin, e_pot, e_int, e_ext, e_bmf, e_tot)
+end

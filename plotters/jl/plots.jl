@@ -46,3 +46,21 @@ function plot_heatmap_cut(data)
 
     fig
 end
+
+function plot_energies(context::EnergiesContext)
+    fig = Figure()
+    ax = Axis(fig[1, 1], xlabel="Iteration", ylabel="Energy (meV)")
+
+    # Energy conversion factor from Hartree to meV
+    conversion_factor = 27.2114 * 1000
+
+    lines!(ax, context.iter, context.e_kin * conversion_factor, label="Kinetic Energy")
+    lines!(ax, context.iter, context.e_pot * conversion_factor, label="Potential Energy")
+    lines!(ax, context.iter, context.e_int * conversion_factor, label="Internal Energy")
+    lines!(ax, context.iter, context.e_ext * conversion_factor, label="External Energy")
+    lines!(ax, context.iter, context.e_bmf * conversion_factor, label="BMF Energy")
+    lines!(ax, context.iter, context.e_tot * conversion_factor, label="Total Energy")
+
+    axislegend(ax)
+    fig
+end

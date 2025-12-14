@@ -21,4 +21,14 @@ struct IsoBECContext
     dz::Float64
 end
 
+struct EnergiesContext
+    iter::Vector{Int32}
+    e_kin::Vector{Float64}
+    e_pot::Vector{Float64}    
+    e_int::Vector{Float64}    
+    e_ext::Vector{Float64}    
+    e_bmf::Vector{Float64}    
+    e_tot::Vector{Float64}    
+end
+
 Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
