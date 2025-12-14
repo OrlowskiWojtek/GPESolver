@@ -45,6 +45,7 @@ void FileManager::save_params() {
     j["edd"]                = params->edd;
     j["fftw_n_threads"]     = params->fftw_n_threads;
     j["calc_strategy"]      = params->calc_strategy.to_string();
+    j["initial_maximas"]    = params->n_gauss_max;
 
     std::ofstream file(PARAMS_FILENAME);
     file << j.dump(4);
@@ -73,6 +74,7 @@ void FileManager::load_params() {
     params->ny                 = j["ny"];
     params->nz                 = j["nz"];
     params->fftw_n_threads     = j["fftw_n_threads"];
+    params->n_gauss_max        = j["initial_maximas"];
     params->calc_strategy.from_string(j["calc_strategy"]);
 
     check_params();
@@ -345,9 +347,9 @@ void FileManager::load_from_different_mesh() {
                 double _x, _y, _z, fr, fi;
                 file >> _x >> _y >> _z >> fr >> fi;
 
-                x[i] = _x;
-                y[j] = _y;
-                z[k] = _z;
+                x[i]                  = _x;
+                y[j]                  = _y;
+                z[k]                  = _z;
                 (*cpsi_data)(i, j, k) = std::complex<double>(fr, fi);
             }
         }

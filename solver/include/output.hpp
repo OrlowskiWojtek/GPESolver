@@ -11,6 +11,9 @@ public:
     static void printInfo(const std::string &&message) {
         std::cout << "[INFO]    " << message << std::endl;
     }
+    static void printDebug(const std::string &&message) {
+        std::cout << "[DEBUG]    " << message << std::endl;
+    }
     static void printWarning(const std::string &&message) {
         std::cout << "[WARNING] " << message << std::endl;
     }

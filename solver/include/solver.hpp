@@ -29,9 +29,6 @@ private:
     //! Wavefunction of bec - copy for calculations.
     StdMat3D<std::complex<double>> cpsi;
 
-    //! Map of dipole-dipole potential (from dipole - dipole interaction)
-    StdMat3D<double> fi3do;
-
     //! Map of dipole-dipole potential - copy
     StdMat3D<double> fi3d;
 
@@ -55,6 +52,7 @@ private:
     void init_containers();
     void init_with_cos();
     void init_with_gauss();
+    void init_with_multiple_gauss();
     void init_potential();
     void free_potential_well();
     void imag_time_iter();

@@ -8,6 +8,7 @@
 *
 * \brief class implements fast poisson solver for mesh.
 *
+* Solver implements R2C and C2R transformations for pure real input data.
 * FFTW has been used in calculations.
 */
 class PoissonSolver : public FFTContext {
@@ -22,6 +23,7 @@ private:
     void prepare_containers() override;
 
     fftw_complex *Vdip_k;
+    double *rho_r;
 };
 
 #endif

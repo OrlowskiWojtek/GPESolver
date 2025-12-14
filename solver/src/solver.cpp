@@ -31,10 +31,6 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
     if (params->load_initial_state) {
         try {
             file_manager->load_initial_state();
-            // file_manager->load_from_different_mesh();
-            // params->init_parameters();
-            // params->print();
-            // init_containers();
         } catch (const std::exception &e) {
             OutputFormatter::printWarning("Could not load initial state from file.");
             OutputFormatter::printWarning(e.what());
@@ -42,7 +38,7 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
             init_with_gauss();
         }
     } else {
-        init_with_gauss();
+        init_with_multiple_gauss();
     }
 
     poisson_solver->prepare(&cpsi, &fi3d);
@@ -84,12 +80,19 @@ void GrossPitaevskiSolver::calc_initial_state() {
     }
 
     OutputFormatter::printInfo("Imaginary time evolution completed");
+
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Minimized energy [meV]: ",
+                                       UnitConverter::ene_au_to_meV(_enes.e_total));
+    OutputFormatter::printBorderLine();
+
+    file_manager->save_current_energies(0, _enes);
 }
 
 void GrossPitaevskiSolver::calc_evolution() {
     OutputFormatter::printInfo("Starting real time evolution");
 
-    for (size_t iter = 0; iter < NumericalParameters::iter_real_evo; iter++) {
+    for (size_t iter = 1; iter < NumericalParameters::iter_real_evo; iter++) {
         real_time_iter();
         calc_energy();
 
@@ -176,7 +179,6 @@ void GrossPitaevskiSolver::init_containers() {
     cpsii.resize(nx, ny, nz);
     cpsi.resize(nx, ny, nz);
 
-    fi3do.resize(nx, ny, nz);
     fi3d.resize(nx, ny, nz);
 }
 
@@ -229,7 +231,7 @@ void GrossPitaevskiSolver::init_with_cos() {
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
-                double x = params->get_x(i);
+                double x = params->get_x(i) - params->dd;
                 double y = params->get_y(j);
                 double z = params->get_z(k);
 
@@ -259,7 +261,7 @@ void GrossPitaevskiSolver::init_with_gauss() {
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
-                double x = params->get_x(i) - UnitConverter::len_nm_to_au(1000.);
+                double x = params->get_x(i) - UnitConverter::len_nm_to_au(1500.);
                 double y = params->get_y(j);
                 double z = params->get_z(k);
 
@@ -270,6 +272,73 @@ void GrossPitaevskiSolver::init_with_gauss() {
                 double val = std::exp(-0.5 * (x * x) / (sigma_x * sigma_x)) *
                              std::exp(-0.5 * (y * y) / (sigma_y * sigma_y)) *
                              std::exp(-0.5 * (z * z) / (sigma_z * sigma_z));
+
+                std::complex<double> cval = std::complex<double>(val, 0.);
+                cpsi(i, j, k)             = cval;
+                cpsii(i, j, k)            = cval;
+            }
+        }
+    }
+
+    calc_norm();
+    normalize();
+}
+
+void GrossPitaevskiSolver::init_with_multiple_gauss() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    // Number of atoms in x and y directions
+    int n_maximas = params->n_gauss_max;
+
+    // Center positions
+    std::vector<double> centers_x(n_maximas);
+    std::vector<double> centers_y(n_maximas);
+
+    for (int idx = 0; idx < n_maximas; idx++) {
+        centers_x[idx] = idx % 2 ? params->dd : -params->dd;
+        if (n_maximas % 2 == 1) {
+            double y_offset = (idx + 1) * (params->ny * params->dy) / (n_maximas + 1);
+
+            centers_y[idx] = params->get_y(0) + y_offset;
+        }
+
+        if (n_maximas % 2 == 0) {
+            int y_idx       = (idx / 2 + 1);
+            int y_maximas   = (n_maximas / 2 + 1);
+            double y_offset = y_idx * (params->ny * params->dy) / y_maximas;
+
+            centers_y[idx] = params->get_y(0) + y_offset;
+        }
+    }
+
+    // Initialize wave function with multiple Gaussian centers
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double x = params->get_x(i);
+                double y = params->get_y(j);
+                double z = params->get_z(k);
+
+                // Width of Gaussian
+                double sigma_x = (params->nx * params->dx) / 10.;
+                double sigma_y = (params->ny * params->dy) / 10.;
+                double sigma_z = (params->nz * params->dz) / 10.;
+
+                // Initialize wave function value
+                double val = 0.0;
+
+                // Sum over all Gaussian centers
+                for (int m = 0; m < n_maximas; m++) {
+                    double xc = x - centers_x[m];
+                    double yc = y - centers_y[m];
+                    double zc = z;
+
+                    val += std::exp(-0.5 * (xc * xc) / (sigma_x * sigma_x)) *
+                           std::exp(-0.5 * (yc * yc) / (sigma_y * sigma_y)) *
+                           std::exp(-0.5 * (zc * zc) / (sigma_z * sigma_z));
+                }
 
                 std::complex<double> cval = std::complex<double>(val, 0.);
                 cpsi(i, j, k)             = cval;
@@ -369,9 +438,8 @@ void GrossPitaevskiSolver::calc_energy() {
                     0.5 * params->ggp11 * std::norm(cpsi(i, j, k)) * std::norm(cpsi(i, j, k));
 
                 // Dipole-dipole interaction energy
-                _enes.e_ext += (0.5 * params->cdd * fi3d(i, j, k) -
-                                params->cdd / 3 * std::norm(cpsi(i, j, k))) *
-                               std::norm(cpsi(i, j, k));
+                _enes.e_ext += 0.5 * params->cdd * fi3d(i, j, k) * std::norm(cpsi(i, j, k)) * params->n_atoms;
+                _enes.e_ext -= params->cdd / 3. * std::pow(std::norm(cpsi(i,j,k)), 2) / 2. * std::pow(params->n_atoms, 2);
 
                 // beyond mean-field energy
                 _enes.e_bmf += 2. / 5. * params->gamma * std::pow(std::abs(cpsi(i, j, k)), 5);
@@ -381,8 +449,8 @@ void GrossPitaevskiSolver::calc_energy() {
 
     _enes.e_kin *= params->get_dxdydz() / (2 * params->m) * params->n_atoms;
     _enes.e_pot *= params->get_dxdydz() * params->n_atoms;
-    _enes.e_int *= params->get_dxdydz() * params->n_atoms;
-    _enes.e_ext *= params->get_dxdydz() * params->n_atoms;
+    _enes.e_int *= params->get_dxdydz() * std::pow(params->n_atoms, 2);
+    _enes.e_ext *= params->get_dxdydz();
     _enes.e_bmf *= params->get_dxdydz() * std::pow(params->n_atoms, 2.5);
 
     _enes.sum();
