@@ -1,6 +1,6 @@
-#include "include/fft_rt_split_solver.hpp"
-#include "include/output.hpp"
-#include "include/numerical_params.hpp"
+#include "solver/fft_rt_split_solver.hpp"
+#include "solver/numerical_params.hpp"
+#include "output.hpp"
 
 RealTimeSplitSolver::RealTimeSplitSolver() {
 }
@@ -75,7 +75,7 @@ void RealTimeSplitSolver::execute() {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
 
-                size_t idx     = (i * ny + j) * nz + k;
+                size_t idx    = (i * ny + j) * nz + k;
                 rpsi(i, j, k) = std::complex<double>(rho_r[idx][0], rho_r[idx][1]) * norm_factor;
             }
         }
@@ -102,5 +102,6 @@ void RealTimeSplitSolver::prepare_transforms() {
     fftw_plan_with_nthreads(FFTW_N_THREADS);
     plan_bwd = fftw_plan_dft_3d(nx, ny, nz, rho_k, rho_r, FFTW_BACKWARD, FFTW_MEASURE);
 
-    OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) + " threads (Split).");
+    OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) +
+                               " threads (Split).");
 }

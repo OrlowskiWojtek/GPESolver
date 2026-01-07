@@ -1,9 +1,9 @@
 #ifndef SOLVER_PARAMETERS_HPP
 #define SOLVER_PARAMETERS_HPP
 
-#include "mat3d/stdmat3d.hpp"
 #include <array>
 #include <string>
+#include <vector>
 
 struct CalcStrategy {
     enum class Type {
@@ -34,11 +34,8 @@ struct CalcStrategy {
 };
 
 /*! Struct PhysicalParameters.
- *  \brief contains physical parameters of simulation.
+ *  \brief contains parameters of simulation.
  *
- *  For now original names of parameters are kept.
- *  References for used values:
- *  [1]
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;
@@ -117,7 +114,6 @@ struct PhysicalParameters {
 private:
     void init_r();
 
-    StdMat3D<double> r_matrix;
     std::vector<double> x_vec;
     std::vector<double> y_vec;
     std::vector<double> z_vec;

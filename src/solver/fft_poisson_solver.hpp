@@ -1,7 +1,7 @@
 #ifndef POISSON_SOLVER_HPP
 #define POISSON_SOLVER_HPP
 
-#include "include/fft_context.hpp"
+#include "solver/fft_context.hpp"
 #include <fftw3.h>
 
 /*! class PoissonSolver.

@@ -1,5 +1,5 @@
-#include "include/params.hpp"
-#include "include/output.hpp"
+#include "parameters/parameters.hpp"
+#include "output.hpp"
 #include "units.hpp"
 #include <cassert>
 #include <cmath>
@@ -60,8 +60,6 @@ void PhysicalParameters::init_parameters() {
 }
 
 void PhysicalParameters::init_r() {
-    r_matrix.resize(nx, ny, nz);
-
     x_vec.resize(nx);
     y_vec.resize(ny);
     z_vec.resize(nz);
@@ -74,7 +72,6 @@ void PhysicalParameters::init_r() {
             y_vec[j] = y;
             for (int k = 0; k < nz; k++) {
                 double z          = (k - (static_cast<int>(nz / 2.) + 1)) * dz;
-                r_matrix(i, j, k) = std::sqrt(x * x + y * y + z * z);
                 z_vec[k]          = z;
             }
         }
@@ -95,10 +92,6 @@ double PhysicalParameters::get_z(int iz) {
 
 double PhysicalParameters::get_dxdydz() {
     return dxdydz;
-}
-
-double PhysicalParameters::get_r(int ix, int iy, int iz) {
-    return r_matrix(ix, iy, iz);
 }
 
 void PhysicalParameters::print() {

@@ -1,7 +1,7 @@
 #ifndef FFT_CONTEXT_HPP
 #define FFT_CONTEXT_HPP
 
-#include "include/params.hpp"
+#include "parameters/parameters.hpp"
 #include "mat3d/stdmat3d.hpp"
 #include <complex>
 #include <fftw3.h>

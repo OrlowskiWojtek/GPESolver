@@ -1,5 +1,5 @@
-#include "include/fft_context.hpp"
-#include "include/params.hpp"
+#include "solver/fft_context.hpp"
+#include "parameters/parameters.hpp"
 #include <fftw3.h>
 
 int FFTContext::FFTW_N_THREADS = 4;

@@ -1,11 +1,12 @@
 #ifndef GPE_SOLVER_HPP
 #define GPE_SOLVER_HPP
 
-#include "include/fft_rt_split_solver.hpp"
-#include "include/params.hpp"
-#include "include/fft_poisson_solver.hpp"
-#include "include/file_manager.hpp"
-#include "include/context.hpp"
+#include "parameters/parameters.hpp"
+#include "solver/fft_rt_split_solver.hpp"
+#include "solver/fft_poisson_solver.hpp"
+#include "manager/sim_mediator.hpp"
+
+#include "context/context.hpp"
 #include "mat3d/stdmat3d.hpp"
 #include <complex>
 #include <memory>
@@ -16,7 +17,7 @@
  */
 class GrossPitaevskiSolver {
 public:
-    GrossPitaevskiSolver();
+    GrossPitaevskiSolver(AbstractSimulationMediator* mediator);
     void solve();
 
 private:
@@ -42,7 +43,7 @@ private:
 
     std::unique_ptr<PoissonSolver> poisson_solver;
     std::unique_ptr<RealTimeSplitSolver> rt_split_solver;
-    std::unique_ptr<FileManager> file_manager;
+    AbstractSimulationMediator* mediator;
 
     void calc_initial_state();
     void calc_evolution();

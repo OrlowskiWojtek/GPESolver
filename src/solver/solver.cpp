@@ -1,45 +1,19 @@
-#include "include/solver.hpp"
-#include "include/fft_rt_split_solver.hpp"
-#include "include/numerical_params.hpp"
-#include "include/output.hpp"
-#include "include/params.hpp"
+#include "solver/solver.hpp"
+#include "solver/fft_rt_split_solver.hpp"
+#include "solver/numerical_params.hpp"
+#include "output.hpp"
+#include "parameters/parameters.hpp"
 #include "units.hpp"
 #include <chrono>
 #include <fftw3.h>
 
-GrossPitaevskiSolver::GrossPitaevskiSolver()
+GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator* mediator)
     : params(PhysicalParameters::getInstance())
     , poisson_solver(std::make_unique<PoissonSolver>())
     , rt_split_solver(std::make_unique<RealTimeSplitSolver>())
-    , file_manager(std::make_unique<FileManager>()) {
-
-    try {
-        file_manager->load_params();
-    } catch (const std::exception &e) {
-        OutputFormatter::printWarning("Could not load parameters from file:");
-        OutputFormatter::printWarning(e.what());
-        OutputFormatter::printInfo("Using default parameters.");
-        params->set_default_values();
-    }
-
-    params->init_parameters();
-    params->print();
+    , mediator(mediator) {
 
     init_containers();
-    file_manager->set_data_pointer(&cpsi);
-
-    if (params->load_initial_state) {
-        try {
-            file_manager->load_last_state();
-        } catch (const std::exception &e) {
-            OutputFormatter::printWarning("Could not load initial state from file.");
-            OutputFormatter::printWarning(e.what());
-            OutputFormatter::printInfo("Initializing with cosine function.");
-            init_with_gauss();
-        }
-    } else {
-        init_with_multiple_gauss();
-    }
 
     poisson_solver->prepare(&cpsi, &fi3d);
     rt_split_solver->prepare(&cpsi, &fi3d);
@@ -52,7 +26,9 @@ void GrossPitaevskiSolver::solve() {
     switch (params->calc_strategy.type) {
     case CalcStrategy::Type::IMAGINARY_TIME:
         calc_initial_state();
-        file_manager->save_initial_state();
+
+        mediator->save_data(cpsi);
+        //file_manager->save_initial_state();
         break;
     case CalcStrategy::Type::REAL_TIME:
         free_potential_well();
@@ -60,7 +36,9 @@ void GrossPitaevskiSolver::solve() {
         break;
     case CalcStrategy::Type::FULL:
         calc_initial_state();
-        file_manager->save_initial_state();
+
+        mediator->save_data(cpsi);
+        //file_manager->save_initial_state();
 
         free_potential_well();
         calc_evolution();
@@ -86,7 +64,8 @@ void GrossPitaevskiSolver::calc_initial_state() {
                                        UnitConverter::ene_au_to_meV(_enes.e_total));
     OutputFormatter::printBorderLine();
 
-    file_manager->save_current_energies(0, _enes);
+    // add energy to container
+    // file_manager->save_current_energies(0, _enes);
 }
 
 void GrossPitaevskiSolver::calc_evolution() {
@@ -97,14 +76,17 @@ void GrossPitaevskiSolver::calc_evolution() {
         calc_energy();
 
         if (iter % 1000 == 0) {
-            file_manager->save_xy_to_file(iter);
-            file_manager->save_current_energies(iter, _enes);
-            file_manager->save_checkpoint(iter);
+            mediator->save_data(cpsi);
+            //file_manager->save_xy_to_file(iter);
+            //file_manager->save_current_energies(iter, _enes);
+            //file_manager->save_checkpoint(iter);
         }
     }
 
     OutputFormatter::printInfo("Real time evolution completed");
-    file_manager->save_last_state();
+
+    mediator->save_data(cpsi);
+    //file_manager->save_last_state();
 }
 
 void GrossPitaevskiSolver::imag_time_iter() {
@@ -298,6 +280,10 @@ void GrossPitaevskiSolver::init_with_multiple_gauss() {
 
     for (int idx = 0; idx < n_maximas; idx++) {
         centers_x[idx] = idx % 2 ? params->dd : -params->dd;
+        if(n_maximas == 1){
+            centers_x[idx] = 0;
+        }
+
         if (n_maximas % 2 == 1) {
             double y_offset = (idx + 1) * (params->ny * params->dy) / (n_maximas + 1);
 
