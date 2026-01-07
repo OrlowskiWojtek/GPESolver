@@ -1,8 +1,17 @@
 #include "include/file_manager.hpp"
 #include "include/output.hpp"
+#include "nlohmann/json.hpp"
 #include "units.hpp"
 #include <fstream>
-#include "nlohmann/json.hpp"
+
+const char FileManager::PARAMS_FILENAME[]        = "gpe_params.json";
+const char FileManager::INITIAL_STATE_FILENAME[] = "initial_state.dat";
+const char FileManager::LAST_STATE_FILENAME[]    = "last_state.bin";
+const char FileManager::ENE_FILENAME[]           = "energy.dat";
+
+const char FileManager::XY_CUT_FILENAME[]    = "cut_xy_";
+const char FileManager::CHECKPOUT_FILENAME[] = "checkpoint_";
+const char FileManager::FORT_MESH_FILENAME[] = "ff.dat";
 
 FileManager::FileManager()
     : params(PhysicalParameters::getInstance()) {
@@ -34,7 +43,9 @@ void FileManager::save_params() {
     j["ny"]                 = params->ny;
     j["nz"]                 = params->nz;
     j["edd"]                = params->edd;
+    j["fftw_n_threads"]     = params->fftw_n_threads;
     j["calc_strategy"]      = params->calc_strategy.to_string();
+    j["initial_maximas"]    = params->n_gauss_max;
 
     std::ofstream file(PARAMS_FILENAME);
     file << j.dump(4);
@@ -62,6 +73,8 @@ void FileManager::load_params() {
     params->nx                 = j["nx"];
     params->ny                 = j["ny"];
     params->nz                 = j["nz"];
+    params->fftw_n_threads     = j["fftw_n_threads"];
+    params->n_gauss_max        = j["initial_maximas"];
     params->calc_strategy.from_string(j["calc_strategy"]);
 
     check_params();
@@ -100,9 +113,9 @@ void FileManager::save_initial_state() {
 }
 
 void FileManager::load_initial_state() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
+    int nx;
+    int ny;
+    int nz;
 
     if (!cpsi_data) {
         throw std::runtime_error("Data pointer not set.");
@@ -115,6 +128,10 @@ void FileManager::load_initial_state() {
     }
 
     file >> nx >> ny >> nz;
+
+    if (nx != params->nx || ny != params->ny || nz != params->nz) {
+        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
 
     StdMat3D<std::complex<double>> &cpsi = *cpsi_data;
     for (int i = 0; i < nx; i++) {
@@ -289,9 +306,60 @@ void FileManager::save_checkpoint(int iter) {
         file.write(reinterpret_cast<char *>(&imag), sizeof(double));
     }
 
-    OutputFormatter::printInfo("Saved checkpoint to " +
-                               std::string(CHECKPOUT_FILENAME) + std::to_string(iter) + ".bin");
+    OutputFormatter::printInfo("Saved checkpoint to " + std::string(CHECKPOUT_FILENAME) +
+                               std::to_string(iter) + ".bin");
     file.close();
+}
+
+void FileManager::load_from_different_mesh() {
+    if (!cpsi_data) {
+        throw std::runtime_error("Data pointer not set.");
+    }
+
+    std::ifstream file(FORT_MESH_FILENAME);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open initial state file for reading.");
+    }
+
+    int nx;
+    int ny;
+    int nz;
+    file >> nx >> ny >> nz;
+
+    if ((nx * 2 + 1) != params->nx || (ny * 2 + 1) != params->ny || (nz * 2 + 1) != params->nz) {
+        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    params->nx = 2 * nx + 1;
+    params->ny = 2 * ny + 1;
+    params->nz = 2 * nz + 1;
+    std::vector<double> x(params->nx);
+    std::vector<double> y(params->ny);
+    std::vector<double> z(params->nz);
+    x.resize(params->nx);
+    y.resize(params->ny);
+    z.resize(params->nz);
+
+    for (int i = 0; i < params->nx; i++) {
+        for (int j = 0; j < params->ny; j++) {
+            for (int k = 0; k < params->nz; k++) {
+                double _x, _y, _z, fr, fi;
+                file >> _x >> _y >> _z >> fr >> fi;
+
+                x[i]                  = _x;
+                y[j]                  = _y;
+                z[k]                  = _z;
+                (*cpsi_data)(i, j, k) = std::complex<double>(fr, fi);
+            }
+        }
+    }
+
+    params->dx = std::abs(x[1] - x[0]);
+    params->dy = std::abs(y[1] - y[0]);
+    params->dz = std::abs(z[1] - z[0]);
+
+    OutputFormatter::printInfo("Loaded initial state from " + std::string(FORT_MESH_FILENAME));
 }
 
 void FileManager::init_filesystem() {

@@ -1,30 +1,31 @@
-#ifndef POISSON_SOLVER_HPP
-#define POISSON_SOLVER_HPP
+#ifndef FFT_CONTEXT_HPP
+#define FFT_CONTEXT_HPP
 
 #include "include/params.hpp"
 #include "mat3d/stdmat3d.hpp"
 #include <complex>
 #include <fftw3.h>
 
-/*! class PoissonSolver.
+/*! class FFT_CONTEXT.
 *
-* \brief class implements fast poisson solver for mesh.
-*
-* FFTW has been used in calculations.
+* \brief Abstract interface for FFTW calculations.
 */
-class PoissonSolver{
+class FFTContext{
 public:
-    PoissonSolver();
-    ~PoissonSolver();
+    FFTContext();
+    virtual ~FFTContext();
 
     void prepare(StdMat3D<std::complex<double>>* psi, StdMat3D<double>* fi3d);
-    void execute();
-private:
+    virtual void execute() = 0;
 
-    void prepare_transforms();
-    PhysicalParameters* p;
+private:
+    virtual void prepare_transforms() = 0;
+    virtual void prepare_containers() = 0;
+
+protected:
     StdMat3D<std::complex<double>>* psi;
     StdMat3D<double>* fi3d;
+    PhysicalParameters* p;
 
     static int FFTW_N_THREADS;
 
@@ -33,7 +34,6 @@ private:
     
     fftw_complex *rho_r;
     fftw_complex *rho_k;
-    fftw_complex *Vdip_k;
 };
 
 #endif

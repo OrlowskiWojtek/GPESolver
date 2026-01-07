@@ -3,12 +3,14 @@
 
 #include <cstddef>
 
-struct NumericalParameters{
-    static constexpr size_t iter_imag_evo = 10000;
-    static constexpr size_t iter_real_evo = 100000;
+struct NumericalParameters {
+    static constexpr size_t iter_imag_evo   = 10000;
+    static constexpr size_t iter_real_evo   = 300000;
 
-    static constexpr double relax_omega = 0.8;
-    static constexpr double imag_time_dt = 1.25e11; 
+    static constexpr size_t iter_imag_speed_test = 500;
+    static constexpr size_t iter_real_speed_test = 500;
+
+    static constexpr double imag_time_dt = 1.25e11;
     static constexpr double real_time_dt = 1.00e10;
 };
 

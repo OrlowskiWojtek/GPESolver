@@ -5,5 +5,5 @@ set view map
 
 #plot "../fort_solver/build/fort.1498" index 5 u 1:2:4 w image
 #plot "../build/xcut.dat" u 1:2
-plot "../build/cut0.dat" u 1:2:3 w image
+plot "../../build/run_3_max/cut_xy_1000.dat" u 1:2:3 w image
 pause -1

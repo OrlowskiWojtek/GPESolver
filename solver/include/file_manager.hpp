@@ -7,6 +7,7 @@
 #include <complex>
 #include <fstream>
 
+// Idea: implement into strategy pattern
 class FileManager{
 public:
     FileManager();
@@ -23,21 +24,26 @@ public:
     void save_last_state();
     void load_last_state();
 
+    //! Loading from differenet mesh results in changing grid size and grid spacing
+    void load_from_different_mesh();
+
     void save_checkpoint(int iter);
 
     void save_xy_to_file(int iter);
     void save_current_energies(int iter, BECEnergies& enes);
 
 private:
-    static constexpr char PARAMS_FILENAME[] = "gpe_params.json";
-    static constexpr char INITIAL_STATE_FILENAME[] = "initial_state.dat";  
-    static constexpr char LAST_STATE_FILENAME[] = "last_state.bin";  
-    static constexpr char ENE_FILENAME[] = "energy.dat";
+    static const char PARAMS_FILENAME[];
+    static const char INITIAL_STATE_FILENAME[];  
+    static const char LAST_STATE_FILENAME[];  
+    static const char ENE_FILENAME[];
 
-    static constexpr char XY_CUT_FILENAME[] = "cut_xy_";
-    static constexpr char CHECKPOUT_FILENAME[] = "checkpoint_";
+    static const char XY_CUT_FILENAME[];
+    static const char CHECKPOUT_FILENAME[];
+    static const char FORT_MESH_FILENAME[];
 
     void init_filesystem();
+    bool find_closest_point(double x, double y, double z, int ix, int iy, int iz);
 
     std::ofstream ene_file;
 

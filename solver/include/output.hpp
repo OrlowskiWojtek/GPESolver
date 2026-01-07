@@ -11,6 +11,9 @@ public:
     static void printInfo(const std::string &&message) {
         std::cout << "[INFO]    " << message << std::endl;
     }
+    static void printDebug(const std::string &&message) {
+        std::cout << "[DEBUG]    " << message << std::endl;
+    }
     static void printWarning(const std::string &&message) {
         std::cout << "[WARNING] " << message << std::endl;
     }
@@ -23,15 +26,21 @@ public:
         std::cout << border << std::endl;
     }
 
+    // switch so is compatible with C++14
     template <typename... Args>
     static void printBoxedMessage(const Args&... args) {
         std::ostringstream oss;
-        (oss << ... << args);
+        using expander = int[];
+        (void)expander{0, (void(oss << args), 0)...};
         std::string message = oss.str();
     
         assert(message.length() < box_width - 2 &&
                "Message too long to fit in the box.");
-
+    
+        if(message.length() % 2 == 0){
+            message += " ";
+        }
+    
         std::cout << "|" 
                   << std::setw((box_width + message.length()) / 2) << std::right << message 
                   << std::setw((box_width - message.length()) / 2) << "|" << std::endl;

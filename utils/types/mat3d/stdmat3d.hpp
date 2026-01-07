@@ -2,6 +2,7 @@
 #define STD_MAT_3D_HPP
 
 #include <vector>
+#include <cstddef>
 
 template <class T>
 class StdMat3D {
