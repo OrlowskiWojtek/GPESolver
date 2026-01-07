@@ -6,7 +6,10 @@ Solver is meant to be modular with the KISS principle taken as main design goal.
 ## GPE 
 
 **Time dependent Grass Pitaevski Eqaution**:
-$$ i\hbar \partial_t \psi(\mathbf{r}, t) = \left[ \frac{-\hbar^2}{2m} + V(\mathbf{r}) + g |\psi|^2 + \psi_{dd} \right]\psi(\mathbf{r}, t) $$
+
+$$
+i\hbar \frac{\partial \psi(\mathbf{r}, t)}{\partial t} = \left( -\frac{\hbar^2}{2m} \nabla^2 + V(\mathbf{r}) + g |\psi(\mathbf{r}, t)|^2 \right) \psi(\mathbf{r}, t)
+$$
 
 ## Dependencies
 
