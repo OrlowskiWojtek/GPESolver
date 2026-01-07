@@ -12,7 +12,7 @@ fig = plot_heatmap_cut(test)
 
 #psi = load_from_binary(joinpath(DATA_DIR, "checkpoint_1.bin"))
 #psi = load_from_binary(joinpath(DATA_DIR, "last_state.bin"))
-psi = load_from_text(joinpath(DATA_DIR, "initial_state.dat"))
+psi = load_from_text(joinpath("../../data/run_find_initial_states/50k_atoms/2_max", "initial_state.dat"))
 #psi = load_from_fort(joinpath(DATA_DIR, "ff.dat"))
 plot_iso_bce(psi)
 

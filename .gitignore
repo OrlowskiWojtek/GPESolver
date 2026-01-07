@@ -6,3 +6,7 @@ compile_commands.json
 .dat
 *.gif
 *.mp4
+data/
+*.pdf
+*.jpg
+*.png

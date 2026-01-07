@@ -23,7 +23,7 @@ void PhysicalParameters::set_default_values() {
     ny = 40 * 2 + 1;
     nz = 20 * 2 + 1;
 
-    edd = 1.45;
+    edd                = 1.45;
     load_initial_state = false;
 
     dx = UnitConverter::len_nm_to_au(150);
@@ -35,14 +35,14 @@ void PhysicalParameters::set_default_values() {
     init_parameters();
 }
 
-void PhysicalParameters::init_parameters(){
+void PhysicalParameters::init_parameters() {
     assert(nx % 2 == 1);
     assert(ny % 2 == 1);
     assert(nz % 2 == 1);
 
     wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
     wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
-    
+
     aa = m * std::pow(wrl, 2) / 4. / std::pow(dd, 2);
     b  = 0.5 * m * std::pow(wrl, 2);
 
@@ -51,7 +51,7 @@ void PhysicalParameters::init_parameters(){
     add = 131.;
     cdd = 12. * M_PI * add / m;
 
-    double a   = add / edd; // ![1]
+    double a = add / edd; // ![1]
 
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
@@ -114,7 +114,8 @@ void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
     OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
-    OutputFormatter::printBoxedMessage("Scattering length (nm): ", UnitConverter::len_au_to_nm(add));
+    OutputFormatter::printBoxedMessage("Scattering length (nm): ",
+                                       UnitConverter::len_au_to_nm(add));
     OutputFormatter::printBoxedMessage("Potential minimas dd: ", UnitConverter::len_au_to_nm(dd));
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Dipole-dipole interaction");

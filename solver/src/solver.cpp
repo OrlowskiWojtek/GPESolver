@@ -30,7 +30,7 @@ GrossPitaevskiSolver::GrossPitaevskiSolver()
 
     if (params->load_initial_state) {
         try {
-            file_manager->load_initial_state();
+            file_manager->load_last_state();
         } catch (const std::exception &e) {
             OutputFormatter::printWarning("Could not load initial state from file.");
             OutputFormatter::printWarning(e.what());
