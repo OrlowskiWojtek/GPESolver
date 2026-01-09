@@ -17,6 +17,8 @@ public:
     void on_data_loaded(const wavefunction_t&) override;
 
     void save_data(const wavefunction_t&) override;
+    void save_checkpoint(const wavefunction_t&) override;
+    void save_initial_state(const wavefunction_t&) override;
     void save_energies(const energies_container_t&) override;
 
 private:
@@ -24,6 +26,7 @@ private:
     std::unique_ptr<FileManager> file_manager;
     std::unique_ptr<GrossPitaevskiSolver> gpe_solver;
 
+    int checkpoint_counter = 0;
 };
 
 #endif

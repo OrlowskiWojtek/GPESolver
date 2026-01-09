@@ -6,13 +6,6 @@
 
 PhysicalParameters *PhysicalParameters::instance = nullptr;
 
-const std::array<const char *, 4> CalcStrategy::TypeNames = {
-    "IT", //!< imaginary time evolution
-    "RT", //!< real time evolution
-    "FS", //!< full simulation (imaginary + real)
-    "ST"  //!< speed test
-};
-
 void PhysicalParameters::set_default_values() {
     n_atoms = 4e4;
     m       = UnitConverter::mass_Da_to_au(163.929); // mass of Erb 164
@@ -55,39 +48,6 @@ void PhysicalParameters::init_parameters() {
 
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
-
-    init_r();
-}
-
-void PhysicalParameters::init_r() {
-    x_vec.resize(nx);
-    y_vec.resize(ny);
-    z_vec.resize(nz);
-
-    for (int i = 0; i < nx; i++) {
-        double x = (i - (static_cast<int>(nx / 2.) + 1)) * dx;
-        x_vec[i] = x;
-        for (int j = 0; j < ny; j++) {
-            double y = (j - (static_cast<int>(ny / 2.) + 1)) * dy;
-            y_vec[j] = y;
-            for (int k = 0; k < nz; k++) {
-                double z          = (k - (static_cast<int>(nz / 2.) + 1)) * dz;
-                z_vec[k]          = z;
-            }
-        }
-    }
-}
-
-double PhysicalParameters::get_x(int ix) {
-    return x_vec[ix];
-}
-
-double PhysicalParameters::get_y(int iy) {
-    return y_vec[iy];
-}
-
-double PhysicalParameters::get_z(int iz) {
-    return z_vec[iz];
 }
 
 double PhysicalParameters::get_dxdydz() {

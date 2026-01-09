@@ -13,7 +13,7 @@ FFTContext::~FFTContext() {
     fftw_destroy_plan(plan_bwd);
 }
 
-void FFTContext::prepare(StdMat3D<std::complex<double>> *cpsi, StdMat3D<double> *_fi3d) {
+void FFTContext::prepare(wavefunction_t *cpsi, potential_t *_fi3d) {
     psi  = cpsi;
     fi3d = _fi3d;
 

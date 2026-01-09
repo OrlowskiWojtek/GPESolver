@@ -13,18 +13,18 @@ public:
     void load_params();
 
     void save_params();
-    void save_energies(energies_container_t &);
+    void save_energies(const energies_container_t &);
+
+    void load_from_text_file(std::string filename);
+    void load_from_binary_file(std::string filename);
+    void save_to_text_file(const wavefunction_t &, std::string filename);
+    void save_to_binary_file(const wavefunction_t &, std::string filename);
 
 private:
     static const char PARAMS_FILENAME[];
     static const char ENERGIES_FILENAME[];
     static const char TEXT_FILE_EXTENSION[];
     static const char BINARY_FILE_EXTENSION[];
-
-    void load_from_text_file(std::string filename);
-    void load_from_binary_file(std::string filename);
-    void save_to_text_file(wavefunction_t &, std::string filename);
-    void save_to_binary_file(wavefunction_t &, std::string filename);
 
     void check_params();
 

@@ -3,6 +3,7 @@
 
 #include "mat3d/stdmat3d.hpp"
 #include <complex>
+#include <parameters/parameters.hpp>
 #include <vector>
 
 struct BECEnergies {
@@ -21,32 +22,48 @@ struct BECEnergies {
 using wavefunction_t       = StdMat3D<std::complex<double>>;
 using potential_t          = StdMat3D<double>;
 using energies_container_t = std::vector<BECEnergies>;
+using energies_t           = BECEnergies;
 
 // For further implementation
-//class SimulationContext {
-//public:
-//    SimulationContext();
-//    void init_containers();
-//
-//    void init_with_cos();
-//    void init_with_gauss();
-//    void init_from_file();
-//
-//    void calc_norm();
-//    void normalize();
-//
-//    void init_potential();
-//    void free_potential_well();
-//    double pote_value(int ix, int iy, int iz);
-//    double pote_released_value(int ix, int iy, int iz);
-//
-//    PhysicalParameters* params;
-//    StdMat3D<std::complex<double>> cpsi;
-//    StdMat3D<std::complex<double>> cpsii;
-//    StdMat3D<double> potential;
-//    StdMat3D<double> fi3d;
-//
-//    double norm;
-//};
+class SimulationContext {
+public:
+    SimulationContext();
+    // void init_containers();
+
+    // void init_with_cos();
+    // void init_with_gauss();
+    // void init_from_file();
+
+    // void calc_norm();
+    // void normalize();
+
+    // void init_potential();
+    // void free_potential_well();
+    // double pote_value(int ix, int iy, int iz);
+    // double pote_released_value(int ix, int iy, int iz);
+    // PhysicalParameters* params;
+    // StdMat3D<std::complex<double>> cpsi;
+    // StdMat3D<std::complex<double>> cpsii;
+    // StdMat3D<double> potential;
+    // StdMat3D<double> fi3d;
+
+    void initialize();
+    inline const double get_x(int ix) const {
+        return x_vec[ix];
+    }
+    inline const double get_y(int iy) const {
+        return y_vec[iy];
+    }
+    inline const double get_z(int iz) const {
+        return z_vec[iz];
+    }
+
+private:
+    PhysicalParameters *params;
+
+    std::vector<double> x_vec;
+    std::vector<double> y_vec;
+    std::vector<double> z_vec;
+};
 
 #endif

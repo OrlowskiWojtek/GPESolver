@@ -9,6 +9,8 @@ public:
     virtual void on_params_loaded() = 0;
 
     virtual void save_data(const wavefunction_t&) = 0;
+    virtual void save_checkpoint(const wavefunction_t&) = 0;
+    virtual void save_initial_state(const wavefunction_t&) = 0;
     virtual void save_energies(const energies_container_t&) = 0;
 };
 

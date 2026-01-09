@@ -6,6 +6,7 @@ add_library(SolverManager
             filemanager/file_manager.cpp
             parameters/parameters.cpp
             manager/sim_manager.cpp
+            context/context.cpp
             solver/fft_context.cpp
             solver/fft_poisson_solver.cpp
             solver/fft_rt_split_solver.cpp

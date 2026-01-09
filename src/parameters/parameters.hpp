@@ -1,37 +1,8 @@
 #ifndef SOLVER_PARAMETERS_HPP
 #define SOLVER_PARAMETERS_HPP
 
-#include <array>
-#include <string>
 #include <vector>
-
-struct CalcStrategy {
-    enum class Type {
-        IMAGINARY_TIME,
-        REAL_TIME,
-        FULL,
-        SPEED_TEST
-    };
-
-    static const std::array<const char *, 4> TypeNames;
-
-    std::string to_string() {
-        return TypeNames[static_cast<size_t>(type)];
-    }
-
-    void from_string(const std::string &str) {
-        for (size_t i = 0; i < TypeNames.size(); ++i) {
-            if (str == TypeNames[i]) {
-                type = static_cast<Type>(i);
-                return;
-            }
-        }
-
-        type = CalcStrategy::Type::FULL;
-    }
-
-    Type type = CalcStrategy::Type::FULL;
-};
+#include "parameters/complex_param.hpp"
 
 /*! Struct PhysicalParameters.
  *  \brief contains parameters of simulation.
@@ -100,11 +71,6 @@ struct PhysicalParameters {
 
     bool load_initial_state;
 
-    double get_x(int ix);
-    double get_y(int iy);
-    double get_z(int iz);
-    double get_r(int ix, int iy, int iz);
-
     double get_dxdydz();
 
     void print();
@@ -112,8 +78,6 @@ struct PhysicalParameters {
     void init_parameters();
 
 private:
-    void init_r();
-
     std::vector<double> x_vec;
     std::vector<double> y_vec;
     std::vector<double> z_vec;

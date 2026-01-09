@@ -73,7 +73,7 @@ void FileManager::load_params() {
     check_params();
 }
 
-void FileManager::save_to_text_file(wavefunction_t &psi,  std::string filename) {
+void FileManager::save_to_text_file(const wavefunction_t &psi,  std::string filename) {
     filename.append(TEXT_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to text file: " + std::string(filename));
 
@@ -148,7 +148,7 @@ void FileManager::check_params() {
     }
 }
 
-void FileManager::save_to_binary_file(wavefunction_t &psi, std::string filename) {
+void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string filename) {
     filename.append(BINARY_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to binary file: " + filename);
 
@@ -212,7 +212,7 @@ void FileManager::load_from_binary_file(std::string filename) {
     file.close();
 }
 
-void FileManager::save_energies(energies_container_t &energies) {
+void FileManager::save_energies(const energies_container_t &energies) {
     std::string FILENAME = std::string(ENERGIES_FILENAME);
     OutputFormatter::printInfo("Saving energies to: " + FILENAME);
 
