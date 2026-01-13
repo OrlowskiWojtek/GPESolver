@@ -1,5 +1,15 @@
 #include "context/context.hpp"
 
+SimulationContext* SimulationContext::instance = nullptr;
+
+SimulationContext* SimulationContext::getInstance(){
+    if(instance == nullptr){
+        instance = new SimulationContext;
+    }
+
+    return instance;
+}
+
 SimulationContext::SimulationContext()
     : params(PhysicalParameters::getInstance()) {
 }

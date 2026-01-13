@@ -40,10 +40,10 @@ private:
     // current norm of wavefunction
     double xnorma;
 
-    std::unique_ptr<SimulationContext> sctx;
     std::unique_ptr<PoissonSolver> poisson_solver;
     std::unique_ptr<RealTimeSplitSolver> rt_split_solver;
-    AbstractSimulationMediator* mediator;
+    AbstractSimulationMediator* p_mediator;
+    SimulationContext* p_sctx;
 
     void calc_initial_state();
     void calc_evolution();
@@ -51,9 +51,6 @@ private:
     void run_speed_test();
 
     void init_containers();
-    void init_with_cos();
-    void init_with_gauss();
-    void init_with_multiple_gauss();
     void init_potential();
     void free_potential_well();
     void imag_time_iter();

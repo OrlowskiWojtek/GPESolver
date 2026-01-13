@@ -60,16 +60,17 @@ struct PhysicalParameters {
     //! Distance per node - z direction.
     double dz;
 
-    //! Calculation strategy (options)
-    CalcStrategy calc_strategy;
-
     //! Number of gaussian maximas to initialize
     int n_gauss_max;
 
     // Number of threads used in FFTW calculations.
     int fftw_n_threads = 1;
 
-    bool load_initial_state;
+    //! Calculation strategy (options)
+    CalcStrategy calc_strategy;
+
+    //! Initialization option
+    InitializationOption init_strategy;
 
     double get_dxdydz();
 

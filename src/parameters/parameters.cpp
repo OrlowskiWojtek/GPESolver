@@ -17,7 +17,6 @@ void PhysicalParameters::set_default_values() {
     nz = 20 * 2 + 1;
 
     edd                = 1.45;
-    load_initial_state = false;
 
     dx = UnitConverter::len_nm_to_au(150);
     dy = UnitConverter::len_nm_to_au(150);
@@ -59,7 +58,6 @@ void PhysicalParameters::print() {
     OutputFormatter::printBoxedMessage("Parameters");
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Load initial state:");
-    OutputFormatter::printBoxedMessage(load_initial_state ? "Yes" : "No");
     OutputFormatter::printBoxedMessage("Calculation strategy:");
     OutputFormatter::printBoxedMessage(calc_strategy.to_string());
     OutputFormatter::printBoxedMessage("Initial gaussian maximas:");

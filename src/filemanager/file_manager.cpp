@@ -23,7 +23,6 @@ void FileManager::save_params() {
 
     nlohmann::json j;
     j["n_atoms"]            = params->n_atoms;
-    j["load_initial_state"] = params->load_initial_state;
     j["m"]                  = UnitConverter::mass_au_to_Da(params->m);
     j["dd"]                 = UnitConverter::len_au_to_nm(params->dd);
     j["dx"]                 = UnitConverter::len_au_to_nm(params->dx);
@@ -55,7 +54,6 @@ void FileManager::load_params() {
     file.close();
 
     params->n_atoms            = j["n_atoms"];
-    params->load_initial_state = j["load_initial_state"];
     params->m                  = UnitConverter::mass_Da_to_au(j["m"]);
     params->dd                 = UnitConverter::len_nm_to_au(j["dd"]);
     params->edd                = j["edd"];

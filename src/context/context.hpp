@@ -27,15 +27,9 @@ using energies_t           = BECEnergies;
 // For further implementation
 class SimulationContext {
 public:
-    SimulationContext();
-    // void init_containers();
-
-    // void init_with_cos();
-    // void init_with_gauss();
-    // void init_from_file();
-
-    // void calc_norm();
-    // void normalize();
+    static SimulationContext* getInstance();
+    //void calc_norm();
+    //void normalize();
 
     // void init_potential();
     // void free_potential_well();
@@ -64,6 +58,9 @@ private:
     std::vector<double> x_vec;
     std::vector<double> y_vec;
     std::vector<double> z_vec;
+
+    SimulationContext();
+    static SimulationContext* instance;
 };
 
 #endif
