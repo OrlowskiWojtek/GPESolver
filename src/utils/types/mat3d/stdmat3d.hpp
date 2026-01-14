@@ -21,12 +21,14 @@ public:
 
     // at operator
     inline T &operator()(int nx, int ny, int nz) noexcept;
+    inline const T &operator()(int nx, int ny, int nz) const noexcept;
 
-    inline int get_index(int i, int j, int k) noexcept {
+    inline int get_index(int i, int j, int k) const noexcept {
         return (i * _ny + j) * _nz + k;
     }
 
     inline T &operator()(int idx) noexcept;
+    inline const  T &operator()(int idx) const noexcept;
 
 private:
     int _nx, _ny, _nz;
@@ -35,7 +37,12 @@ private:
 };
 
 template <class T>
-T &StdMat3D<T>::operator()(int idx) noexcept {
+inline const T &StdMat3D<T>::operator()(int idx) const noexcept {
+    return data[idx];
+}
+
+template <class T>
+inline T &StdMat3D<T>::operator()(int idx) noexcept {
     return data[idx];
 }
 
@@ -66,6 +73,11 @@ void StdMat3D<T>::resize(int nx, int ny, int nz) {
     N   = nx * ny * nz;
 
     data.resize(nx * ny * nz, 0);
+}
+
+template <class T>
+inline const T &StdMat3D<T>::operator()(int i, int j, int k) const noexcept {
+    return data[get_index(i, j, k)];
 }
 
 template <class T>

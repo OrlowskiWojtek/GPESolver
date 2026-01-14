@@ -1,17 +1,10 @@
-#include "include/params.hpp"
-#include "include/output.hpp"
+#include "parameters/parameters.hpp"
+#include "output.hpp"
 #include "units.hpp"
 #include <cassert>
 #include <cmath>
 
 PhysicalParameters *PhysicalParameters::instance = nullptr;
-
-const std::array<const char *, 4> CalcStrategy::TypeNames = {
-    "IT", //!< imaginary time evolution
-    "RT", //!< real time evolution
-    "FS", //!< full simulation (imaginary + real)
-    "ST"  //!< speed test
-};
 
 void PhysicalParameters::set_default_values() {
     n_atoms = 4e4;
@@ -24,7 +17,6 @@ void PhysicalParameters::set_default_values() {
     nz = 20 * 2 + 1;
 
     edd                = 1.45;
-    load_initial_state = false;
 
     dx = UnitConverter::len_nm_to_au(150);
     dy = UnitConverter::len_nm_to_au(150);
@@ -55,63 +47,39 @@ void PhysicalParameters::init_parameters() {
 
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
-
-    init_r();
-}
-
-void PhysicalParameters::init_r() {
-    r_matrix.resize(nx, ny, nz);
-
-    x_vec.resize(nx);
-    y_vec.resize(ny);
-    z_vec.resize(nz);
-
-    for (int i = 0; i < nx; i++) {
-        double x = (i - (static_cast<int>(nx / 2.) + 1)) * dx;
-        x_vec[i] = x;
-        for (int j = 0; j < ny; j++) {
-            double y = (j - (static_cast<int>(ny / 2.) + 1)) * dy;
-            y_vec[j] = y;
-            for (int k = 0; k < nz; k++) {
-                double z          = (k - (static_cast<int>(nz / 2.) + 1)) * dz;
-                r_matrix(i, j, k) = std::sqrt(x * x + y * y + z * z);
-                z_vec[k]          = z;
-            }
-        }
-    }
-}
-
-double PhysicalParameters::get_x(int ix) {
-    return x_vec[ix];
-}
-
-double PhysicalParameters::get_y(int iy) {
-    return y_vec[iy];
-}
-
-double PhysicalParameters::get_z(int iz) {
-    return z_vec[iz];
 }
 
 double PhysicalParameters::get_dxdydz() {
     return dxdydz;
 }
 
-double PhysicalParameters::get_r(int ix, int iy, int iz) {
-    return r_matrix(ix, iy, iz);
+void PhysicalParameters::print_initialization(){
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Initialization method:");
+    OutputFormatter::printBoxedMessage(init_strategy.to_string());
+    if(init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS){
+        OutputFormatter::printBoxedMessage("Number of initial maximas:");
+        OutputFormatter::printBoxedMessage(n_gauss_max);
+    }
+    if(init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE){
+        OutputFormatter::printBoxedMessage("Binary file name:");
+        OutputFormatter::printBoxedMessage(load_filename);
+    }
+    if(init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE){
+        OutputFormatter::printBoxedMessage("Text file name:");
+        OutputFormatter::printBoxedMessage(load_filename);
+    }
+
+    OutputFormatter::printBorderLine();
 }
 
 void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Parameters");
     OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Load initial state:");
-    OutputFormatter::printBoxedMessage(load_initial_state ? "Yes" : "No");
     OutputFormatter::printBoxedMessage("Calculation strategy:");
     OutputFormatter::printBoxedMessage(calc_strategy.to_string());
-    OutputFormatter::printBoxedMessage("Initial gaussian maximas:");
-    OutputFormatter::printBoxedMessage(n_gauss_max);
-    OutputFormatter::printBorderLine();
+    print_initialization();
     OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
     OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
     OutputFormatter::printBoxedMessage("Scattering length (nm): ",

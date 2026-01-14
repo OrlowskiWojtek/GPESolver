@@ -1,44 +1,11 @@
 #ifndef SOLVER_PARAMETERS_HPP
 #define SOLVER_PARAMETERS_HPP
 
-#include "mat3d/stdmat3d.hpp"
-#include <array>
-#include <string>
-
-struct CalcStrategy {
-    enum class Type {
-        IMAGINARY_TIME,
-        REAL_TIME,
-        FULL,
-        SPEED_TEST
-    };
-
-    static const std::array<const char *, 4> TypeNames;
-
-    std::string to_string() {
-        return TypeNames[static_cast<size_t>(type)];
-    }
-
-    void from_string(const std::string &str) {
-        for (size_t i = 0; i < TypeNames.size(); ++i) {
-            if (str == TypeNames[i]) {
-                type = static_cast<Type>(i);
-                return;
-            }
-        }
-
-        type = CalcStrategy::Type::FULL;
-    }
-
-    Type type = CalcStrategy::Type::FULL;
-};
+#include "parameters/complex_param.hpp"
 
 /*! Struct PhysicalParameters.
- *  \brief contains physical parameters of simulation.
+ *  \brief contains parameters of simulation.
  *
- *  For now original names of parameters are kept.
- *  References for used values:
- *  [1]
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;
@@ -92,36 +59,31 @@ struct PhysicalParameters {
     //! Distance per node - z direction.
     double dz;
 
-    //! Calculation strategy (options)
-    CalcStrategy calc_strategy;
-
-    //! Number of gaussian maximas to initialize
-    int n_gauss_max;
-
     // Number of threads used in FFTW calculations.
     int fftw_n_threads = 1;
 
-    bool load_initial_state;
+    //! Number of gaussian maximas to initialize
+    //! Used only if initializing from multiple gaussians.
+    int n_gauss_max;
 
-    double get_x(int ix);
-    double get_y(int iy);
-    double get_z(int iz);
-    double get_r(int ix, int iy, int iz);
+    //! Filename to load data from.
+    //! Used only when initializing from file.
+    std::string load_filename;
+
+    //! Calculation strategy (options)
+    CalcStrategy calc_strategy;
+
+    //! Initialization option
+    InitializationOption init_strategy;
 
     double get_dxdydz();
 
     void print();
+    void print_initialization();
     void set_default_values();
     void init_parameters();
 
 private:
-    void init_r();
-
-    StdMat3D<double> r_matrix;
-    std::vector<double> x_vec;
-    std::vector<double> y_vec;
-    std::vector<double> z_vec;
-
     double dxdydz;
 
     PhysicalParameters() {};

@@ -1,12 +1,12 @@
-#include "include/solver.hpp"
-#include "solver/include/solver.hpp"
-#include "include/output.hpp"
+#include "output.hpp"
+#include "manager/sim_manager.hpp"
 
 int main(int argc, char** argv) {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Gross Pitaevski Equation Solver");
     OutputFormatter::printBorderLine();
 
-    GrossPitaevskiSolver solver;
-    solver.solve();
+    std::unique_ptr<SimulationManager> manager = std::make_unique<SimulationManager>();
+    manager->initialize();
+    manager->run_simulation();
 }

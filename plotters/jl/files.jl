@@ -1,6 +1,6 @@
 include("context.jl")
 
-const DATA_DIR = "../../build/run_3_max"
+const DATA_DIR = "../../build/"
 
 function load_from_binary(file_path::String)
     file    = open(file_path, "r")

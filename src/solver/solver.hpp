@@ -1,13 +1,12 @@
 #ifndef GPE_SOLVER_HPP
 #define GPE_SOLVER_HPP
 
-#include "include/fft_rt_split_solver.hpp"
-#include "include/params.hpp"
-#include "include/fft_poisson_solver.hpp"
-#include "include/file_manager.hpp"
-#include "include/context.hpp"
-#include "mat3d/stdmat3d.hpp"
-#include <complex>
+#include "parameters/parameters.hpp"
+#include "solver/fft_rt_split_solver.hpp"
+#include "solver/fft_poisson_solver.hpp"
+#include "manager/sim_mediator.hpp"
+
+#include "context/context.hpp"
 #include <memory>
 
 /*! Solver of time dependent Gross Pitaevski equation.
@@ -16,33 +15,35 @@
  */
 class GrossPitaevskiSolver {
 public:
-    GrossPitaevskiSolver();
+    GrossPitaevskiSolver(AbstractSimulationMediator* mediator);
     void solve();
 
+    void initialize();
+    void load_buffer(const wavefunction_t&);
 private:
     PhysicalParameters *params;
 
     //! Containers
-    //! Wavefunction of bec - copy for calculations.
-    StdMat3D<std::complex<double>> cpsii;
-
-    //! Wavefunction of bec - copy for calculations.
-    StdMat3D<std::complex<double>> cpsi;
+    //! Wavefunction of bec + copy for calculations.
+    wavefunction_t cpsii;
+    wavefunction_t cpsi;
 
     //! Map of dipole-dipole potential - copy
-    StdMat3D<double> fi3d;
+    potential_t fi3d;
 
     //! Map of external potential
-    StdMat3D<double> pote;
+    potential_t pote;
 
-    BECEnergies _enes;
+    energies_container_t enes;
+    energies_t ene;
 
     // current norm of wavefunction
     double xnorma;
 
     std::unique_ptr<PoissonSolver> poisson_solver;
     std::unique_ptr<RealTimeSplitSolver> rt_split_solver;
-    std::unique_ptr<FileManager> file_manager;
+    AbstractSimulationMediator* p_mediator;
+    SimulationContext* p_sctx;
 
     void calc_initial_state();
     void calc_evolution();
@@ -50,9 +51,6 @@ private:
     void run_speed_test();
 
     void init_containers();
-    void init_with_cos();
-    void init_with_gauss();
-    void init_with_multiple_gauss();
     void init_potential();
     void free_potential_well();
     void imag_time_iter();

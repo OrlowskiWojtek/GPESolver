@@ -1,9 +1,8 @@
 #ifndef FFT_CONTEXT_HPP
 #define FFT_CONTEXT_HPP
 
-#include "include/params.hpp"
-#include "mat3d/stdmat3d.hpp"
-#include <complex>
+#include "parameters/parameters.hpp"
+#include "context/context.hpp"
 #include <fftw3.h>
 
 /*! class FFT_CONTEXT.
@@ -15,7 +14,7 @@ public:
     FFTContext();
     virtual ~FFTContext();
 
-    void prepare(StdMat3D<std::complex<double>>* psi, StdMat3D<double>* fi3d);
+    void prepare(wavefunction_t* psi, potential_t* fi3d);
     virtual void execute() = 0;
 
 private:
@@ -23,8 +22,8 @@ private:
     virtual void prepare_containers() = 0;
 
 protected:
-    StdMat3D<std::complex<double>>* psi;
-    StdMat3D<double>* fi3d;
+    wavefunction_t* psi;
+    potential_t* fi3d;
     PhysicalParameters* p;
 
     static int FFTW_N_THREADS;

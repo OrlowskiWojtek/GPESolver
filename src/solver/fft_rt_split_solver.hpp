@@ -1,7 +1,7 @@
 #ifndef REAL_TIME_SPLIT_SOLVER_HPP
 #define REAL_TIME_SPLIT_SOLVER_HPP
 
-#include "include/fft_context.hpp"
+#include "solver/fft_context.hpp"
 #include <fftw3.h>
 
 /*! class RealTimeSplitSolver.

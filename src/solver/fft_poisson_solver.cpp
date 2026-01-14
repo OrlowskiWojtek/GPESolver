@@ -1,6 +1,6 @@
-#include "include/fft_poisson_solver.hpp"
-#include "include/output.hpp"
-#include "include/params.hpp"
+#include "solver/fft_poisson_solver.hpp"
+#include "output.hpp"
+#include "parameters/parameters.hpp"
 #include <cmath>
 #include <fftw3.h>
 
