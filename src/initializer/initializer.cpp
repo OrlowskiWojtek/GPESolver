@@ -28,7 +28,7 @@ void DataInitializer::initialize_wavefunction() {
         init_from_text_file();
         break;
     }
-    
+
     p_mediator->on_data_initialized(_data);
 }
 
@@ -36,6 +36,7 @@ void DataInitializer::init_with_cos() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
+    _data.resize(nx, ny, nz);
 
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
@@ -58,15 +59,16 @@ void DataInitializer::init_with_cos() {
     }
 }
 
-void DataInitializer::init_with_gaussian(){
+void DataInitializer::init_with_gaussian() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
+    _data.resize(nx, ny, nz);
 
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
-                double x = p_sctx->get_x(i) - UnitConverter::len_nm_to_au(1500.);
+                double x = p_sctx->get_x(i);
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
 
@@ -79,16 +81,17 @@ void DataInitializer::init_with_gaussian(){
                              std::exp(-0.5 * (z * z) / (sigma_z * sigma_z));
 
                 std::complex<double> cval = std::complex<double>(val, 0.);
-                _data(i, j, k)             = cval;
+                _data(i, j, k)            = cval;
             }
         }
     }
 }
 
-void DataInitializer::init_with_multiple_gaussian(){
+void DataInitializer::init_with_multiple_gaussian() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
+    _data.resize(nx, ny, nz);
 
     int n_maximas = params->n_gauss_max;
     std::vector<double> centers_x(n_maximas);
@@ -138,8 +141,16 @@ void DataInitializer::init_with_multiple_gaussian(){
                 }
 
                 std::complex<double> cval = std::complex<double>(val, 0.);
-                _data(i, j, k)             = cval;
+                _data(i, j, k)            = cval;
             }
         }
     }
+}
+
+void DataInitializer::init_from_text_file() {
+    p_mediator->request_load_from_text(_data);
+}
+
+void DataInitializer::init_from_binary_file() {
+    p_mediator->request_load_from_binary(_data);
 }

@@ -1,7 +1,7 @@
 #include "filemanager/file_manager.hpp"
 #include "context/context.hpp"
-#include "output.hpp"
 #include "nlohmann/json.hpp"
+#include "output.hpp"
 #include "units.hpp"
 #include <fstream>
 
@@ -22,19 +22,21 @@ void FileManager::save_params() {
     OutputFormatter::printInfo("Saving simulation parameters to" + std::string(PARAMS_FILENAME));
 
     nlohmann::json j;
-    j["n_atoms"]            = params->n_atoms;
-    j["m"]                  = UnitConverter::mass_au_to_Da(params->m);
-    j["dd"]                 = UnitConverter::len_au_to_nm(params->dd);
-    j["dx"]                 = UnitConverter::len_au_to_nm(params->dx);
-    j["dy"]                 = UnitConverter::len_au_to_nm(params->dy);
-    j["dz"]                 = UnitConverter::len_au_to_nm(params->dz);
-    j["nx"]                 = params->nx;
-    j["ny"]                 = params->ny;
-    j["nz"]                 = params->nz;
-    j["edd"]                = params->edd;
-    j["fftw_n_threads"]     = params->fftw_n_threads;
-    j["calc_strategy"]      = params->calc_strategy.to_string();
-    j["initial_maximas"]    = params->n_gauss_max;
+    j["n_atoms"]         = params->n_atoms;
+    j["m"]               = UnitConverter::mass_au_to_Da(params->m);
+    j["dd"]              = UnitConverter::len_au_to_nm(params->dd);
+    j["dx"]              = UnitConverter::len_au_to_nm(params->dx);
+    j["dy"]              = UnitConverter::len_au_to_nm(params->dy);
+    j["dz"]              = UnitConverter::len_au_to_nm(params->dz);
+    j["nx"]              = params->nx;
+    j["ny"]              = params->ny;
+    j["nz"]              = params->nz;
+    j["edd"]             = params->edd;
+    j["fftw_n_threads"]  = params->fftw_n_threads;
+    j["calc_strategy"]   = params->calc_strategy.to_string();
+    j["init_strategy"]   = params->init_strategy.to_string();
+    j["load_filename"]   = params->load_filename;
+    j["initial_maximas"] = params->n_gauss_max;
 
     std::ofstream file(PARAMS_FILENAME);
     file << j.dump(4);
@@ -42,7 +44,8 @@ void FileManager::save_params() {
 }
 
 void FileManager::load_params() {
-    OutputFormatter::printInfo("Loading simulation parameters from: " + std::string(PARAMS_FILENAME));
+    OutputFormatter::printInfo("Loading simulation parameters from: " +
+                               std::string(PARAMS_FILENAME));
 
     std::ifstream file(PARAMS_FILENAME);
     if (!file.is_open()) {
@@ -53,25 +56,27 @@ void FileManager::load_params() {
     file >> j;
     file.close();
 
-    params->n_atoms            = j["n_atoms"];
-    params->m                  = UnitConverter::mass_Da_to_au(j["m"]);
-    params->dd                 = UnitConverter::len_nm_to_au(j["dd"]);
-    params->edd                = j["edd"];
-    params->dx                 = UnitConverter::len_nm_to_au(j["dx"]);
-    params->dy                 = UnitConverter::len_nm_to_au(j["dy"]);
-    params->dz                 = UnitConverter::len_nm_to_au(j["dz"]);
-    params->nx                 = j["nx"];
-    params->ny                 = j["ny"];
-    params->nz                 = j["nz"];
-    params->fftw_n_threads     = j["fftw_n_threads"];
-    params->n_gauss_max        = j["initial_maximas"];
+    params->n_atoms        = j["n_atoms"];
+    params->m              = UnitConverter::mass_Da_to_au(j["m"]);
+    params->dd             = UnitConverter::len_nm_to_au(j["dd"]);
+    params->edd            = j["edd"];
+    params->dx             = UnitConverter::len_nm_to_au(j["dx"]);
+    params->dy             = UnitConverter::len_nm_to_au(j["dy"]);
+    params->dz             = UnitConverter::len_nm_to_au(j["dz"]);
+    params->nx             = j["nx"];
+    params->ny             = j["ny"];
+    params->nz             = j["nz"];
+    params->fftw_n_threads = j["fftw_n_threads"];
+    params->load_filename  = j["load_filename"];
+    params->n_gauss_max    = j["initial_maximas"];
     params->calc_strategy.from_string(j["calc_strategy"]);
+    params->init_strategy.from_string(j["init_strategy"]);
 
     mediator->on_params_loaded();
     check_params();
 }
 
-void FileManager::save_to_text_file(const wavefunction_t &psi,  std::string filename) {
+void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filename) {
     filename.append(TEXT_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to text file: " + std::string(filename));
 
@@ -130,8 +135,46 @@ void FileManager::load_from_text_file(std::string filename) {
         }
     }
 
-    mediator->on_data_loaded(psi_loading_buffer);
     file.close();
+    mediator->on_data_loaded(psi_loading_buffer);
+}
+
+void FileManager::load_from_text_file(std::string filename,
+                                      std::function<void(wavefunction_t &)> callback) {
+    filename.append(TEXT_FILE_EXTENSION);
+    OutputFormatter::printInfo("Loading from text file: " + filename);
+
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open initial state file for reading.");
+    }
+
+    int nx;
+    int ny;
+    int nz;
+    file >> nx >> ny >> nz;
+
+    if (nx != params->nx || ny != params->ny || nz != params->nz) {
+        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    psi_loading_buffer.resize(nx, ny, nz);
+
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                double re, im;
+                file >> re >> im;
+                psi_loading_buffer(i, j, k) = std::complex<double>(re, im);
+            }
+        }
+    }
+
+    file.close();
+    if (callback) {
+        callback(psi_loading_buffer);
+    }
 }
 
 void FileManager::check_params() {
@@ -206,8 +249,44 @@ void FileManager::load_from_binary_file(std::string filename) {
         psi_loading_buffer(i) = std::complex<double>(real, imag);
     }
 
-    mediator->on_data_loaded(psi_loading_buffer);
     file.close();
+    mediator->on_data_loaded(psi_loading_buffer);
+}
+
+void FileManager::load_from_binary_file(std::string filename,
+                                        std::function<void(wavefunction_t &)> callback) {
+    filename.append(BINARY_FILE_EXTENSION);
+    OutputFormatter::printInfo("Loading from binary file: " + filename);
+
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open last state file for reading.");
+    }
+
+    int nx_file, ny_file, nz_file;
+    file.read(reinterpret_cast<char *>(&nx_file), sizeof(int));
+    file.read(reinterpret_cast<char *>(&ny_file), sizeof(int));
+    file.read(reinterpret_cast<char *>(&nz_file), sizeof(int));
+
+    if (nx_file != params->nx || ny_file != params->ny || nz_file != params->nz) {
+        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    psi_loading_buffer.resize(nx_file, ny_file, nz_file);
+
+    for (size_t i = 0; i < psi_loading_buffer.size(); i++) {
+        double real, imag;
+        file.read(reinterpret_cast<char *>(&real), sizeof(double));
+        file.read(reinterpret_cast<char *>(&imag), sizeof(double));
+
+        psi_loading_buffer(i) = std::complex<double>(real, imag);
+    }
+
+    file.close();
+    if (callback) {
+        callback(psi_loading_buffer);
+    }
 }
 
 void FileManager::save_energies(const energies_container_t &energies) {

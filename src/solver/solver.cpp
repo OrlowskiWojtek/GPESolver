@@ -16,7 +16,6 @@ GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator *mediator)
 }
 
 void GrossPitaevskiSolver::initialize() {
-    p_sctx->initialize();
     init_containers();
 
     poisson_solver->prepare(&cpsi, &fi3d);
@@ -363,7 +362,7 @@ void GrossPitaevskiSolver::real_fft_potential_half_step() {
     double w         = params->n_atoms;
     double dt_factor = NumericalParameters::real_time_dt / 2.;
 
-    for (int i = 0; i < nx - 1; i++) {
+    for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
                 double v_ext   = pote(i, j, k);

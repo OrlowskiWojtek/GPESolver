@@ -9,8 +9,8 @@ public:
     virtual void on_data_initialized(const wavefunction_t& ) = 0;
     virtual void on_params_loaded() = 0;
 
-    //virtual void request_load_from_binary();
-    //virtual void request_load_from_text();
+    virtual void request_load_from_binary(wavefunction_t&) = 0;
+    virtual void request_load_from_text(wavefunction_t&) = 0;
 
     virtual void save_data(const wavefunction_t&) = 0;
     virtual void save_checkpoint(const wavefunction_t&) = 0;

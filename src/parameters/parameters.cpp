@@ -53,16 +53,33 @@ double PhysicalParameters::get_dxdydz() {
     return dxdydz;
 }
 
+void PhysicalParameters::print_initialization(){
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Initialization method:");
+    OutputFormatter::printBoxedMessage(init_strategy.to_string());
+    if(init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS){
+        OutputFormatter::printBoxedMessage("Number of initial maximas:");
+        OutputFormatter::printBoxedMessage(n_gauss_max);
+    }
+    if(init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE){
+        OutputFormatter::printBoxedMessage("Binary file name:");
+        OutputFormatter::printBoxedMessage(load_filename);
+    }
+    if(init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE){
+        OutputFormatter::printBoxedMessage("Text file name:");
+        OutputFormatter::printBoxedMessage(load_filename);
+    }
+
+    OutputFormatter::printBorderLine();
+}
+
 void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Parameters");
     OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Load initial state:");
     OutputFormatter::printBoxedMessage("Calculation strategy:");
     OutputFormatter::printBoxedMessage(calc_strategy.to_string());
-    OutputFormatter::printBoxedMessage("Initial gaussian maximas:");
-    OutputFormatter::printBoxedMessage(n_gauss_max);
-    OutputFormatter::printBorderLine();
+    print_initialization();
     OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
     OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
     OutputFormatter::printBoxedMessage("Scattering length (nm): ",

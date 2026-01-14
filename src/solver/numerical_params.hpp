@@ -4,7 +4,7 @@
 #include <cstddef>
 
 struct NumericalParameters {
-    static constexpr size_t iter_imag_evo   = 10000;
+    static constexpr size_t iter_imag_evo   = 100000;
     static constexpr size_t iter_real_evo   = 300000;
 
     static constexpr size_t iter_imag_speed_test = 500;

@@ -19,8 +19,8 @@ Plotting is done with Julia code using excellent Makie library.
 ## TODOS:
 - [*] make fft calculator
 - [*] write visualiser / plotter (meaby live) (3d isolines?)
-- [ ] Code refactor - managing object
-- [ ] Fix gaussians
-- [ ] Write initializator class
+- [*] Code refactor - managing object
+- [*] Fix gaussians
+- [*] Write initializator class
 - [ ] Move iteration numbers to parameter file
 - [ ] Write references

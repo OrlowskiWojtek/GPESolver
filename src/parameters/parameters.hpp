@@ -1,7 +1,6 @@
 #ifndef SOLVER_PARAMETERS_HPP
 #define SOLVER_PARAMETERS_HPP
 
-#include <vector>
 #include "parameters/complex_param.hpp"
 
 /*! Struct PhysicalParameters.
@@ -60,11 +59,16 @@ struct PhysicalParameters {
     //! Distance per node - z direction.
     double dz;
 
-    //! Number of gaussian maximas to initialize
-    int n_gauss_max;
-
     // Number of threads used in FFTW calculations.
     int fftw_n_threads = 1;
+
+    //! Number of gaussian maximas to initialize
+    //! Used only if initializing from multiple gaussians.
+    int n_gauss_max;
+
+    //! Filename to load data from.
+    //! Used only when initializing from file.
+    std::string load_filename;
 
     //! Calculation strategy (options)
     CalcStrategy calc_strategy;
@@ -75,14 +79,11 @@ struct PhysicalParameters {
     double get_dxdydz();
 
     void print();
+    void print_initialization();
     void set_default_values();
     void init_parameters();
 
 private:
-    std::vector<double> x_vec;
-    std::vector<double> y_vec;
-    std::vector<double> z_vec;
-
     double dxdydz;
 
     PhysicalParameters() {};

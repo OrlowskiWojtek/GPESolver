@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_library(SolverManager 
             filemanager/file_manager.cpp
+            initializer/initializer.cpp
             parameters/parameters.cpp
             manager/sim_manager.cpp
             context/context.cpp
