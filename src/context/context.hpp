@@ -6,6 +6,9 @@
 #include <parameters/parameters.hpp>
 #include <vector>
 
+//! struct BECEnergies.
+//!
+//! Stores energies of Bose-Einstein Condensate
 struct BECEnergies {
     double e_kin;   //!< Kinetic energy
     double e_pot;   //!< Potential energy
@@ -24,13 +27,15 @@ using potential_t          = StdMat3D<double>;
 using energies_container_t = std::vector<BECEnergies>;
 using energies_t           = BECEnergies;
 
-// For further implementation
+//! Class SimulationContext.
+//!
+//! \brief  used to store basic simulation containters like arrays of grid spaces;
 class SimulationContext {
 public:
     static SimulationContext* getInstance();
-    //void calc_norm();
-    //void normalize();
 
+    // void calc_norm();
+    // void normalize();
     // void init_potential();
     // void free_potential_well();
     // double pote_value(int ix, int iy, int iz);
@@ -41,13 +46,18 @@ public:
     // StdMat3D<double> potential;
     // StdMat3D<double> fi3d;
 
+    //! Initialize vectors based on loaded parameters.
     void initialize();
+
+    //! Return value of x at given index.
     inline const double get_x(int ix) const {
         return x_vec[ix];
     }
+    //! Return value of y at given index.
     inline const double get_y(int iy) const {
         return y_vec[iy];
     }
+    //! Return value of z at given index.
     inline const double get_z(int iz) const {
         return z_vec[iz];
     }
