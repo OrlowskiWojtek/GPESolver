@@ -99,9 +99,6 @@ void DataInitializer::init_with_multiple_gaussian() {
 
     for (int idx = 0; idx < n_maximas; idx++) {
         centers_x[idx] = idx % 2 ? params->dd : -params->dd;
-        if (n_maximas == 1) {
-            centers_x[idx] = 0;
-        }
 
         if (n_maximas % 2 == 1) {
             double y_offset = (idx + 1) * (params->ny * params->dy) / (n_maximas + 1);
