@@ -4,7 +4,7 @@ include("context.jl")
 include("files.jl")
 
 function animate_iso_bce(output_file::String)
-    files = filter(f -> occursin("checkpoint_", f) && endswith(f, ".bin"), readdir(DATA_DIR))
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(DATA_DIR))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
 
@@ -17,7 +17,7 @@ function animate_iso_bce(output_file::String)
                aspect=:data,
             )
 
-    BCEContext = load_from_binary(joinpath(DATA_DIR, files[1]))
+    BCEContext = load_from_text(joinpath(DATA_DIR, files[1]))
     rho = Observable(Array{Float64,3}(abs.(BCEContext.psi)))
     x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
 
@@ -41,6 +41,6 @@ function animate_iso_bce(output_file::String)
 
     record(fig, output_file, 1:n_frames; framerate=10) do frame
         println("loading frame", joinpath(DATA_DIR, files[frame]))
-        rho[] = abs.(load_from_binary(joinpath(DATA_DIR, files[frame])).psi)
+        rho[] = abs.(load_from_text(joinpath(DATA_DIR, files[frame])).psi)
     end
 end

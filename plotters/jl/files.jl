@@ -1,6 +1,7 @@
 include("context.jl")
 
 const DATA_DIR = "../../build/"
+TEMP_DATA_DIR = "../../../data/run_find_initial_states"
 
 function load_from_binary(file_path::String)
     file    = open(file_path, "r")
@@ -8,8 +9,8 @@ function load_from_binary(file_path::String)
     ny      = read(file, Int32)
     nz      = read(file, Int32)
 
-    dx      = 200
-    dy      = 200
+    dx      = 60
+    dy      = 60
     dz      = 500
 
     array_3d = zeros(ComplexF64, nx, ny, nz)
