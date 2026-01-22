@@ -44,3 +44,45 @@ function animate_iso_bce(output_file::String)
         rho[] = abs.(load_from_text(joinpath(DATA_DIR, files[frame])).psi)
     end
 end
+
+function plot_local_maxima_evolution()
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(DATA_DIR))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure(size = (1024, 768))
+    ax = Axis(fig[1, 1],
+              xlabel="X [nm]",
+              ylabel="Y [nm]",
+              title="Local Maxima Evolution",
+    )
+
+    all_maxima = Vector{Tuple{Float64, Float64, Float64, Int}}()
+
+    for (frame_idx, file) in enumerate(files)
+        println("loading frame", joinpath(DATA_DIR, file))
+        context = load_from_text(joinpath(DATA_DIR, file))
+        slice = get_BEC_slice(context)
+        maxima = find_local_maxima(slice)
+        coords = get_coordinates(slice, maxima)
+        for m in coords
+            push!(all_maxima, (m.x, m.y, m.value, frame_idx))
+        end
+    end
+
+    if !isempty(all_maxima)
+        xs = [m[1] for m in all_maxima]
+        ys = [m[2] for m in all_maxima]
+        frames = [m[4] for m in all_maxima]
+
+        scatter!(ax, xs, ys;
+                 color=frames,
+                 colormap=:viridis,
+                 markersize=8,
+                 strokewidth=0)
+        
+        Colorbar(fig[1, 2], label="Time Step")
+    end
+
+    return fig
+end
