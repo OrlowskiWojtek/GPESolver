@@ -387,4 +387,7 @@ void GrossPitaevskiSolver::real_fft_kinetic_step() {
 void GrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
     cpsii = wvf;
     cpsi  = wvf;
+
+    calc_norm();
+    normalize();
 }
