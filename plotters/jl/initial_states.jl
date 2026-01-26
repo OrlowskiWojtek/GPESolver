@@ -3,8 +3,7 @@ using CSV
 using CairoMakie
 
 CairoMakie.activate!()
-DATA_FILE = "../../../data/run_find_initial_states/energies.txt"
-
+DATA_FILE = "energies.txt"
 
 #= LOADS DATAFRAME AND SELECTS SEGMENTS FOR LOWEST ENERGY
 #
@@ -81,4 +80,4 @@ max_energy = maximum(df.e_total ./ (df.atom_number * 10^3)) * conv
 Legend(fig[2, 1], ax, orientation=:horizontal, tellwidth=false)
 
 fig
-save("lowest_energy_all_components.pdf", fig)
+#save("lowest_energy_all_components.pdf", fig)

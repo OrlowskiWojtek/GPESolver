@@ -65,3 +65,5 @@ function plot_slice(slice::IsoBECSlice)
 
     return fig;
 end
+
+

@@ -1,7 +1,7 @@
 include("context.jl")
 
-const DATA_DIR = "../../build/"
-TEMP_DATA_DIR = "../../../data/run_find_initial_states"
+#const DATA_DIR = "../../build/"
+TEMP_DATA_DIR = "../../../../data/run_30_atoms"
 
 function load_from_binary(file_path::String)
     file    = open(file_path, "r")
@@ -39,8 +39,8 @@ function load_from_text(file_path::String)
     ny      = parse(Int32, readline(file))
     nz      = parse(Int32, readline(file))
 
-    dx      = 200
-    dy      = 200
+    dx      = 60
+    dy      = 60
     dz      = 500
 
     array_3d = zeros(ComplexF64, nx, ny, nz)
@@ -167,4 +167,21 @@ function load_energies(filename::String)
     end
 
     return EnergiesContext(iter, e_kin, e_pot, e_int, e_ext, e_bmf, e_tot)
+end
+
+function load_directory_from_text(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    bec_data_vec = Vector{IsoBECContext}(undef, n_frames)
+
+    for (frame_idx, file) in enumerate(files)
+        println("loading frame", joinpath(data_dir, file))
+        context = load_from_text(joinpath(data_dir, file))
+    
+        bec_data_vec[frame_idx] = context
+    end
+
+    return bec_data_vec
 end

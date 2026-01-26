@@ -2,9 +2,10 @@ using GLMakie
 
 include("context.jl")
 include("files.jl")
+include("units.jl")
 
-function animate_iso_bce(output_file::String)
-    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(DATA_DIR))
+function animate_iso_bce(data_dir::String, output_file::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
 
@@ -17,7 +18,7 @@ function animate_iso_bce(output_file::String)
                aspect=:data,
             )
 
-    BCEContext = load_from_text(joinpath(DATA_DIR, files[1]))
+    BCEContext = load_from_text(joinpath(data_dir, files[1]))
     rho = Observable(Array{Float64,3}(abs.(BCEContext.psi)))
     x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
 
@@ -40,49 +41,44 @@ function animate_iso_bce(output_file::String)
     end
 
     record(fig, output_file, 1:n_frames; framerate=10) do frame
-        println("loading frame", joinpath(DATA_DIR, files[frame]))
-        rho[] = abs.(load_from_text(joinpath(DATA_DIR, files[frame])).psi)
+        println("loading frame", joinpath(data_dir, files[frame]))
+        rho[] = abs.(load_from_text(joinpath(data_dir, files[frame])).psi)
     end
 end
 
-function plot_local_maxima_evolution()
-    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(DATA_DIR))
-    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
-    n_frames = length(files)
+function plot_local_maxima_evolution(psi_vec::Vector{IsoBECContext})
+    fig = Figure()
+    ax = Axis(fig[1,1])
 
-    fig = Figure(size = (1024, 768))
-    ax = Axis(fig[1, 1],
-              xlabel="X [nm]",
-              ylabel="Y [nm]",
-              title="Local Maxima Evolution",
-    )
+    n_frames = length(psi_vec)
+    slice = get_BEC_slice(psi_vec[begin])
+    maxima = find_local_maxima(slice)
+    coords = get_coordinates(slice, maxima)
 
-    all_maxima = Vector{Tuple{Float64, Float64, Float64, Int}}()
+    n_becs = length(coords)
+    all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
 
-    for (frame_idx, file) in enumerate(files)
-        println("loading frame", joinpath(DATA_DIR, file))
-        context = load_from_text(joinpath(DATA_DIR, file))
+    for (idx, context) in enumerate(psi_vec)
         slice = get_BEC_slice(context)
         maxima = find_local_maxima(slice)
         coords = get_coordinates(slice, maxima)
-        for m in coords
-            push!(all_maxima, (m.x, m.y, m.value, frame_idx))
-        end
+
+        for (bec_idx, coord) in enumerate(coords)
+            push!(all_maxima[bec_idx], coord)
+        end 
     end
 
-    if !isempty(all_maxima)
-        xs = [m[1] for m in all_maxima]
-        ys = [m[2] for m in all_maxima]
-        frames = [m[4] for m in all_maxima]
+    frames = collect(1:length(psi_vec)) .* STEPS_PER_SAVE * time_au_to_us(TIME_STEP_AU)
+    for lmax in all_maxima
+        xs = [m.x for m in lmax]
+        ys = [m.y for m in lmax]
 
-        scatter!(ax, xs, ys;
-                 color=frames,
-                 colormap=:viridis,
-                 markersize=8,
-                 strokewidth=0)
-        
-        Colorbar(fig[1, 2], label="Time Step")
+        lines!(ax, xs, ys)
     end
+
+    xlims!(ax, (psi_vec[begin].x[begin], psi_vec[begin].x[end]))
+    ylims!(ax, (psi_vec[begin].y[begin], psi_vec[begin].y[end]))
+    #Colorbar(fig[1, 2], label="Time [μs]", limits = (0, frames[end]))
 
     return fig
 end

@@ -114,5 +114,29 @@ function get_coordinates(slice::IsoBECSlice, maxima::Vector{LocalMaximaGrid})
     return coords
 end
 
+function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1)
+    threshold = 0.5
+    n_max = 0;
+
+    slice   = get_BEC_slice(context)
+    rho     = abs.(slice.psi)
+
+    max_val = threshold * maximum(rho)
+    total_maximas = find_local_maxima(slice)
+
+    max_atoms = max_val * n_atoms
+    if(max_atoms < 1e-4)
+        @info "Low number of atoms in maximum: $max_val"
+    end
+
+    for m in total_maximas
+        if(m.value > max_val)
+            n_max += 1
+        end
+    end
+
+    return n_max
+end
+
 Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
 Base.show(io::IO, context::IsoBECSlice) = print(io, "BEC slice with size ($(context.nx), $(context.ny))")
