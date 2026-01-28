@@ -61,7 +61,9 @@ function plot_slice(slice::IsoBECSlice)
     ax = Axis(fig[1,1], xlabel = "x [nm]", ylabel = "y [nm]")
 
     rho = abs.(slice.psi)
-    heatmap!(ax, slice.x, slice.y, rho, colormap = :plasma)
+    hm = heatmap!(ax, slice.x, slice.y, rho, colormap = :plasma)
+    Colorbar(fig[1,2], hm, label = "|Ψ|")
+
 
     return fig;
 end

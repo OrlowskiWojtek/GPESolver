@@ -21,30 +21,44 @@ using GLMakie
 GLMakie.activate!()
 ##
 
-animate_iso_bce(TEMP_DATA_DIR, "bce_evolution.gif")
+using CairoMakie
+CairoMakie.activate!()
+##
+#animate_iso_bce(TEMP_DATA_DIR, "bce_evolution.gif")
 
 ##
 
-psi_vec = load_directory_from_text(TEMP_DATA_DIR)
+#psi_vec = load_directory_from_text(TEMP_DATA_DIR)
 
 ##
-
 fig = plot_local_maxima_evolution(psi_vec)
+save("eps_1_5_atoms_30k_1500nm.pdf", fig)
 
 ##
 
-plot_slice(get_BEC_slice(psi_vec[begin]))
+fig = plot_local_maxima_coordinates(psi_vec)
+save("coordinates_eps_1_5_atoms_30k_1500nm.pdf", fig)
 
 ##
 
-psi = load_from_text(joinpath(TEMP_DATA_DIR, "5k_atoms/1_max/initial_state.dat"))
+plot_slice(interpolate_slice(get_BEC_slice(psi_vec[begin])))
+
+##
+
+psi = load_from_text(joinpath("../../../data/run_find_initial_states", "6k_atoms/2_max/initial_state.dat"))
 #maxs = find_local_maxima(get_BEC_slice(psi))
-maxs = number_of_lmax(psi)
+#plot_iso_bce(psi)
+plot_slice(interpolate_slice(get_BEC_slice(psi)))
+#maxs = number_of_lmax(psi)
+#
+##
+psi_1 = get_BEC_slice(load_from_text(joinpath("../../../data/run_find_initial_states", "7k_atoms/1_max/initial_state.gpe.dat")))
+psi_2 = get_BEC_slice(load_from_text(joinpath("../../../data/run_find_initial_states", "7k_atoms/2_max/initial_state.gpe.dat")))
 
 ##
-plot_iso_bce(psi)
+plot_slice(psi_1)
 ##
-dist_dir = "../../../../data/run_find_initial_states"
+dist_dir = "../../../data/run_find_initial_states"
 maxs = Float64[]
 maxs_atoms = Float64[]
 maxs_atoms_per_bec = Float64[]
@@ -83,10 +97,12 @@ GLMakie.activate!()
 
 fig = Figure();
 ax = Axis(fig[1,1]);
-scatter!(ax, atoms, maxs, label = "max");
-scatter!(ax, atoms, maxs_atoms, label = "max atoms");
-scatter!(ax, atoms, maxs_atoms_per_bec, label = "max atoms / bec");
-vlines!(ax, [6], color = :black)
+scatter!(ax, atoms, maxs, label = "max", markersize = 10);
+scatter!(ax, atoms, maxs_atoms, label = "max atoms", markersize = 8);
+scatter!(ax, atoms, maxs_atoms_per_bec, label = "max atoms / bec", markersize = 6);
+#vlines!(ax, [6], color = :black)
 
 axislegend()
 display(fig)
+
+##

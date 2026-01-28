@@ -1,7 +1,7 @@
 include("context.jl")
 
-#const DATA_DIR = "../../build/"
-TEMP_DATA_DIR = "../../../../data/run_30_atoms"
+const DATA_DIR = "../../build/"
+TEMP_DATA_DIR = "../../../data/run_30_atoms"
 
 function load_from_binary(file_path::String)
     file    = open(file_path, "r")
@@ -169,6 +169,7 @@ function load_energies(filename::String)
     return EnergiesContext(iter, e_kin, e_pot, e_int, e_ext, e_bmf, e_tot)
 end
 
+# Function to load data from quick directory.
 function load_directory_from_text(data_dir::String)
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
@@ -180,7 +181,7 @@ function load_directory_from_text(data_dir::String)
         println("loading frame", joinpath(data_dir, file))
         context = load_from_text(joinpath(data_dir, file))
     
-        bec_data_vec[frame_idx] = context
+        bec_data_vec[frame_idx] = context 
     end
 
     return bec_data_vec

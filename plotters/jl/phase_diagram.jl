@@ -2,8 +2,10 @@ using DataFrames
 using CSV
 using Glob
 
+include("context.jl")
+
 # another approach; - load all output files, then find number of maximas assiociated to energy
-function gather_energy(dist_dir::String)
+function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
     df = DataFrame(atom_number=Int[],
                    max_number=Int[],
                    e_kin=Float64[],
@@ -54,13 +56,13 @@ function gather_energy(dist_dir::String)
                 atom_number = parse(Int, match(r"(\d+)k_atoms", atom_dir).captures[1])
                 max_number = parse(Int, match(r"(\d+)_max", basename(max_folder)).captures[1])
                 psi = load_from_text(psi_file)
-                l_maxes = number_of_lmax(psi)
+                l_maxes = number_of_lmax(psi;n_atoms = atom_number, condensation_threshold = 1e-6)
 
                 if(l_maxes != max_number)
                     @info "Number of condensates changed from $max_number to $l_maxes in $atom_number k atoms"
+                    max_number = l_maxes
                 end
 
-                max_number = l_maxes
                 push!(df, (atom_number,
                     max_number,
                     parse(Float64, numbers[2]),
@@ -73,10 +75,10 @@ function gather_energy(dist_dir::String)
         end
     end
 
-    CSV.write("energies.txt", df, delim=' ')
+    #CSV.write("energies.txt", df, delim=' ')
     return df
 end
 
 ##
 
-gather_energy("../../../../data/run_find_initial_states")
+gather_energy("../../../data/run_find_initial_states")

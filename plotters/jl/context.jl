@@ -1,21 +1,13 @@
-struct CutContext
-    data::Array{Float64,2}  # 2D array for the cut data
-    x::Vector{Float64}
-    y::Vector{Float64}
-    nx::Int
-    ny::Int
-    dx::Float64
-    dy::Float64
-end
+using Interpolations
 
 struct IsoBECContext
     psi::Array{ComplexF64,3}  # 3D array for the wavefunction data
     x::Vector{Float64}
     y::Vector{Float64}
     z::Vector{Float64}
-    nx::Int
-    ny::Int
-    nz::Int
+    nx::Int32
+    ny::Int32
+    nz::Int32
     dx::Float64
     dy::Float64
     dz::Float64
@@ -32,8 +24,8 @@ struct EnergiesContext
 end
 
 struct LocalMaximaGrid
-    i::Int
-    j::Int
+    i::Int32
+    j::Int32
     value::Float64
 end
 
@@ -47,8 +39,8 @@ struct IsoBECSlice
     psi::Array{ComplexF64,2}
     x::Vector{Float64}
     y::Vector{Float64}
-    nx::Int
-    ny::Int
+    nx::Int32
+    ny::Int32
     dx::Float64
     dy::Float64
 end
@@ -114,7 +106,7 @@ function get_coordinates(slice::IsoBECSlice, maxima::Vector{LocalMaximaGrid})
     return coords
 end
 
-function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1)
+function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1, condensation_threshold = nothing)
     threshold = 0.5
     n_max = 0;
 
@@ -124,18 +116,53 @@ function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1)
     max_val = threshold * maximum(rho)
     total_maximas = find_local_maxima(slice)
 
-    max_atoms = max_val * n_atoms
-    if(max_atoms < 1e-4)
-        @info "Low number of atoms in maximum: $max_val"
-    end
-
     for m in total_maximas
+        if(condensation_threshold != nothing)
+            if(m.value * n_atoms < condensation_threshold)
+                @info "Low number of atoms in maximum: $(m.value)"
+                continue 
+            end
+        end
         if(m.value > max_val)
             n_max += 1
         end
     end
 
     return n_max
+end
+
+# WARNING : changes phase of slice, do not use in calculations
+function interpolate_slice(slice::IsoBECSlice; size = (1000, 1000))
+    nx = size[1]
+    ny = size[2]
+    interpolated_psi = Array{Float64, 2}(undef, nx, ny)
+
+    xs_old = LinRange(slice.x[begin], slice.x[end], slice.nx)
+    ys_old = LinRange(slice.y[begin], slice.y[end], slice.ny)
+
+    xs = LinRange(slice.x[begin], slice.x[end], nx)
+    ys = LinRange(slice.y[begin], slice.y[end], ny)
+
+    dx = (xs[end] - xs[begin]) / nx
+    dy = (ys[end] - ys[begin]) / ny
+
+    itp = cubic_spline_interpolation((xs_old, ys_old), abs.(slice.psi))
+
+    for ix in eachindex(xs)
+        for iy in eachindex(ys)
+            interpolated_psi[ix, iy] = itp(xs[ix], ys[iy])
+        end
+    end
+
+    return IsoBECSlice(
+        interpolated_psi,
+        xs,
+        ys,
+        nx,
+        ny,
+        dx,
+        dy
+    )
 end
 
 Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
