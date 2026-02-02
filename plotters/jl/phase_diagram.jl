@@ -44,7 +44,8 @@ function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
             end
 
             open(energy_file, "r") do f
-                line = readline(f)
+                lines = readlines(f)
+                line = lines[end]
                 line = strip(line)
                 if isempty(line)
                     return
@@ -79,6 +80,128 @@ function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
     return df
 end
 
+function segmentize_dataframe(df)
+    grouped = groupby(df, :atom_number)
+    df.e_tot_ext = df.e_int .+ df.e_ext .+ df.e_bmf
+
+    lowest_energy = DataFrame()
+    for g in grouped
+        idx = argmin(g.e_total)
+        push!(lowest_energy, g[idx, :])
+    end
+
+    println("Loaded df: ", df)
+
+    segments = Vector{DataFrame}()
+    start_idx = 1
+    for i in 2:nrow(lowest_energy)
+        if lowest_energy.max_number[i] != lowest_energy.max_number[i-1]
+            push!(segments, lowest_energy[start_idx:i-1, :])
+            start_idx = i
+        end
+    end
+    push!(segments, lowest_energy[start_idx:end, :])  # Add the last segment
+
+    return segments;
+end
+
+function plot_segments(segments)
+    fig = Figure();
+    ax = Axis(fig[1, 1],
+              xlabel="N/10³",
+              ylabel="E/N (nK)")
+
+    conv = 27211.4 * 11.6*10^9
+    labels = ["Total", "Kinetic", "Potential", "Interaction"]
+    fields = [:e_total, :e_kin, :e_pot, :e_tot_ext]
+    colors = [:black, :orange, :red, :blue]
+
+    # For legend: only label the first segment for each energy type
+    legend_drawn = fill(false, length(fields))
+
+    for seg in segments
+        for (i, (field, label)) in enumerate(zip(fields, labels))
+            lines!(
+                ax,
+                seg.atom_number,
+                seg[!, field] * conv ./ (seg.atom_number * 10^3),
+                color = colors[i],
+                label = legend_drawn[i] ? nothing : label
+            )
+            legend_drawn[i] = true
+        end
+    end
+
+    for seg in segments[begin:end-1]
+        change_point = seg.atom_number[end] + 0.5
+        vlines!(ax, [change_point], color=:red, linestyle=:dash, linewidth=2)
+    end
+
+    Legend(fig[2, 1], ax, orientation=:horizontal, tellwidth=false)
+
+    return fig
+end
+
 ##
 
-gather_energy("../../../data/run_find_initial_states")
+df = gather_energy("../../../../data/run_find_initial_states")
+segments = segmentize_dataframe(df)
+
+##
+
+fig = plot_segments(segments)
+#save("eps_15_stable_phases.pdf", fig)
+
+##
+
+
+## Plot in order to find threshhold
+
+dist_dir = "../../../../data/run_find_initial_states"
+maxs = Float64[]
+maxs_atoms = Float64[]
+maxs_atoms_per_bec = Float64[]
+atoms = Float64[]
+for atom_folder in 1:50
+    atom_dir = joinpath(dist_dir, "$(atom_folder)k_atoms")
+    if !isdir(atom_dir)
+        continue
+    end
+
+    max_folders = glob("*_max", atom_dir)
+    for max_folder in max_folders
+        psi_file = joinpath(max_folder, "initial_state.gpe.dat")
+
+        if !isfile(psi_file)
+            psi_file = joinpath(max_folder, "initial_state.dat")
+        end
+
+        if !isfile(psi_file)
+            @error "No wavefunction file"
+        end
+
+        psi = load_from_text(psi_file)
+        slice = get_BEC_slice(psi)
+        n_lmax = number_of_lmax(psi)      
+
+        push!(maxs, maximum(abs.(slice.psi)))
+        push!(maxs_atoms, maximum(abs.(slice.psi)) * atom_folder)
+        push!(maxs_atoms_per_bec, maximum(abs.(slice.psi)) * atom_folder / n_lmax)
+        push!(atoms, atom_folder)
+    end
+end
+
+##
+GLMakie.activate!()
+
+fig = Figure();
+ax = Axis(fig[1,1]);
+scatter!(ax, atoms, maxs, label = "max", markersize = 10);
+scatter!(ax, atoms, maxs_atoms, label = "max atoms", markersize = 8);
+scatter!(ax, atoms, maxs_atoms_per_bec, label = "max atoms / bec", markersize = 6);
+#vlines!(ax, [6], color = :black)
+
+axislegend()
+display(fig)
+
+##

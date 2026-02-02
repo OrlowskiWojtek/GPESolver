@@ -1,7 +1,7 @@
 include("context.jl")
 
 const DATA_DIR = "../../build/"
-TEMP_DATA_DIR = "../../../data/run_30_atoms"
+TEMP_DATA_DIR = "../../../../data/run_40_atoms"
 
 function load_from_binary(file_path::String)
     file    = open(file_path, "r")
@@ -25,9 +25,9 @@ function load_from_binary(file_path::String)
         end
     end
 
-    x = collect(-div(nx, 2):div(nx, 2)) * dx
-    y = collect(-div(ny, 2):div(ny, 2)) * dy
-    z = collect(-div(nz, 2):div(nz, 2)) * dz
+    x = ((1:nx) .- (div(nx, 2) + 2)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 2)) .* dy
+    z = ((1:nz) .- (div(nz, 2) + 2)) .* dz
 
     close(file)
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
@@ -57,9 +57,9 @@ function load_from_text(file_path::String)
         end
     end
 
-    x = collect(-div(nx, 2):div(nx, 2)) * dx
-    y = collect(-div(ny, 2):div(ny, 2)) * dy
-    z = collect(-div(nz, 2):div(nz, 2)) * dz
+    x = ((1:nx) .- (div(nx, 2) + 2)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 2)) .* dy
+    z = ((1:nz) .- (div(nz, 2) + 2)) .* dz
 
     close(file)
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)

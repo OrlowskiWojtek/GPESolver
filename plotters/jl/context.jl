@@ -132,7 +132,7 @@ function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1, condensation
 end
 
 # WARNING : changes phase of slice, do not use in calculations
-function interpolate_slice(slice::IsoBECSlice; size = (1000, 1000))
+function interpolate_slice(slice::IsoBECSlice; size = (5000, 5000))
     nx = size[1]
     ny = size[2]
     interpolated_psi = Array{Float64, 2}(undef, nx, ny)
