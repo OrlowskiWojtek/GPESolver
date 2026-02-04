@@ -3,6 +3,17 @@ using CSV
 using Glob
 
 include("context.jl")
+include("files.jl")
+include("units.jl")
+
+function roman_from_idx(idx::Int)
+    romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+    if 1 ≤ idx ≤ length(romans)
+        return romans[idx]
+    else
+        error("Index out of range (0–9)")
+    end
+end
 
 # another approach; - load all output files, then find number of maximas assiociated to energy
 function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
@@ -40,6 +51,7 @@ function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
             end
 
             if !isfile(psi_file)
+                continue
                 @error "No wavefunction file"
             end
 
@@ -56,8 +68,8 @@ function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
                 end
                 atom_number = parse(Int, match(r"(\d+)k_atoms", atom_dir).captures[1])
                 max_number = parse(Int, match(r"(\d+)_max", basename(max_folder)).captures[1])
-                psi = load_from_text(psi_file)
-                l_maxes = number_of_lmax(psi;n_atoms = atom_number, condensation_threshold = 1e-6)
+                slice = load_slice_from_text(psi_file)
+                l_maxes = number_of_lmax(slice ;n_atoms = atom_number, condensation_threshold = 1e-9)
 
                 if(l_maxes != max_number)
                     @info "Number of condensates changed from $max_number to $l_maxes in $atom_number k atoms"
@@ -116,35 +128,128 @@ function plot_segments(segments)
     fields = [:e_total, :e_kin, :e_pot, :e_tot_ext]
     colors = [:black, :orange, :red, :blue]
 
-    # For legend: only label the first segment for each energy type
-    legend_drawn = fill(false, length(fields))
-
-    for seg in segments
+    for (seg_idx, seg) in enumerate(segments)
         for (i, (field, label)) in enumerate(zip(fields, labels))
+            ydata = seg[!, field] * conv ./ (seg.atom_number * 10^3)
+            xdata = seg.atom_number
+
             lines!(
                 ax,
-                seg.atom_number,
-                seg[!, field] * conv ./ (seg.atom_number * 10^3),
+                xdata,
+                ydata,
                 color = colors[i],
-                label = legend_drawn[i] ? nothing : label
             )
-            legend_drawn[i] = true
-        end
+
+            if(seg_idx == length(segments))
+                text_x_pos = 45
+                text!(
+                    ax,
+                    text_x_pos,
+                    ydata[end-3],
+                    text = labels[i],
+                    color = colors[i],
+                    align = (:center, :bottom),
+                    fontsize = 18)
+            end
+        end 
     end
 
-    for seg in segments[begin:end-1]
+    for (idx, seg) in enumerate(segments[begin:end-1])
         change_point = seg.atom_number[end] + 0.5
         vlines!(ax, [change_point], color=:red, linestyle=:dash, linewidth=2)
     end
 
-    Legend(fig[2, 1], ax, orientation=:horizontal, tellwidth=false)
+    for (idx, seg) in enumerate(segments[begin:end])
+        text!(ax,
+              seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.,
+              18.,
+              text = roman_from_idx(idx),
+              align = (:center, :bottom),
+              fontsize = 25)
+    end
+
+    ax.xticks = 0:5:50
+
+    return fig
+end
+
+function get_heights(segments, data_dist)
+    all_heights = Vector{Vector{Vector{BECHeight}}}()
+
+    for seg in segments
+        seg_heights = Vector{Vector{BECHeight}}()
+
+        for row in eachrow(seg)
+            atom_number = row.atom_number
+            max_number = row.max_number
+            max_folder = joinpath(data_dist, "$(atom_number)k_atoms", "$(max_number)_max")
+            psi_file = joinpath(max_folder, "initial_state.gpe.dat")
+            if !isfile(psi_file)
+                psi_file = joinpath(max_folder, "initial_state.dat")
+            end
+            if !isfile(psi_file)
+                @info "No wavefunction file for atom_number=$atom_number, max_number=$max_number"
+                continue
+            end
+            context = load_from_text(psi_file)
+            heights = get_BEC_heights(context)
+
+            push!(seg_heights, heights)
+        end
+
+        push!(all_heights, seg_heights)
+    end
+    return all_heights
+end
+
+function plot_heights(segments, seg_heights)
+    fig = Figure()
+    ax = Axis(fig[1, 1],
+              xlabel="N/10³",
+              ylabel="H (μm)")
+
+    for (seg_idx, (seg, heights)) in enumerate(zip(segments, seg_heights))
+        if isempty(heights)
+            continue
+        end
+
+        xs = seg.atom_number
+        n_becs = length(heights[begin])
+
+        plot_heights = [Float64[] for _i in 1:n_becs]
+        for bec_idx in 1:n_becs
+            for h in heights
+                push!(plot_heights[bec_idx], length_au_to_μm(h[bec_idx].height))
+            end
+        end 
+
+        for (idx, ph) in enumerate(plot_heights)
+            lines!(ax, xs, ph, color = :black)
+        end
+    end
+
+    for (idx, seg) in enumerate(segments[begin:end-1])
+        change_point = seg.atom_number[end] + 0.5
+        vlines!(ax, [change_point], color=:red, linestyle=:dash, linewidth=2)
+    end
+
+    for (idx, (seg, height)) in enumerate(zip(segments, seg_heights))
+        text!(ax,
+              seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.,
+              0.8 * length_au_to_μm((height[begin][end].height + height[end][end].height) / 2.),
+              text = roman_from_idx(idx),
+              align = (:center, :bottom),
+              fontsize = 25)
+    end
+
+    ax.xticks = 0:5:50
 
     return fig
 end
 
 ##
 
-df = gather_energy("../../../../data/run_find_initial_states")
+df = gather_energy("../../../data/run_find_initial_states_eps145")
 segments = segmentize_dataframe(df)
 
 ##
@@ -154,10 +259,18 @@ fig = plot_segments(segments)
 
 ##
 
+seg_heights = get_heights(segments, "../../../data/run_find_initial_states_eps145")
+
+##
+
+fig = plot_heights(segments, seg_heights)
+save("eps_145_heights.pdf", fig)
+
+##
 
 ## Plot in order to find threshhold
 
-dist_dir = "../../../../data/run_find_initial_states"
+dist_dir = "../../../data/run_find_initial_states_eps145"
 maxs = Float64[]
 maxs_atoms = Float64[]
 maxs_atoms_per_bec = Float64[]
@@ -177,12 +290,12 @@ for atom_folder in 1:50
         end
 
         if !isfile(psi_file)
-            @error "No wavefunction file"
+            @info "No wavefunction file"
+            continue
         end
 
-        psi = load_from_text(psi_file)
-        slice = get_BEC_slice(psi)
-        n_lmax = number_of_lmax(psi)      
+        slice = load_slice_from_text(psi_file)
+        n_lmax = number_of_lmax(slice)      
 
         push!(maxs, maximum(abs.(slice.psi)))
         push!(maxs_atoms, maximum(abs.(slice.psi)) * atom_folder)

@@ -63,6 +63,7 @@ function plot_local_maxima_evolution(psi_vec::Vector{IsoBECContext})
         slice = interpolate_slice(get_BEC_slice(context))
         maxima = find_local_maxima(slice)
         coords = get_coordinates(slice, maxima)
+        println("Processing context nr: ", idx)
 
         for (bec_idx, coord) in enumerate(coords)
             push!(all_maxima[bec_idx], coord)
@@ -70,6 +71,45 @@ function plot_local_maxima_evolution(psi_vec::Vector{IsoBECContext})
     end
 
     frames = collect(1:length(psi_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+    for lmax in all_maxima
+        xs = [m.x for m in lmax]
+        ys = [m.y for m in lmax]
+
+        scatter!(ax, xs, ys, color = frames, markersize = 5)
+    end
+
+    Colorbar(fig[1, 2], label="Time [ms]", limits = (0, frames[end]))
+
+    #xlims!(ax, (psi_vec[begin].x[begin], psi_vec[begin].x[end]))
+    #ylims!(ax, (psi_vec[begin].y[begin], psi_vec[begin].y[end]))
+
+    return fig
+end
+
+function plot_local_maxima_evolution(slice_vec::Vector{IsoBECSlice})
+    fig = Figure()
+    ax = Axis(fig[1,1], xlabel = "x [nm]", ylabel = "y [nm]")
+
+    n_frames = length(slice_vec)
+    slice = interpolate_slice(slice_vec[begin])
+    maxima = find_local_maxima(slice)
+    coords = get_coordinates(slice, maxima)
+
+    n_becs = length(coords)
+    all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
+
+    for (idx, _slice) in enumerate(slice_vec)
+        slice = interpolate_slice(_slice)
+        maxima = find_local_maxima(slice)
+        coords = get_coordinates(slice, maxima)
+        println("Processing slice nr: ", idx)
+
+        for (bec_idx, coord) in enumerate(coords)
+            push!(all_maxima[bec_idx], coord)
+        end 
+    end
+
+    frames = collect(1:length(slice_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
     for lmax in all_maxima
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
@@ -99,6 +139,7 @@ function plot_local_maxima_coordinates(psi_vec::Vector{IsoBECContext})
     all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
 
     for (idx, context) in enumerate(psi_vec)
+        println("Processing context: ", idx)
         slice = interpolate_slice(get_BEC_slice(context))
         maxima = find_local_maxima(slice)
         coords = get_coordinates(slice, maxima)
@@ -120,5 +161,39 @@ function plot_local_maxima_coordinates(psi_vec::Vector{IsoBECContext})
     return fig
 end
 
+function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
+    fig = Figure()
 
+    ax_x = Axis(fig[1,1], ylabel = "x [nm]", xlabel = "t [ms]")
+    ax_y = Axis(fig[2,1], ylabel = "y [nm]", xlabel = "t [ms]")
 
+    n_frames = length(slice_vec)
+    slice = interpolate_slice(slice_vec[begin])
+    maxima = find_local_maxima(slice)
+    coords = get_coordinates(slice, maxima)
+
+    n_becs = length(coords)
+    all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
+
+    for (idx, _slice) in enumerate(slice_vec)
+        println("Processing slice: ", idx)
+        slice = interpolate_slice(_slice)
+        maxima = find_local_maxima(slice)
+        coords = get_coordinates(slice, maxima)
+
+        for (bec_idx, coord) in enumerate(coords)
+            push!(all_maxima[bec_idx], coord)
+        end 
+    end
+
+    times = collect(1:length(slice_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+    for (idx, lmax) in enumerate(all_maxima)
+        xs = [m.x for m in lmax]
+        ys = [m.y for m in lmax]
+
+        scatter!(ax_x, times, xs, markersize = 5 + (length(all_maxima) - idx) * 2)
+        scatter!(ax_y, times, ys, markersize = 5 + (length(all_maxima) - idx) * 2)
+    end
+
+    return fig
+end

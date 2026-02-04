@@ -8,3 +8,11 @@ end
 function time_au_to_ms(time_au::Float64)
     return 2.418884 * 1e-14 * time_au
 end
+
+function length_au_to_nm(length_au::Float64)
+    return length_au * 0.052917721092
+end
+
+function length_au_to_μm(length_au::Float64)
+    return length_au * 0.000052917721092
+end

@@ -1,7 +1,7 @@
 include("context.jl")
 
 const DATA_DIR = "../../build/"
-TEMP_DATA_DIR = "../../../../data/run_40_atoms"
+TEMP_DATA_DIR = "../../../data/run_30_atoms"
 
 function load_from_binary(file_path::String)
     file    = open(file_path, "r")
@@ -185,4 +185,57 @@ function load_directory_from_text(data_dir::String)
     end
 
     return bec_data_vec
+end
+
+function load_slice_from_text(file_path::String)
+    file = open(file_path, "r")
+    nx = parse(Int32, readline(file))
+    ny = parse(Int32, readline(file))
+    nz = parse(Int32, readline(file))
+
+    dx = 60
+    dy = 60
+    dz = 500
+
+    # z=0 is at k0:
+    k0 = div(nz, 2) + 1
+
+    slice_2d = zeros(ComplexF64, nx, ny)
+
+    for i in 1:nx
+        for j in 1:ny
+            for k in 1:nz
+                line = readline(file)
+                if k == k0
+                    splitted = split(line, "\t")
+                    real_part = parse(Float64, splitted[1])
+                    imag_part = parse(Float64, splitted[2])
+                    slice_2d[i, j] = ComplexF64(real_part, imag_part)
+                end
+            end
+        end
+    end
+
+    x = ((1:nx) .- (div(nx, 2) + 2)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 2)) .* dy
+
+    close(file)
+    return IsoBECSlice(slice_2d, x, y, nx, ny, dx, dy)
+end
+
+function load_directory_slice_from_text(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    slice_data_vec = Vector{IsoBECSlice}(undef, n_frames)
+
+    for (frame_idx, file) in enumerate(files)
+        println("loading frame", joinpath(data_dir, file))
+        context = load_slice_from_text(joinpath(data_dir, file))
+    
+        slice_data_vec[frame_idx] = context 
+    end
+
+    return slice_data_vec
 end

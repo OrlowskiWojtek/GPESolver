@@ -35,6 +35,15 @@ struct LocalMaximaPhysical
     value::Float64
 end
 
+struct BECHeight
+    i::Int32
+    j::Int32
+    x::Float64
+    y::Float64
+    height::Float64
+    value::Float64
+end
+
 struct IsoBECSlice
     psi::Array{ComplexF64,2}
     x::Vector{Float64}
@@ -131,8 +140,32 @@ function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1, condensation
     return n_max
 end
 
-# WARNING : changes phase of slice, do not use in calculations
-function interpolate_slice(slice::IsoBECSlice; size = (5000, 5000))
+function number_of_lmax(slice::IsoBECSlice; n_atoms::Int64 = 1, condensation_threshold = nothing)
+    threshold = 0.5
+    n_max = 0;
+
+    rho     = abs.(slice.psi)
+
+    max_val = threshold * maximum(rho)
+    total_maximas = find_local_maxima(slice)
+
+    for m in total_maximas
+        if(condensation_threshold != nothing)
+            if(m.value * n_atoms < condensation_threshold)
+                @info "Low number of atoms in maximum: $(m.value)"
+                continue 
+            end
+        end
+        if(m.value > max_val)
+            n_max += 1
+        end
+    end
+
+    return n_max
+end
+
+# WARNING : changes phase of slice, do not use in phase calculations
+function interpolate_slice(slice::IsoBECSlice; size = (2000, 2000))
     nx = size[1]
     ny = size[2]
     interpolated_psi = Array{Float64, 2}(undef, nx, ny)
@@ -163,6 +196,38 @@ function interpolate_slice(slice::IsoBECSlice; size = (5000, 5000))
         dx,
         dy
     )
+end
+
+function get_BEC_heights(psi::IsoBECContext; FWXM = 0.5)
+    slice  = get_BEC_slice(psi)
+    maxima = find_local_maxima(slice)
+    coords = get_coordinates(slice, maxima)
+    n_becs = length(maxima)
+
+    heights = Vector{BECHeight}(undef, n_becs)
+    for idx in eachindex(maxima)
+        max     = maxima[idx]
+        coord   = coords[idx]
+        
+        z_rho   = abs.(psi.psi[max.i, max.j, :])
+        z_iter  = LinRange(psi.z[begin], psi.z[end], psi.nz)
+        z_new   = LinRange(psi.z[begin], psi.z[end], 2000)
+
+        itp = cubic_spline_interpolation(z_iter, z_rho)
+        rho_itp = [itp(z) for z in z_new]
+        max_z   = maximum(rho_itp)
+
+        cz_rho  = rho_itp .> (max_z * FWXM)
+
+        begin_idx = findfirst(cz_rho)
+        end_idx = findlast(cz_rho)
+
+        height  = z_new[end_idx] - z_new[begin_idx]
+
+        heights[idx] = BECHeight(max.i, max.j, coord.x, coord.y, height, coord.value)
+    end
+
+    return heights
 end
 
 Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
