@@ -15,7 +15,6 @@ function animate_iso_bce(data_dir::String, output_file::String)
                xlabel="X [nm]",
                ylabel="Y [nm]",
                zlabel="Z [nm]",
-               title="Isosurface of BCE",
                aspect=:data,
             )
 
@@ -193,6 +192,75 @@ function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
 
         scatter!(ax_x, times, xs, markersize = 5 + (length(all_maxima) - idx) * 2)
         scatter!(ax_y, times, ys, markersize = 5 + (length(all_maxima) - idx) * 2)
+    end
+
+    return fig
+end
+
+function plot_evolution(data_dir::String; step = 40, total_size = 6)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+
+    files = files[begin:step:end]
+    if(length(files) > total_size)
+        files = files[begin:total_size]
+    end
+
+    n_frames = length(files)
+    fig = Figure()
+
+    ncols = ceil(Int, sqrt(n_frames))
+    nrows = ceil(Int, n_frames / ncols)
+    alphas = [0.4, 0.7, 0.9]
+
+    for (file_idx, file) in enumerate(files)
+        # Load file 
+        BCEContext = load_from_text(joinpath(data_dir, file))
+
+        n = [length(BCEContext.x), length(BCEContext.y), length(BCEContext.z)]
+        begin_idx = floor.(Int, n / 5)
+        end_idx = n .- begin_idx
+
+        slices = (
+            begin_idx[1]:end_idx[1], # x-direction
+            begin_idx[2]:end_idx[2], # y-direction
+            begin_idx[3]:end_idx[3]  # z-direction
+        )
+
+        rho = abs.(BCEContext.psi[slices...])
+        x = BCEContext.x[begin_idx[1]:end_idx[1]]
+        y = BCEContext.y[begin_idx[2]:end_idx[2]]
+        z = BCEContext.z[begin_idx[3]:end_idx[3]]
+
+        # Prepare values for isosurfaces
+        max_val = maximum(rho)
+        isovals = [0.2 * max_val, 0.5 * max_val, 0.8 * max_val]
+
+        # Find idx of axis in frame
+        row = div(file_idx - 1, nrows) + 1
+        col = mod(file_idx - 1, nrows) + 1
+
+        # Create axis
+        ax = Axis3(fig[row, col],
+                   xlabel="X [nm]",
+                   ylabel="Y [nm]",
+                   zlabel="Z [nm]",
+                   aspect=:data)
+
+        # Plot values
+        for (i, isovalue) in enumerate(isovals)
+            volume!(ax,
+                    (x[begin], x[end]),
+                    (y[begin], y[end]),
+                    (z[begin], z[end]),
+                    rho,
+                    algorithm = :iso,
+                    isovalue = isovalue,
+                    alpha = alphas[i],
+                    colormap = :YlGn,
+                    transparency = true,
+                    isorange = 0.1 * max_val)
+        end
     end
 
     return fig
