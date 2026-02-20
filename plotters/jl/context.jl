@@ -73,7 +73,7 @@ end
 function find_local_maxima(slice::IsoBECSlice)
     rho = abs.(slice.psi)
     max_val = maximum(rho)
-    threshold_val = 0.3 * max_val
+    threshold_val = 0.6 * max_val
     
     local_maxima = Vector{LocalMaximaGrid}()
     
@@ -116,7 +116,7 @@ function get_coordinates(slice::IsoBECSlice, maxima::Vector{LocalMaximaGrid})
 end
 
 function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1, condensation_threshold = nothing)
-    threshold = 0.5
+    threshold = 0.6
     n_max = 0;
 
     slice   = get_BEC_slice(context)
@@ -141,7 +141,7 @@ function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1, condensation
 end
 
 function number_of_lmax(slice::IsoBECSlice; n_atoms::Int64 = 1, condensation_threshold = nothing)
-    threshold = 0.5
+    threshold = 0.6
     n_max = 0;
 
     rho     = abs.(slice.psi)
