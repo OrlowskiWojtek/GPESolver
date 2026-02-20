@@ -1,21 +1,21 @@
 using GLMakie
-using MarchingCubes
-using GeometryBasics
-using LinearAlgebra
+#using MarchingCubes
+#using GeometryBasics
+#using LinearAlgebra
 # This files includes sets of plots and animations that require time evolution of BEC
 
 include("context.jl")
 include("files.jl")
 include("units.jl")
 
-set_theme!(theme_latexfonts())
+set_theme!(theme_latexfonts(), rowgap = 0, colgap = 0)
 
 function animate_iso_bce(data_dir::String, output_file::String)
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
 
-    fig = Figure(size = (1024, 768), backgroundcolor = :gray97)
+    fig = Figure(size = (1024*2, 768), backgroundcolor = :gray97)
     ax = Axis3(fig[1, 1],
                xlabel="X [nm]",
                ylabel="Y [nm]",
@@ -214,7 +214,7 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
 
     ncols = ceil(Int, 2)
     nrows = ceil(Int, 3)
-    fig = Figure(size = (800, 1200))
+    fig = Figure(size = (728, 1024), figure_padding  = 40)
 
     for (file_idx, file) in enumerate(files)
         # Load file 
@@ -249,12 +249,25 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
         letter = 'a' + (file_idx - 1)
 
         ax          = Axis3(fig[row,col],
-                            title = letter*") t = $(time_ms) ms",
-                            titlesize = 20.,
-                            titlegap = -30.,
+                            #title = "  "*letter*") t = $(time_ms) ms",
+                            #titlealign = :left,
+                            #titlesize = 20.,
+                            #titlegap = -35.,
                             aspect=:data,
                             protrusions = 0.,
-                            viewmode = :fitzoom)
+                            xautolimitmargin = (0., 0.),
+                            yautolimitmargin = (0., 0.),
+                            zautolimitmargin = (0., 0.),
+                            xticklabelpad = 1.,
+                            yticklabelpad = 1.,
+                            zticklabelpad = 1.,
+                            xlabel = "x [nm]",
+                            ylabel = "y [nm]",
+                            zlabel = "z [nm]",
+                            xlabeloffset = 25.,
+                            ylabeloffset = 25.,
+                            zlabeloffset = 25.,
+                            viewmode = :stretch)
 
         set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
 
@@ -274,8 +287,10 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
         end
         heatmap!(ax, BCEslice.x, BCEslice.y, abs.(BCEslice.psi), transparency = true, colormap = :inferno, transformation=(:xy, z[begin]))
 
-        hidedecorations!(ax)
-        hidespines!(ax)
+        if(file_idx != 1)
+            hidedecorations!(ax)
+            hidespines!(ax)
+        end
     end
 
     for col in 1:ncols
@@ -332,9 +347,9 @@ function plot_states(files::Vector{String}; total_size = 6)
         letter = 'a' + (file_idx - 1)
 
         ax          = Axis3(fig[row,col],
-                            title = letter*") N = $(parse(Int32, N[1]) * 1000)",
-                            titlesize = 20.,
-                            titlegap = -30.,
+                            #title = letter*") N = $(parse(Int32, N[1]) * 1000)",
+                            #titlesize = 20.,
+                            #titlegap = -30.,
                             aspect=:data,
                             protrusions = 0.,
                             viewmode = :fitzoom)
