@@ -249,10 +249,6 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
         letter = 'a' + (file_idx - 1)
 
         ax          = Axis3(fig[row,col],
-                            #title = "  "*letter*") t = $(time_ms) ms",
-                            #titlealign = :left,
-                            #titlesize = 20.,
-                            #titlegap = -35.,
                             aspect=:data,
                             protrusions = 0.,
                             xautolimitmargin = (0., 0.),
@@ -312,7 +308,6 @@ function plot_states(files::Vector{String}; total_size = 6)
     fig = Figure(size = (800, 1200))
 
     for (file_idx, file) in enumerate(files)
-        # Load file 
         BCEContext = load_from_text(file)
         BCEslice = get_BEC_slice(BCEContext)
 
@@ -342,14 +337,9 @@ function plot_states(files::Vector{String}; total_size = 6)
         row = div(file_idx - 1, ncols) + 1
         col = mod(file_idx - 1, ncols) + 1
 
-        println("N: ", N)
-
         letter = 'a' + (file_idx - 1)
 
         ax          = Axis3(fig[row,col],
-                            #title = letter*") N = $(parse(Int32, N[1]) * 1000)",
-                            #titlesize = 20.,
-                            #titlegap = -30.,
                             aspect=:data,
                             protrusions = 0.,
                             viewmode = :fitzoom)
@@ -381,4 +371,66 @@ function plot_states(files::Vector{String}; total_size = 6)
     end
 
     return fig
+end
+
+function plot_single_state(file::String, out::String = "")
+    BCEContext = load_from_text(file)
+    BCEslice = get_BEC_slice(BCEContext)
+
+    n = [length(BCEContext.x), length(BCEContext.y), length(BCEContext.z)]
+    begin_idx = [floor(Int, n[1] / 3), floor(Int, n[2]/ 3), floor(Int, n[3] / 5)]
+    end_idx = n .- begin_idx
+
+    N = match(r"(\d+)k_atoms", file)
+
+    slices = (
+        begin_idx[1]:end_idx[1], # x-direction
+        begin_idx[2]:end_idx[2], # y-direction
+        begin_idx[3]:end_idx[3]  # z-direction
+    )
+
+    rho = abs.(BCEContext.psi[slices...])
+    x = BCEContext.x[begin_idx[1]:end_idx[1]]
+    y = BCEContext.y[begin_idx[2]:end_idx[2]]
+    z = BCEContext.z[begin_idx[3]:end_idx[3]]
+
+    # Prepare values for isosurfaces
+    max_val = maximum(rho)
+    alphas = [0.3, 0.8]
+    isovals = [0.4 * max_val, 0.8 * max_val]
+
+    fig = Figure()
+
+    ax          = Axis3(fig[1,1],
+                        aspect=:data,
+                        xlabel = "x [nm]",
+                        ylabel = "y [nm]",
+                        zlabel = "z [nm]",
+                        viewmode = :fit)
+
+    set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
+
+    colormap = :inferno
+    for (i, isovalue) in enumerate(isovals)
+        volume!(ax,
+                (x[begin], x[end]),
+                (y[begin], y[end]),
+                (z[begin], z[end]),
+                rho,
+                algorithm = :iso,
+                isovalue = isovalue,
+                alpha = alphas[i],
+                colormap = colormap,
+                transparency = true,
+                isorange = 0.1 * max_val)
+    end
+    heatmap!(ax, BCEslice.x, BCEslice.y, abs.(BCEslice.psi), transparency = true, colormap = colormap, transformation=(:xy, z[begin]))
+
+    hidedecorations!(ax)
+    hidespines!(ax)
+
+    if(out != "")
+        save(out, fig)
+    end
+    fig
 end
