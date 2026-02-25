@@ -203,17 +203,24 @@ function get_heights(segments, data_dist)
 end
 
 function plot_heights(segments, seg_heights)
-    fig = Figure()
+    fig = Figure(size = (600,600))
     ax = Axis(fig[1, 1],
-              xlabel="N/10³",
-              ylabel="H (μm)")
+              xlabel="N/10⁴",
+              ylabel="H (μm)",
+              xlabelsize = 16,
+              ylabelsize = 16,
+              xticksize = 14,
+              yticksize = 14,
+              xtickalign = 1,
+              ytickalign = 1
+              )
 
     for (seg_idx, (seg, heights)) in enumerate(zip(segments, seg_heights))
         if isempty(heights)
             continue
         end
 
-        xs = seg.atom_number
+        xs = seg.atom_number / 10
         n_becs = length(heights[begin])
 
         plot_heights = [Float64[] for _i in 1:n_becs]
@@ -230,19 +237,22 @@ function plot_heights(segments, seg_heights)
 
     for (idx, seg) in enumerate(segments[begin:end-1])
         change_point = seg.atom_number[end] + 0.5
-        vlines!(ax, [change_point], color=:red, linestyle=:dash, linewidth=2)
+        vlines!(ax, [change_point / 10], color=:red, linestyle=:dash, linewidth=2)
     end
 
     for (idx, (seg, height)) in enumerate(zip(segments, seg_heights))
         text!(ax,
-              seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.,
+              (seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.)/10,
               0.8 * length_au_to_μm((height[begin][end].height + height[end][end].height) / 2.),
               text = roman_from_idx(idx),
               align = (:center, :bottom),
               fontsize = 25)
     end
 
-    ax.xticks = 0:5:50
+    xlims!(ax, (0, 5))
+    ylims!(ax, (0.15, 0.47))
+    ax.xticks = 0:1:5
+    ax.yticks = 0.1:0.1:0.5
 
     return fig
 end
@@ -264,7 +274,7 @@ seg_heights = get_heights(segments, "../../../data/run_find_initial_states_eps14
 ##
 
 fig = plot_heights(segments, seg_heights)
-save("eps_145_heights.pdf", fig)
+#save("eps_145_heights.pdf", fig)
 
 ##
 
