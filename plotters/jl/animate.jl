@@ -307,12 +307,12 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
                             xautolimitmargin = (0., 0.),
                             yautolimitmargin = (0., 0.),
                             zautolimitmargin = (0., 0.),
-                            xticklabelpad = 1.,
-                            yticklabelpad = 1.,
-                            zticklabelpad = 1.,
                             xlabel = "x [nm]",
                             ylabel = "y [nm]",
                             zlabel = "z [nm]",
+                            xticklabelpad = 1.,
+                            yticklabelpad = 1.,
+                            zticklabelpad = 1.,
                             xlabeloffset = 25.,
                             ylabeloffset = 25.,
                             zlabeloffset = 25.,
@@ -464,6 +464,12 @@ function plot_single_state(file::String; hide_decs = true)
                         xautolimitmargin = (0., 0.),
                         yautolimitmargin = (0., 0.),
                         zautolimitmargin = (0., 0.),
+                        xlabeloffset = 25.,
+                        ylabeloffset = 25.,
+                        zlabeloffset = 25.,
+                        zlabelrotation = 0.,
+                        zlabelsize = 16.,
+                        #zlabelalign = (:top, :right),
                         xlabel = "x [nm]",
                         ylabel = "y [nm]",
                         zlabel = "z [nm]",
@@ -487,10 +493,25 @@ function plot_single_state(file::String; hide_decs = true)
     end
     heatmap!(ax, hm_x, hm_y, hm_rho, transparency = true, colormap = colormap, transformation=(:xy, z[begin + 3]))
 
+    origin = Point3f(x[begin], y[end], z[begin + 3])
+    direction = Vec3f(0, 0, abs(z[end] - z[begin + 3]))
+
+    arrows2d!(ax, [origin], [direction]; 
+              color=:black
+              )
+
     if(hide_decs)
         hidedecorations!(ax)
         hidespines!(ax)
+    else
+        hidespines!(ax)
+        hidexdecorations!(ax)
+        hideydecorations!(ax)
+        #hidexspines!(ax)
+        #hideyspines!(ax)
     end
+
+    ax.zticks = -5000:2500:5000
 
     fig
 end

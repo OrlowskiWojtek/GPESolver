@@ -54,6 +54,11 @@ end
 
 ##
 
+file = joinpath("../../../data/run_find_initial_states", minimas_edd_15[begin])
+fig = plot_single_state(file, hide_decs = false)
+
+##
+
 minimas_edd_145 = ["10k_atoms/2_max/initial_state.gpe.dat",
                    "20k_atoms/2_max/initial_state.gpe.dat",
                    "27k_atoms/3_max/initial_state.gpe.dat",
@@ -67,7 +72,7 @@ minimas_edd_145 = ["10k_atoms/2_max/initial_state.gpe.dat",
 
 ##
 
-for (idx, minima_edd_145) in enumerate(minimas_edd_145)
+for (idx, minima_edd_145) in enumerate(minimas_edd_145[begin])
     file = joinpath("../../../data/run_find_initial_states_eps145", minima_edd_145)
     fig = plot_single_state(file)
     N = match(r"(\d+)k_atoms", file)
@@ -81,13 +86,55 @@ end
 
 ##
 
-file = joinpath("../../../data/run_find_initial_states", minimas_edd_15[end])
-fig = plot_single_state(file)
+minimas_single_well = ["5k_atoms/1_max/initial_state.gpe.dat",
+    "6k_atoms/1_max/initial_state.gpe.dat",
+    "7k5_atoms/1_max/initial_state.gpe.dat",
+    "20k_atoms/2_max/initial_state.gpe.dat",
+    "27k5_atoms/3_max/initial_state.gpe.dat",
+    "40k_atoms/4_max/initial_state.gpe.dat",
+];
+
+minimas_single_well_atom_counts = [
+    5000,   # 5k_atoms
+    6000,   # 6k_atoms
+    7500,   # 7k5_atoms
+    20000,  # 20k_atoms
+    27500,  # 27k5_atoms
+    40000,  # 40k_atoms
+];
+
+for (idx, minima_single_well) in enumerate(minimas_single_well)
+    file = joinpath("../../../data/run_find_initial_states_single_well", minima_single_well)
+    fig = plot_single_state(file)
+    N = minimas_single_well_atom_counts[idx]
+    maxs = match(r"(\d+)_max", file)
+
+    dir = "plots/single_well/"
+    filename = joinpath(dir, "wavefunction_$(N)_atoms_" * maxs[1] * "_condensates" * ".png")
+
+    save(filename, fig)
+end
 
 ##
-#
-    %\includegraphics[height=0.18\textwidth, trim={1.1cm 3cm 0 0},clip]{1500/1k45/1k45_1e4_1.png} & 2
-    %\includegraphics[height=0.18\textwidth, trim={1.1cm 3cm 0 0},clip]{1500/1k45/x15001k45_2e4_1.png} & 2
-    %\includegraphics[height=0.18\textwidth, trim={1.1cm 3cm 0 0},clip]{1500/1k45/f1500_1k45_2k75_1.png} & 3
-    %\includegraphics[height=0.18\textwidth, trim={1.1cm 3cm 0 0},clip]{1500/1k45/fr1k5_1k45_4e4_1.png} & 4
-    %\includegraphics[height=0.18\textwidth, trim={1.1cm 3cm 0 0},clip]{1500/1k45/f1500_1k45_5e4__1.png} 5
+
+minimas_eps_140 = [
+    "20k_atoms/2_max/initial_state.gpe.dat",
+    "40k_atoms/4_max/initial_state.gpe.dat"
+];
+
+minimas_eps_140_atom_counts = [
+    20000,   # 5k_atoms
+    40000
+];
+
+for (idx, minima_eps_140) in enumerate(minimas_eps_140)
+    file = joinpath("../../../data/run_find_initial_states_eps140", minima_eps_140)
+    fig = plot_single_state(file)
+    N = minimas_eps_140_atom_counts[idx]
+    maxs = match(r"(\d+)_max", file)
+
+    dir = "plots/eps140/"
+    filename = joinpath(dir, "wavefunction_$(N)_atoms_" * maxs[1] * "_condensates" * ".png")
+
+    save(filename, fig)
+end

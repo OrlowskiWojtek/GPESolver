@@ -123,7 +123,7 @@ function plot_segments(segments)
               xlabel="N/10³",
               ylabel="E/N (nK)")
 
-    conv = 27211.4 * 11.6*10^9
+    conv = 27211.4 * 11.6 * 10^9
     labels = ["Total", "Kinetic", "Potential", "Interaction"]
     fields = [:e_total, :e_kin, :e_pot, :e_tot_ext]
     colors = [:black, :orange, :red, :blue]
@@ -173,6 +173,38 @@ function plot_segments(segments)
     return fig
 end
 
+function get_rhomax(segments, data_dist)
+    all_rho = Vector{Vector{Vector{BECMaxRho}}}()
+
+    for seg in segments
+        seg_rhos = Vector{Vector{BECMaxRho}}()
+
+        for row in eachrow(seg)
+            atom_number = row.atom_number
+            max_number = row.max_number
+
+            max_folder = joinpath(data_dist, "$(atom_number)k_atoms", "$(max_number)_max")
+            psi_file = joinpath(max_folder, "initial_state.gpe.dat")
+            if !isfile(psi_file)
+                psi_file = joinpath(max_folder, "initial_state.dat")
+            end
+            if !isfile(psi_file)
+                @info "No wavefunction file for atom_number=$atom_number, max_number=$max_number"
+                continue
+            end
+            context = load_from_text(psi_file)
+            rhos = get_BEC_maxrho(context)
+            
+            bec_rhos = [BECMaxRho(rho, atom_number) for rho in rhos]
+            push!(seg_rhos, bec_rhos)
+        end
+
+        push!(all_rho, seg_rhos)
+    end
+
+    return all_rho
+end
+
 function get_heights(segments, data_dist)
     all_heights = Vector{Vector{Vector{BECHeight}}}()
 
@@ -199,6 +231,7 @@ function get_heights(segments, data_dist)
 
         push!(all_heights, seg_heights)
     end
+
     return all_heights
 end
 
@@ -229,7 +262,6 @@ function plot_heights(segments, seg_heights)
                 push!(plot_heights[bec_idx], length_au_to_μm(h[bec_idx].height))
             end
         end 
-
         for (idx, ph) in enumerate(plot_heights)
             lines!(ax, xs, ph, color = :black)
         end
@@ -249,32 +281,128 @@ function plot_heights(segments, seg_heights)
               fontsize = 25)
     end
 
-    xlims!(ax, (0, 5))
-    ylims!(ax, (0.15, 0.47))
+    #xlims!(ax, (0, 5))
+    #ylims!(ax, (0.15, 0.47))
     ax.xticks = 0:1:5
     ax.yticks = 0.1:0.1:0.5
 
     return fig
 end
 
+function plot_rhomax(segments, seg_rhos)
+    fig = Figure(size = (600,600))
+    ax = Axis(fig[1, 1],
+              xlabel="N/10⁴",
+              ylabel=L"$\rho_{\text{max}}$ ($\mu$m$^{-3}$)",
+              xlabelsize = 16,
+              ylabelsize = 16,
+              xticksize = 14,
+              yticksize = 14,
+              xtickalign = 1,
+              ytickalign = 1
+              )
+
+    for (seg_idx, (seg, rhos)) in enumerate(zip(segments, seg_rhos))
+        if isempty(rhos)
+            continue
+        end
+
+        xs = seg.atom_number / 10
+        n_becs = length(rhos[begin])
+
+        plot_rhos = [Float64[] for _i in 1:n_becs]
+        for bec_idx in 1:n_becs
+            for r in rhos
+                push!(plot_rhos[bec_idx], r[bec_idx].value * r[bec_idx].n_atoms)
+            end
+        end 
+
+        for (idx, pr) in enumerate(plot_rhos)
+            lines!(ax, xs, pr, color = :black)
+        end
+    end
+
+    for (idx, seg) in enumerate(segments[begin:end-1])
+        change_point = seg.atom_number[end] + 0.5
+        vlines!(ax, [change_point / 10], color=:red, linestyle=:dash, linewidth=2)
+    end
+
+    #for (idx, (seg, rho)) in enumerate(zip(segments, seg_rhos))
+    #    text!(ax,
+    #          (seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.)/10,
+    #          0.8 * length_au_to_μm((rho[begin][end].height + rho[end][end].height) / 2.),
+    #          text = roman_from_idx(idx),
+    #          align = (:center, :bottom),
+    #          fontsize = 25)
+    #end
+
+    return fig
+end
+
+function save_segments(segments, filename::String)
+    open(filename, "w") do f
+        for (seg_idx, seg) in enumerate(segments)
+            for row in eachrow(seg)
+                write(f, "$(row.atom_number)\t$(row.e_total)\t$(row.e_kin)\t$(row.e_pot)\t$(row.e_int)\t$(row.e_ext)\t$(row.e_bmf)\n")
+            end
+            # Empty line separates segments in gnuplot format
+            if seg_idx < length(segments)
+                write(f, "\n")
+            end
+        end
+    end
+end
+
+function save_rhomax(seg_rhos::Vector{Vector{Vector{BECMaxRho}}}, filename::String)
+    open(filename, "w") do f
+        for (seg_idx, seg) in enumerate(seg_rhos)
+            n_becs = length(seg[1])  # Get number of BECs from first row
+            for bec_idx in 1:n_becs
+                for rhos in seg
+                    rho = rhos[bec_idx]
+                    write(f, "$(rho.n_atoms)\t$(rho.value * rho.n_atoms)\t$bec_idx\n")
+                end
+                # Empty line separates different BECs within a segment
+                if bec_idx < n_becs
+                    write(f, "\n")
+                end
+            end
+            # Empty line separates segments in gnuplot format
+            if seg_idx < length(seg_rhos)
+                write(f, "\n")
+            end
+        end
+    end
+end
+
 ##
 
-df = gather_energy("../../../data/run_find_initial_states_eps145")
+df = gather_energy("../../../data/run_find_initial_states")
 segments = segmentize_dataframe(df)
 
 ##
 
 fig = plot_segments(segments)
 #save("eps_15_stable_phases.pdf", fig)
+#save_segments(segments, "eps_15_segments.dat")
 
 ##
 
-seg_heights = get_heights(segments, "../../../data/run_find_initial_states_eps145")
+seg_heights = get_heights(segments, "../../../data/run_find_initial_states")
+
+##
+
+seg_rhos = get_rhomax(segments, "../../../data/run_find_initial_states")
 
 ##
 
 fig = plot_heights(segments, seg_heights)
 #save("eps_145_heights.pdf", fig)
+
+##
+
+#fig = plot_rhomax(segments, seg_rhos)
+save_rhomax(seg_rhos, "eps_15_maxrho.dat")
 
 ##
 

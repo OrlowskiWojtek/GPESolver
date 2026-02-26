@@ -1,4 +1,9 @@
+include("units.jl")
 using Interpolations
+
+X_INTERPOLATION_SIZE = 2000
+Y_INTERPOLATION_SIZE = 2000
+Z_INTERPOLATION_SIZE = 500
 
 struct IsoBECContext
     psi::Array{ComplexF64,3}  # 3D array for the wavefunction data
@@ -44,6 +49,11 @@ struct BECHeight
     value::Float64
 end
 
+struct BECMaxRho
+    value::Float64
+    n_atoms::Float64
+end
+
 struct IsoBECSlice
     psi::Array{ComplexF64,2}
     x::Vector{Float64}
@@ -56,7 +66,7 @@ end
 
 function get_BEC_slice(context::IsoBECContext)
     @assert context.nz % 2 == 1 "Wrong grid in 'z' dimension"
-    z_0_index = Int64(floor(context.nz / 2) + 1)
+    z_0_index = Int64(floor(context.nz / 2) + 2)
     
     psi_slice = context.psi[:, :, z_0_index]  # 2D slice at z=0
     return IsoBECSlice(
@@ -198,6 +208,56 @@ function interpolate_slice(slice::IsoBECSlice; size = (2000, 2000))
     )
 end
 
+function get_itp_context(context::IsoBECContext)
+
+    xs_old = LinRange(context.x[begin], context.x[end], context.nx)
+    ys_old = LinRange(context.y[begin], context.y[end], context.ny)
+    zs_old = LinRange(context.z[begin], context.z[end], context.nz)
+
+    itp = cubic_spline_interpolation((xs_old, ys_old, zs_old), abs.(context.psi))
+
+    return itp
+end
+
+function interpolate_context(context::IsoBECContext; size = (X_INTERPOLATION_SIZE, Y_INTERPOLATION_SIZE, Z_INTERPOLATION_SIZE))
+    itp = get_itp_context(context)
+
+    nx = size[1]
+    ny = size[2]
+    nz = size[3]
+
+    interpolated_psi = Array{Float64, 3}(undef, nx, ny, nz)
+
+    xs = LinRange(context.x[begin], context.x[end], nx)
+    ys = LinRange(context.y[begin], context.y[end], ny)
+    zs = LinRange(context.z[begin], context.z[end], nz)
+
+    dx = (xs[end] - xs[begin]) / nx
+    dy = (ys[end] - ys[begin]) / ny
+    dz = (zs[end] - zs[begin]) / nz
+
+    for ix in eachindex(xs)
+        for iy in eachindex(ys)
+            for iz in eachindex(zs)
+                interpolated_psi[ix, iy, iz] = itp(xs[ix], ys[iy], zs[iz])
+            end
+        end
+    end
+
+    return IsoBECContext(
+        interpolated_psi,
+        xs,
+        ys,
+        zs,
+        nx,
+        ny,
+        nz,
+        dx,
+        dy,
+        dz
+    )
+end
+
 function get_BEC_heights(psi::IsoBECContext; FWXM = 0.5)
     slice  = get_BEC_slice(psi)
     maxima = find_local_maxima(slice)
@@ -228,6 +288,24 @@ function get_BEC_heights(psi::IsoBECContext; FWXM = 0.5)
     end
 
     return heights
+end
+
+function get_BEC_maxrho(context::IsoBECContext)
+    _slice = get_BEC_slice(context)
+    slice = interpolate_slice(_slice)
+    maxima = find_local_maxima(slice)
+    coords = get_coordinates(slice, maxima)
+    n_becs = length(maxima)
+
+    maxrhos = Vector{Float64}(undef, n_becs)
+    itp_context = get_itp_context(context)
+
+    for (idx, max) in enumerate(maxima) 
+        max_value = max.value^2 
+        maxrhos[idx] = max_value / length_au3_to_μm3(1.)
+    end
+
+    return maxrhos
 end
 
 Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
