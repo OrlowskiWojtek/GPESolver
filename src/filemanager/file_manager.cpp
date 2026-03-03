@@ -37,6 +37,8 @@ void FileManager::save_params() {
     j["init_strategy"]   = params->init_strategy.to_string();
     j["load_filename"]   = params->load_filename;
     j["initial_maximas"] = params->n_gauss_max;
+    j["iter_imag"]       = params->iter_imag;
+    j["iter_real"]       = params->iter_real;
 
     std::ofstream file(PARAMS_FILENAME);
     file << j.dump(4);
@@ -71,6 +73,8 @@ void FileManager::load_params() {
     params->n_gauss_max    = j["initial_maximas"];
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->init_strategy.from_string(j["init_strategy"]);
+    params->iter_imag = j["iter_imag"];
+    params->iter_real = j["iter_real"];
 
     mediator->on_params_loaded();
     check_params();
@@ -186,7 +190,33 @@ void FileManager::check_params() {
     }
     if (params->n_atoms <= 0) {
         throw std::runtime_error("Number of atoms must be positive.");
+    if (params->n_atoms <= 0) {
+        throw std::runtime_error("Number of atoms must be positive.");
     }
+    if (params->m <= 0) {
+        throw std::runtime_error("Mass must be positive.");
+    }
+    if (params->fftw_n_threads <= 0) {
+        throw std::runtime_error("FFTW number of threads must be positive.");
+    }
+    if (params->n_gauss_max <= 0) {
+        throw std::runtime_error("Number of Gaussian maxima must be positive.");
+    }
+
+    if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) || !is_fft_compatible(params->nz)) {
+        OutputFormatter::printWarning("Grid dimensions may be slow for FFTW. Consider using dimensions that factor into small primes (2, 3, 5, 7).");
+    }
+}
+}
+
+bool FileManager::is_fft_compatible(int n) {
+    // Check if n has only small prime factors (2, 3, 5, 7) which are efficient for FFTW
+    int temp = n;
+    while (temp % 2 == 0) temp /= 2;
+    while (temp % 3 == 0) temp /= 3;
+    while (temp % 5 == 0) temp /= 5;
+    while (temp % 7 == 0) temp /= 7;
+    return temp == 1;
 }
 
 void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string filename) {

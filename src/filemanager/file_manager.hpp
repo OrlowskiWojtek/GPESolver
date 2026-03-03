@@ -72,6 +72,9 @@ private:
     //! \brief Checks parameters for validity.
     void check_params();
 
+    //! \brief Checks for best number of n for FFTW
+    bool is_fft_compatible(int n);
+
     //! \brief Buffer for loading wavefunctions.
     wavefunction_t psi_loading_buffer;
     //! \brief Pointer to the simulation mediator.

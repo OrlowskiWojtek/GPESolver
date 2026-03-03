@@ -466,10 +466,10 @@ function plot_single_state(file::String; hide_decs = true)
                         zautolimitmargin = (0., 0.),
                         xlabeloffset = 25.,
                         ylabeloffset = 25.,
-                        zlabeloffset = 25.,
+                        zlabeloffset = 30.,
                         zlabelrotation = 0.,
-                        zlabelsize = 16.,
-                        #zlabelalign = (:top, :right),
+                        zlabelsize = 20.,
+                        zticklabelsize = 20.,
                         xlabel = "x [nm]",
                         ylabel = "y [nm]",
                         zlabel = "z [nm]",
@@ -496,14 +496,13 @@ function plot_single_state(file::String; hide_decs = true)
     origin = Point3f(x[begin], y[end], z[begin + 3])
     direction = Vec3f(0, 0, abs(z[end] - z[begin + 3]))
 
-    arrows2d!(ax, [origin], [direction]; 
-              color=:black
-              )
-
     if(hide_decs)
         hidedecorations!(ax)
         hidespines!(ax)
     else
+        arrows2d!(ax, [origin], [direction]; 
+                  color=:black
+                  )
         hidespines!(ax)
         hidexdecorations!(ax)
         hideydecorations!(ax)
@@ -511,7 +510,7 @@ function plot_single_state(file::String; hide_decs = true)
         #hideyspines!(ax)
     end
 
-    ax.zticks = -5000:2500:5000
+    ax.zticks = [-5000, -2500, 2500,5000]
 
     fig
 end

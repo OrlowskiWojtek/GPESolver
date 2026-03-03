@@ -258,7 +258,17 @@ function interpolate_context(context::IsoBECContext; size = (X_INTERPOLATION_SIZ
     )
 end
 
-function get_BEC_heights(psi::IsoBECContext; FWXM = 0.5)
+function get_BEC_heights_rms(psi::IsoBECContext, max)
+    # Calculate standard deviation of the BEC in z-direction
+    z_rho = abs.(psi.psi[max.i, max.j, :])
+    z_norm = z_rho ./ sum(z_rho)
+    z_positions = LinRange(psi.z[begin], psi.z[end], psi.nz)
+    mean_z = sum(z_norm .* z_positions)
+    rms_width = sqrt(sum(z_norm .* (z_positions .- mean_z).^2))
+    return 2 * rms_width  # ~2σ covers ~95% of distribution
+end
+
+function get_BEC_heights(psi::IsoBECContext; FWXM = 0.1)
     slice  = get_BEC_slice(psi)
     maxima = find_local_maxima(slice)
     coords = get_coordinates(slice, maxima)

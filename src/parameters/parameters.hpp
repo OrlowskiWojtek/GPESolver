@@ -52,6 +52,11 @@ struct PhysicalParameters {
     //! Number of nodes in calculations - z direction.
     int nz;
 
+    //! Number of iterations for imaginary time evolution.
+    size_t iter_imag;
+    //! Number of iterations for real time evolution.
+    size_t iter_real;
+
     //! Distance per node - x direction
     double dx;
     //! Distance per node - y direction.

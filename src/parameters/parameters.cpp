@@ -16,6 +16,9 @@ void PhysicalParameters::set_default_values() {
     ny = 40 * 2 + 1;
     nz = 20 * 2 + 1;
 
+    iter_imag = 10000;
+    iter_real = 300000;
+
     edd                = 1.45;
 
     dx = UnitConverter::len_nm_to_au(150);
@@ -76,6 +79,11 @@ void PhysicalParameters::print_initialization(){
 void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Parameters");
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Number if iterations");
+    OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));
+    OutputFormatter::printBoxedMessage("REAL -  " + std::to_string(iter_real));
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Calculation strategy:");
     OutputFormatter::printBoxedMessage(calc_strategy.to_string());

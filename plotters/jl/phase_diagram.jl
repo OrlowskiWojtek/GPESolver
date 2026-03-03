@@ -375,9 +375,32 @@ function save_rhomax(seg_rhos::Vector{Vector{Vector{BECMaxRho}}}, filename::Stri
     end
 end
 
+function save_heights(seg_heights::Vector{Vector{Vector{BECHeight}}}, segments::Vector{DataFrame}, filename::String)
+    open(filename, "w") do f
+        for (seg_idx, (seg, seg_heights_data)) in enumerate(zip(segments, seg_heights))
+            n_becs = length(seg_heights_data[1])  # Get number of BECs from first row
+            for bec_idx in 1:n_becs
+                for (row_idx, heights) in enumerate(seg_heights_data)
+                    atom_number = seg[row_idx, :atom_number]
+                    height = heights[bec_idx]
+                    write(f, "$(atom_number)\t$(height.height)\t$(height.value)\t$bec_idx\n")
+                end
+                # Empty line separates different BECs within a segment
+                if bec_idx < n_becs
+                    write(f, "\n")
+                end
+            end
+            # Empty line separates segments in gnuplot format
+            if seg_idx < length(seg_heights)
+                write(f, "\n")
+            end
+        end
+    end
+end
+
 ##
 
-df = gather_energy("../../../data/run_find_initial_states")
+df = gather_energy("../../../../data/run_find_initial_states")
 segments = segmentize_dataframe(df)
 
 ##
@@ -388,7 +411,7 @@ fig = plot_segments(segments)
 
 ##
 
-seg_heights = get_heights(segments, "../../../data/run_find_initial_states")
+seg_heights = get_heights(segments, "../../../../data/run_find_initial_states")
 
 ##
 
@@ -396,8 +419,9 @@ seg_rhos = get_rhomax(segments, "../../../data/run_find_initial_states")
 
 ##
 
-fig = plot_heights(segments, seg_heights)
+#fig = plot_heights(segments, seg_heights)
 #save("eps_145_heights.pdf", fig)
+save_heights(seg_heights, segments, "eps_15_height.dat")
 
 ##
 
