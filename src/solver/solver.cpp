@@ -52,12 +52,8 @@ void GrossPitaevskiSolver::calc_initial_state() {
     OutputFormatter::printInfo("Starting imaginary time evolution");
 
     for (size_t iter = 0; iter < params->iter_imag; iter++) {
-        std::cout << iter << std::endl;
         imag_time_iter();
         calc_energy();
-        if (iter % 100 == 0) {
-            p_mediator->save_checkpoint(cpsi);
-        }
     }
 
     OutputFormatter::printInfo("Imaginary time evolution completed");
