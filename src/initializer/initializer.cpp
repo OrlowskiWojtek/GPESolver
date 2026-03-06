@@ -72,9 +72,9 @@ void DataInitializer::init_with_gaussian() {
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
 
-                double sigma_x = (params->nx * params->dx) / 10.;
-                double sigma_y = (params->ny * params->dy) / 10.;
-                double sigma_z = (params->nz * params->dz) / 10.;
+                double sigma_x = (params->nx * params->dx) / 20.;
+                double sigma_y = (params->ny * params->dy) / 20.;
+                double sigma_z = (params->nz * params->dz) / 20.;
 
                 double val = std::exp(-0.5 * (x * x) / (sigma_x * sigma_x)) *
                              std::exp(-0.5 * (y * y) / (sigma_y * sigma_y)) *
@@ -101,9 +101,11 @@ void DataInitializer::init_with_multiple_gaussian() {
         centers_x[idx] = idx % 2 ? params->dd : -params->dd;
 
         if (n_maximas % 2 == 1) {
-            double y_offset = (idx + 1) * (params->ny * params->dy) / (n_maximas + 1);
 
-            centers_y[idx] = p_sctx->get_y(0) + y_offset;
+            int center_y_idx = n_maximas / 2;
+            double y_offset = (idx - center_y_idx) * (params->ny * params->dy) / (n_maximas + 1.);
+
+            centers_y[idx] = y_offset;
         }
 
         if (n_maximas % 2 == 0) {
@@ -122,9 +124,9 @@ void DataInitializer::init_with_multiple_gaussian() {
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
 
-                double sigma_x = (params->nx * params->dx) / 10.;
-                double sigma_y = (params->ny * params->dy) / 10.;
-                double sigma_z = (params->nz * params->dz) / 10.;
+                double sigma_x = (params->nx * params->dx) / 20.;
+                double sigma_y = (params->ny * params->dy) / 20.;
+                double sigma_z = (params->nz * params->dz) / 20.;
 
                 double val = 0.0;
                 for (int m = 0; m < n_maximas; m++) {
