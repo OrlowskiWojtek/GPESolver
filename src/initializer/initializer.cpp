@@ -1,6 +1,5 @@
 #include "initializer/initializer.hpp"
 #include "output.hpp"
-#include "units.hpp"
 
 DataInitializer::DataInitializer(AbstractSimulationMediator *_mediator)
     : params(PhysicalParameters::getInstance())
