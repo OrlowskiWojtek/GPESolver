@@ -66,7 +66,7 @@ end
 
 function get_BEC_slice(context::IsoBECContext)
     @assert context.nz % 2 == 1 "Wrong grid in 'z' dimension"
-    z_0_index = Int64(floor(context.nz / 2) + 2)
+    z_0_index = Int64(floor(context.nz / 2) + 1)
     
     psi_slice = context.psi[:, :, z_0_index]  # 2D slice at z=0
     return IsoBECSlice(

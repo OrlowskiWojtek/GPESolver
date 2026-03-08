@@ -25,9 +25,9 @@ function load_from_binary(file_path::String)
         end
     end
 
-    x = ((1:nx) .- (div(nx, 2) + 2)) .* dx
-    y = ((1:ny) .- (div(ny, 2) + 2)) .* dy
-    z = ((1:nz) .- (div(nz, 2) + 2)) .* dz
+    x = ((1:nx) .- (div(nx, 2) + 1)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 1)) .* dy
+    z = ((1:nz) .- (div(nz, 2) + 1)) .* dz
 
     close(file)
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
@@ -57,9 +57,9 @@ function load_from_text(file_path::String)
         end
     end
 
-    x = ((1:nx) .- (div(nx, 2) + 2)) .* dx
-    y = ((1:ny) .- (div(ny, 2) + 2)) .* dy
-    z = ((1:nz) .- (div(nz, 2) + 2)) .* dz
+    x = ((1:nx) .- (div(nx, 2) + 1)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 1)) .* dy
+    z = ((1:nz) .- (div(nz, 2) + 1)) .* dz
 
     close(file)
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
@@ -216,8 +216,8 @@ function load_slice_from_text(file_path::String)
         end
     end
 
-    x = ((1:nx) .- (div(nx, 2) + 2)) .* dx
-    y = ((1:ny) .- (div(ny, 2) + 2)) .* dy
+    x = ((1:nx) .- (div(nx, 2) + 1)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 1)) .* dy
 
     close(file)
     return IsoBECSlice(slice_2d, x, y, nx, ny, dx, dy)
