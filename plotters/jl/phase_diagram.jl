@@ -24,9 +24,10 @@ function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
                    e_int=Float64[],
                    e_ext=Float64[],
                    e_bmf=Float64[],
-                   e_total=Float64[])
+                   e_total=Float64[],
+                   filename=String[])
 
-    for atom_folder in 1:50
+    for atom_folder in 1:54
         atom_dir = joinpath(dist_dir, "$(atom_folder)k_atoms")
         if !isdir(atom_dir)
             continue
@@ -83,12 +84,12 @@ function gather_energy(dist_dir::String; BCE_THRESHOLD = nothing)
                     parse(Float64, numbers[4]),
                     parse(Float64, numbers[5]),
                     parse(Float64, numbers[6]),
-                    parse(Float64, numbers[7])))
+                    parse(Float64, numbers[7]),
+                    psi_file))
             end
         end
     end
 
-    #CSV.write("energies.txt", df, delim=' ')
     return df
 end
 
@@ -101,8 +102,6 @@ function segmentize_dataframe(df)
         idx = argmin(g.e_total)
         push!(lowest_energy, g[idx, :])
     end
-
-    println("Loaded df: ", df)
 
     segments = Vector{DataFrame}()
     start_idx = 1
@@ -184,8 +183,9 @@ function get_rhomax(segments, data_dist)
             max_number = row.max_number
 
             max_folder = joinpath(data_dist, "$(atom_number)k_atoms", "$(max_number)_max")
-            psi_file = joinpath(max_folder, "initial_state.gpe.dat")
+            psi_file = row.filename
             if !isfile(psi_file)
+                @info "No such file $psi_file"
                 psi_file = joinpath(max_folder, "initial_state.dat")
             end
             if !isfile(psi_file)
@@ -215,16 +215,15 @@ function get_heights(segments, data_dist)
             atom_number = row.atom_number
             max_number = row.max_number
             max_folder = joinpath(data_dist, "$(atom_number)k_atoms", "$(max_number)_max")
-            psi_file = joinpath(max_folder, "initial_state.gpe.dat")
-            if !isfile(psi_file)
-                psi_file = joinpath(max_folder, "initial_state.dat")
-            end
+            psi_file = row.filename
+
             if !isfile(psi_file)
                 @info "No wavefunction file for atom_number=$atom_number, max_number=$max_number"
                 continue
             end
+
             context = load_from_text(psi_file)
-            heights = get_BEC_heights(context)
+            heights = get_BEC_heights(context, atom_number)
 
             push!(seg_heights, heights)
         end
@@ -272,20 +271,6 @@ function plot_heights(segments, seg_heights)
         vlines!(ax, [change_point / 10], color=:red, linestyle=:dash, linewidth=2)
     end
 
-    for (idx, (seg, height)) in enumerate(zip(segments, seg_heights))
-        text!(ax,
-              (seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.)/10,
-              0.8 * length_au_to_μm((height[begin][end].height + height[end][end].height) / 2.),
-              text = roman_from_idx(idx),
-              align = (:center, :bottom),
-              fontsize = 25)
-    end
-
-    #xlims!(ax, (0, 5))
-    #ylims!(ax, (0.15, 0.47))
-    ax.xticks = 0:1:5
-    ax.yticks = 0.1:0.1:0.5
-
     return fig
 end
 
@@ -293,7 +278,7 @@ function plot_rhomax(segments, seg_rhos)
     fig = Figure(size = (600,600))
     ax = Axis(fig[1, 1],
               xlabel="N/10⁴",
-              ylabel=L"$\rho_{\text{max}}$ ($\mu$m$^{-3}$)",
+              ylabel="ρ_{max}",
               xlabelsize = 16,
               ylabelsize = 16,
               xticksize = 14,
@@ -326,15 +311,6 @@ function plot_rhomax(segments, seg_rhos)
         change_point = seg.atom_number[end] + 0.5
         vlines!(ax, [change_point / 10], color=:red, linestyle=:dash, linewidth=2)
     end
-
-    #for (idx, (seg, rho)) in enumerate(zip(segments, seg_rhos))
-    #    text!(ax,
-    #          (seg.atom_number[begin] + (seg.atom_number[end] - seg.atom_number[begin]) / 2.)/10,
-    #          0.8 * length_au_to_μm((rho[begin][end].height + rho[end][end].height) / 2.),
-    #          text = roman_from_idx(idx),
-    #          align = (:center, :bottom),
-    #          fontsize = 25)
-    #end
 
     return fig
 end
@@ -398,41 +374,66 @@ function save_heights(seg_heights::Vector{Vector{Vector{BECHeight}}}, segments::
     end
 end
 
+function plot_df(df)
+    fig = Figure();
+    ax = Axis(fig[1,1], xlabel = "N / 10^3", ylabel = "E/N [nK]")
+
+    temp = ["4max", "5max"]
+    conv = 27211.4 * 11.6 * 10^9
+    for (idx, nmdf) in enumerate(groupby(df, :max_number))
+        if(idx < 4)
+            continue
+        end
+        lines!(ax, nmdf[!, :atom_number], nmdf[!, :e_total] .* conv ./ (nmdf[!, :atom_number] * 10^3), label = "$(temp[idx - 3])")
+    end
+
+    axislegend()
+    xlims!(ax, (46, 54))
+    ylims!(ax, (35, 38))
+
+    fig
+end
+
 ##
 
-df = gather_energy("../../../../data/run_find_initial_states")
+df = gather_energy("../../../../data/run_find_initial_states_eps145")
 segments = segmentize_dataframe(df)
+
+##
+
+fig = plot_df(df)
+save("4vs5_ene_diff.png", fig)
 
 ##
 
 fig = plot_segments(segments)
 #save("eps_15_stable_phases.pdf", fig)
-#save_segments(segments, "eps_15_segments.dat")
+save_segments(segments, "eps_145_segments.dat")
 
 ##
 
-seg_heights = get_heights(segments, "../../../../data/run_find_initial_states")
+seg_heights = get_heights(segments, "../../../../data/run_find_initial_states_eps_145")
 
 ##
 
-seg_rhos = get_rhomax(segments, "../../../data/run_find_initial_states")
+seg_rhos = get_rhomax(segments, "../../../../data/run_find_initial_states_eps_145")
 
 ##
 
-#fig = plot_heights(segments, seg_heights)
+fig = plot_heights(segments, seg_heights)
 #save("eps_145_heights.pdf", fig)
-save_heights(seg_heights, segments, "eps_15_height.dat")
+save_heights(seg_heights, segments, "eps_145_height.dat")
 
 ##
 
-#fig = plot_rhomax(segments, seg_rhos)
-save_rhomax(seg_rhos, "eps_15_maxrho.dat")
+fig = plot_rhomax(segments, seg_rhos)
+save_rhomax(seg_rhos, "eps_145_maxrho.dat")
 
 ##
 
 ## Plot in order to find threshhold
 
-dist_dir = "../../../data/run_find_initial_states_eps145"
+dist_dir = "../../../../data/run_find_initial_states_single_well"
 maxs = Float64[]
 maxs_atoms = Float64[]
 maxs_atoms_per_bec = Float64[]

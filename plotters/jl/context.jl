@@ -64,9 +64,10 @@ struct IsoBECSlice
     dy::Float64
 end
 
-function get_BEC_slice(context::IsoBECContext)
+function get_BEC_slice(context::IsoBECContext; z_0_index_offset = 1)
     @assert context.nz % 2 == 1 "Wrong grid in 'z' dimension"
-    z_0_index = Int64(floor(context.nz / 2) + 1)
+
+    z_0_index = Int64(floor(context.nz / 2) + z_0_index_offset)
     
     psi_slice = context.psi[:, :, z_0_index]  # 2D slice at z=0
     return IsoBECSlice(
@@ -175,7 +176,7 @@ function number_of_lmax(slice::IsoBECSlice; n_atoms::Int64 = 1, condensation_thr
 end
 
 # WARNING : changes phase of slice, do not use in phase calculations
-function interpolate_slice(slice::IsoBECSlice; size = (2000, 2000))
+function interpolate_slice(slice::IsoBECSlice; size = (2001, 2001))
     nx = size[1]
     ny = size[2]
     interpolated_psi = Array{Float64, 2}(undef, nx, ny)
@@ -268,7 +269,7 @@ function get_BEC_heights_rms(psi::IsoBECContext, max)
     return 2 * rms_width  # ~2σ covers ~95% of distribution
 end
 
-function get_BEC_heights(psi::IsoBECContext; FWXM = 0.1)
+function get_BEC_heights(psi::IsoBECContext, n_atoms; FWXM = 0.1)
     slice  = get_BEC_slice(psi)
     maxima = find_local_maxima(slice)
     coords = get_coordinates(slice, maxima)
@@ -287,7 +288,10 @@ function get_BEC_heights(psi::IsoBECContext; FWXM = 0.1)
         rho_itp = [itp(z) for z in z_new]
         max_z   = maximum(rho_itp)
 
-        cz_rho  = rho_itp .> (max_z * FWXM)
+        #cz_rho  = rho_itp .> (max_z * FWXM)
+        #
+        atoms_density = abs.(rho_itp).^2 * n_atoms * 1000 / length_au3_to_μm3(1.)
+        cz_rho  = atoms_density .> (1)
 
         begin_idx = findfirst(cz_rho)
         end_idx = findlast(cz_rho)
@@ -301,14 +305,17 @@ function get_BEC_heights(psi::IsoBECContext; FWXM = 0.1)
 end
 
 function get_BEC_maxrho(context::IsoBECContext)
-    _slice = get_BEC_slice(context)
+    z_0_index_offset = findmax(abs.(context.psi))[2][3] - div(context.nz, 2)
+
+    _slice = get_BEC_slice(context; z_0_index_offset = z_0_index_offset)
+
     slice = interpolate_slice(_slice)
     maxima = find_local_maxima(slice)
+
     coords = get_coordinates(slice, maxima)
     n_becs = length(maxima)
 
     maxrhos = Vector{Float64}(undef, n_becs)
-    itp_context = get_itp_context(context)
 
     for (idx, max) in enumerate(maxima) 
         max_value = max.value^2 

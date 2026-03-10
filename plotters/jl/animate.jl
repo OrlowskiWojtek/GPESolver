@@ -491,10 +491,10 @@ function plot_single_state(file::String; hide_decs = true)
                 transparency = true,
                 isorange = 0.1 * max_val)
     end
-    heatmap!(ax, hm_x, hm_y, hm_rho, transparency = true, colormap = colormap, transformation=(:xy, z[begin + 3]))
+    heatmap!(ax, hm_x, hm_y, hm_rho, transparency = true, colormap = colormap, transformation=(:xy, z[begin + 2]))
 
-    origin = Point3f(x[begin], y[end], z[begin + 3])
-    direction = Vec3f(0, 0, abs(z[end] - z[begin + 3]))
+    origin = Point3f(x[begin], y[end], z[begin + 2])
+    direction = Vec3f(0, 0, abs(z[end] - z[begin + 2]))
 
     if(hide_decs)
         hidedecorations!(ax)
