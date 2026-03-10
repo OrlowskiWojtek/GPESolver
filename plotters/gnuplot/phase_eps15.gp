@@ -8,7 +8,7 @@ set ylabel "{/Symbol r}_{max} ({/Symbol m}m^{-3})" font ",16" textcolor "red"
 set y2label "H_{z} ({/Symbol m}m)" font ",16" textcolor "blue"
 
 set yrange[0:2500]
-set y2range[0:10]
+set y2range[2:12]
 set xrange[0.1:5]
 
 set xtics font",14" 1

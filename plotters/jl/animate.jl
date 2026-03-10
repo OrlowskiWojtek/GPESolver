@@ -280,12 +280,12 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
             begin_idx[3]:end_idx[3]  # z-direction
         )
 
-        rho = abs.(BCEContext.psi[slices...])
+        rho = abs.(BCEContext.psi[slices...]) .^ 2
         x = BCEContext.x[begin_idx[1]:end_idx[1]]
         y = BCEContext.y[begin_idx[2]:end_idx[2]]
         z = BCEContext.z[begin_idx[3]:end_idx[3]]
 
-        hm_rho = abs.(BCEslice.psi[slices[1:2]...])
+        hm_rho = abs.(BCEslice.psi[slices[1:2]...]) .^ 2
         hm_x = BCEslice.x[begin_idx[1]:end_idx[1]]
         hm_y = BCEslice.y[begin_idx[1]:end_idx[1]]
 
@@ -336,7 +336,7 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
         end
 
 
-        heatmap!(ax, BCEslice.x, BCEslice.y, abs.(BCEslice.psi), transparency = true, colormap = :inferno, transformation=(:xy, z[begin]))
+        heatmap!(ax, BCEslice.x, BCEslice.y, hm_rho, transparency = true, colormap = :inferno, transformation=(:xy, z[begin]))
 
         if(file_idx != 1)
             hidedecorations!(ax)
@@ -442,17 +442,21 @@ function plot_single_state(file::String; hide_decs = true)
         begin_idx[3]:end_idx[3]  # z-direction
     )
 
-    rho = abs.(BCEContext.psi[slices...])
+    rho = abs.(BCEContext.psi[slices...]) .^ 2
     x = BCEContext.x[begin_idx[1]:end_idx[1]]
     y = BCEContext.y[begin_idx[2]:end_idx[2]]
     z = BCEContext.z[begin_idx[3]:end_idx[3]]
     
-    hm_rho = abs.(BCEslice.psi[slices[1:2]...])
+    hm_rho = abs.(BCEslice.psi[slices[1:2]...]) .^ 2
     hm_x = BCEslice.x[begin_idx[1]:end_idx[1]]
     hm_y = BCEslice.y[begin_idx[1]:end_idx[1]]
 
+    # Przeskaluj do zakresu [0, 1] dla poprawnego renderowania
+    rho_normalized = (rho .- minimum(rho)) ./ (maximum(rho) - minimum(rho) + eps(eltype(rho)))
+
     # Prepare values for isosurfaces
-    max_val = maximum(rho)
+    max_val = maximum(rho_normalized)
+
     alphas = [0.3, 0.8]
     isovals = [0.4 * max_val, 0.8 * max_val]
 
@@ -483,7 +487,7 @@ function plot_single_state(file::String; hide_decs = true)
                 (x[begin], x[end]),
                 (y[begin], y[end]),
                 (z[begin], z[end]),
-                rho,
+                rho_normalized,
                 algorithm = :iso,
                 isovalue = isovalue,
                 alpha = alphas[i],
