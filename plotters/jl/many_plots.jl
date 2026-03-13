@@ -30,22 +30,22 @@ minimas_edd_15 = ["1k_atoms/1_max/initial_state.gpe.dat",
                    "6k_atoms/1_max/initial_state.gpe.dat",
                    "8k_atoms/2_max/initial_state.gpe.dat",
                    "27k_atoms/2_max/initial_state.dat",
-                   "30k_atoms/3_max/initial_state.dat",
+                   "38k_atoms/3_max/initial_state.dat",
                    "40k_atoms/4_max/initial_state.dat",
                     ];
 
-#paths_edd_15 = joinpath.("../../../data/run_find_initial_states/", minimas_edd_15)
-#fig = plot_states(paths_edd_15);
-#save("edd_15_ground_states.png", fig);
+paths_edd_15 = joinpath.("../../../data/run_find_initial_states/", minimas_edd_15)
+fig = plot_single_state(paths_edd_15[2], hide_decs = false, n_atoms = 6000);
+save("edd_15_test.png", fig, px_per_unit = 2);
 
 ##
 
 for (idx, minima_edd_15) in enumerate(minimas_edd_15)
     file = joinpath("../../../data/run_find_initial_states", minima_edd_15)
-    fig = plot_single_state(file)
     N = match(r"(\d+)k_atoms", file)
     maxs = match(r"(\d+)_max", file)
 
+    fig = plot_single_state(file; hide_decs = (idx != 1), n_atoms = parse(Float64, N[1]) * 1000)
     dir = "plots/eps15/"
     filename = joinpath(dir, "wavefunction_" * N[1] * "k_atoms_" * maxs[1] * "_condensates" * ".png")
 
@@ -72,11 +72,11 @@ minimas_edd_145 = ["10k_atoms/2_max/initial_state.gpe.dat",
 
 ##
 
-for (idx, minima_edd_145) in enumerate(minimas_edd_145[begin])
+for (idx, minima_edd_145) in enumerate(minimas_edd_145)
     file = joinpath("../../../data/run_find_initial_states_eps145", minima_edd_145)
-    fig = plot_single_state(file)
     N = match(r"(\d+)k_atoms", file)
     maxs = match(r"(\d+)_max", file)
+    fig = plot_single_state(file, hide_decs = (idx != 1), n_atoms = parse(Float64, N[1]) * 1000)
 
     dir = "plots/eps145/"
     filename = joinpath(dir, "wavefunction_" * N[1] * "k_atoms_" * maxs[1] * "_condensates" * ".png")
@@ -105,9 +105,9 @@ minimas_single_well_atom_counts = [
 
 for (idx, minima_single_well) in enumerate(minimas_single_well)
     file = joinpath("../../../data/run_find_initial_states_single_well", minima_single_well)
-    fig = plot_single_state(file)
     N = minimas_single_well_atom_counts[idx]
     maxs = match(r"(\d+)_max", file)
+    fig = plot_single_state(file; hide_decs = (idx != 1), n_atoms = N[1])
 
     dir = "plots/single_well/"
     filename = joinpath(dir, "wavefunction_$(N)_atoms_" * maxs[1] * "_condensates" * ".png")
@@ -129,12 +129,14 @@ minimas_eps_140_atom_counts = [
 
 for (idx, minima_eps_140) in enumerate(minimas_eps_140)
     file = joinpath("../../../data/run_find_initial_states_eps140", minima_eps_140)
-    fig = plot_single_state(file)
     N = minimas_eps_140_atom_counts[idx]
     maxs = match(r"(\d+)_max", file)
 
+    fig = plot_single_state(file; hide_decs = (idx != 1), n_atoms = N)
+
     dir = "plots/eps140/"
     filename = joinpath(dir, "wavefunction_$(N)_atoms_" * maxs[1] * "_condensates" * ".png")
+    display(fig)
 
-    save(filename, fig)
+    #save(filename, fig)
 end

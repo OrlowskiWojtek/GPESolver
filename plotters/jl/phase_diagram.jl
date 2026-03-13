@@ -381,53 +381,48 @@ function plot_df(df)
     temp = ["4max", "5max"]
     conv = 27211.4 * 11.6 * 10^9
     for (idx, nmdf) in enumerate(groupby(df, :max_number))
-        if(idx < 4)
-            continue
-        end
-        lines!(ax, nmdf[!, :atom_number], nmdf[!, :e_total] .* conv ./ (nmdf[!, :atom_number] * 10^3), label = "$(temp[idx - 3])")
+        lines!(ax, nmdf[!, :atom_number], nmdf[!, :e_total] .* conv ./ (nmdf[!, :atom_number] * 10^3), label = "$idx")
     end
 
     axislegend()
-    xlims!(ax, (46, 54))
-    ylims!(ax, (35, 38))
 
     fig
 end
 
 ##
 
-df = gather_energy("../../../../data/run_find_initial_states_eps145")
+df = gather_energy("../../../data/run_find_initial_states")
 segments = segmentize_dataframe(df)
 
 ##
 
 fig = plot_df(df)
-save("4vs5_ene_diff.png", fig)
+#save("4vs5_ene_diff.png", fig)
 
 ##
 
 fig = plot_segments(segments)
 #save("eps_15_stable_phases.pdf", fig)
-save_segments(segments, "eps_145_segments.dat")
+save_segments(segments, "eps_140_segments.dat")
 
 ##
 
-seg_heights = get_heights(segments, "../../../../data/run_find_initial_states_eps_145")
+seg_heights = get_heights(segments, "../../../data/run_find_initial_states")
 
 ##
 
-seg_rhos = get_rhomax(segments, "../../../../data/run_find_initial_states_eps_145")
+seg_rhos = get_rhomax(segments, "../../../data/run_find_initial_states")
 
 ##
 
 fig = plot_heights(segments, seg_heights)
-#save("eps_145_heights.pdf", fig)
-save_heights(seg_heights, segments, "eps_145_height.dat")
+save("eps_15_heights.pdf", fig)
+#save_heights(seg_heights, segments, "eps_140_height.dat")
 
 ##
 
 fig = plot_rhomax(segments, seg_rhos)
-save_rhomax(seg_rhos, "eps_145_maxrho.dat")
+#save_rhomax(seg_rhos, "eps_140_maxrho.dat")
 
 ##
 

@@ -1,5 +1,6 @@
 using GLMakie
 using LaTeXStrings
+using Colors
 # This files includes sets of plots and animations that require time evolution of BEC
 # TODO refactor from common code
 
@@ -428,7 +429,7 @@ function plot_states(files::Vector{String}; total_size = 6)
     return fig
 end
 
-function plot_single_state(file::String; hide_decs = true)
+function plot_single_state(file::String; hide_decs = true, n_atoms = 1)
     BCEContext = load_from_text(file)
     BCEslice = get_BEC_slice(BCEContext)
 
@@ -447,7 +448,7 @@ function plot_single_state(file::String; hide_decs = true)
     y = BCEContext.y[begin_idx[2]:end_idx[2]]
     z = BCEContext.z[begin_idx[3]:end_idx[3]]
     
-    hm_rho = abs.(BCEslice.psi[slices[1:2]...]) .^ 2
+    hm_rho = abs.(BCEslice.psi[slices[1:2]...]) .^ 2 ./ length_au3_to_μm3(1.) * n_atoms
     hm_x = BCEslice.x[begin_idx[1]:end_idx[1]]
     hm_y = BCEslice.y[begin_idx[1]:end_idx[1]]
 
@@ -457,8 +458,11 @@ function plot_single_state(file::String; hide_decs = true)
     # Prepare values for isosurfaces
     max_val = maximum(rho_normalized)
 
+    #alphas = [0.3, 0.3, 0.8]
+    #isovals = [0.2 * max_val, 0.4 * max_val, 0.8 * max_val]
+
     alphas = [0.3, 0.8]
-    isovals = [0.4 * max_val, 0.8 * max_val]
+    isovals = [0.2 * max_val, 0.8 * max_val]
 
     fig = Figure(figure_padding = 0)
 
@@ -470,18 +474,34 @@ function plot_single_state(file::String; hide_decs = true)
                         zautolimitmargin = (0., 0.),
                         xlabeloffset = 25.,
                         ylabeloffset = 25.,
-                        zlabeloffset = 30.,
+                        zlabeloffset = 35.,
                         zlabelrotation = 0.,
-                        zlabelsize = 20.,
-                        zticklabelsize = 20.,
+                        zlabelsize = 25.,
+                        zticklabelsize = 25.,
+                        height = 500,
                         xlabel = "x [nm]",
                         ylabel = "y [nm]",
                         zlabel = "z [nm]",
-                        viewmode = :fit)
+                        viewmode = :fitzoom)
 
     set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
 
-    colormap = :inferno
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+
+    # Create interpolated colormap
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
     for (i, isovalue) in enumerate(isovals)
         volume!(ax,
                 (x[begin], x[end]),
@@ -495,10 +515,25 @@ function plot_single_state(file::String; hide_decs = true)
                 transparency = true,
                 isorange = 0.1 * max_val)
     end
-    heatmap!(ax, hm_x, hm_y, hm_rho, transparency = true, colormap = colormap, transformation=(:xy, z[begin + 2]))
+
+    max_hm_rho = 10 * round(maximum(hm_rho / 10))
+    ticks = [round(tick) for tick in LinRange(0, max_hm_rho, 5)]
+
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  transparency = true,
+                  colormap = colormap,
+                  colorrange = (0, max_hm_rho),
+                  transformation=(:xy, z[begin + 2]))
 
     origin = Point3f(x[begin], y[end], z[begin + 2])
     direction = Vec3f(0, 0, abs(z[end] - z[begin + 2]))
+
+    Colorbar(fig[1,2], hm;
+             height     = 400,
+             ticks      = ticks,
+             ticklabelsize = 25.,
+             #tickformat = "{:.0f}"
+             )
 
     if(hide_decs)
         hidedecorations!(ax)
@@ -515,6 +550,7 @@ function plot_single_state(file::String; hide_decs = true)
     end
 
     ax.zticks = [-5000, -2500, 2500,5000]
+    colgap!(fig.layout, -180)
 
     fig
 end
