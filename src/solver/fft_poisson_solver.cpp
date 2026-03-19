@@ -143,13 +143,20 @@ void PoissonSolver::prepare_transforms() {
 
 #ifdef USE_CUDA
     auto err = cudaMalloc(&d_rho_r, sizeof(cufftDoubleReal) * N);
-    cudaMalloc(&d_rho_k, sizeof(cufftDoubleComplex) * N_out);
+    if(err != cudaSuccess){   
+        OutputFormatter::printError("Can't aloc memory");
+        OutputFormatter::printError(cudaGetErrorString(err));
+    }
 
-    std::cout << cudaGetErrorString(err) << std::endl;
+    err = cudaMalloc(&d_rho_k, sizeof(cufftDoubleComplex) * N_out);
+    if(err != cudaSuccess){   
+        OutputFormatter::printError("Can't aloc memory");
+        OutputFormatter::printError(cudaGetErrorString(err));
+    }
     
-    h_rho_r = (double*)malloc(sizeof(double) * N);
-    h_rho_k = (complex_type*)malloc(sizeof(complex_type) * N_out);
-    
+    cudaMallocHost(&h_rho_r, sizeof(double) * N);
+    cudaMallocHost(&h_rho_k, sizeof(complex_type) * N_out); 
+
     cufftPlan3d(&plan_fwd, nx, ny, nz, CUFFT_D2Z);
     cufftPlan3d(&plan_bwd, nx, ny, nz, CUFFT_Z2D);
 

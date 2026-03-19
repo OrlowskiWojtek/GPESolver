@@ -43,21 +43,22 @@ if(USE_CUDA)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-find_package(FFTW3 REQUIRED COMPONENTS double threads)
 
 add_subdirectory(src)
 add_subdirectory(lib)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-message("Found libraries: " ${FFTW3_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}
                         SolverManager 
                         compiler_flags)
 
 if(NOT USE_CUDA)
-    message("Linking fftw3 libraries")
-    target_link_libraries(${PROJECT_NAME}
-                            ${FFTW3_LIBRARIES})
+	find_package(FFTW3 REQUIRED COMPONENTS double threads)
+	message("Found libraries: " ${FFTW3_LIBRARIES})
+
+	message("Linking fftw3 libraries")
+	target_link_libraries(${PROJECT_NAME}
+		${FFTW3_LIBRARIES})
 endif()

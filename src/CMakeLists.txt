@@ -27,11 +27,26 @@ target_include_directories(SolverManager PUBLIC
 if(USE_CUDA)
     find_package(CUDAToolkit REQUIRED)
     
-    set(CMAKE_CUDA_ARCHITECTURES 60)  # GTX 1050
-    
-    # cuFFTW (FFT on GPU with FFTW API)
+    set(CMAKE_CUDA_ARCHITECTURES 60)
     target_link_libraries(SolverManager PUBLIC CUDA::cufftw CUDA::cufft CUDA::cudart)
-    
-    # nvcc settings
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
+endif()
+
+if(USE_CUDA)
+    enable_language(CUDA)
+    add_library(SolverKernels SHARED
+        solver/cuda_kernels.cu
+    )
+    
+    target_compile_options(SolverKernels PRIVATE
+        --use_fast_math
+        -arch=sm_60  # Pascal for GTX 1050
+    )
+    
+    target_link_libraries(SolverKernels PUBLIC
+        CUDA::cufft
+        CUDA::cudart
+    )
+
+    target_link_libraries(SolverManager PUBLIC SolverKernels)
 endif()
