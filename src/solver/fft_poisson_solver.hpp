@@ -2,7 +2,12 @@
 #define POISSON_SOLVER_HPP
 
 #include "solver/fft_context.hpp"
+#ifdef USE_CUDA
+#include <cufft.h>
+#include <cuda_runtime.h>
+#else
 #include <fftw3.h>
+#endif
 
 /*! class PoissonSolver.
 *
@@ -22,8 +27,13 @@ private:
     void prepare_transforms() override;
     void prepare_containers() override;
 
-    fftw_complex *Vdip_k;
-    double *rho_r;
+    complex_type* Vdip_k;
+
+    complex_type *h_rho_k;
+    complex_type *d_rho_k;
+
+    double* d_rho_r;
+    double* h_rho_r;
 };
 
 #endif

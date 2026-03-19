@@ -3,7 +3,36 @@
 
 #include "parameters/parameters.hpp"
 #include "context/context.hpp"
+#ifdef USE_CUDA
+#include <cufft.h>
+#include <cuda_runtime.h>
+#else
 #include <fftw3.h>
+#endif
+
+#ifdef USE_CUDA
+using plan_type = cufftHandle;
+using complex_type = cufftDoubleComplex;
+#else
+using plan_type = fftw_plan;
+using complex_type = fftw_complex;
+#endif
+
+inline double& real(complex_type& num){
+#ifdef USE_CUDA
+    return num.x;
+#else
+    return num[0];
+#endif
+}
+
+inline double& imag(complex_type& num){
+#ifdef USE_CUDA
+    return num.y;
+#else
+    return num[1];
+#endif
+}
 
 /*! class FFT_CONTEXT.
 *
@@ -28,11 +57,8 @@ protected:
 
     static int FFTW_N_THREADS;
 
-    fftw_plan plan_fwd;
-    fftw_plan plan_bwd;
-    
-    fftw_complex *rho_r;
-    fftw_complex *rho_k;
+    plan_type plan_fwd;
+    plan_type plan_bwd; 
 };
 
 #endif

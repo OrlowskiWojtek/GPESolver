@@ -23,3 +23,15 @@ target_link_libraries(SolverManager PUBLIC
 target_include_directories(SolverManager PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+if(USE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    
+    set(CMAKE_CUDA_ARCHITECTURES 60)  # GTX 1050
+    
+    # cuFFTW (FFT on GPU with FFTW API)
+    target_link_libraries(SolverManager PUBLIC CUDA::cufftw CUDA::cufft CUDA::cudart)
+    
+    # nvcc settings
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
+endif()

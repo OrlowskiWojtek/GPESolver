@@ -5,7 +5,6 @@
 #include "solver/numerical_params.hpp"
 #include "units.hpp"
 #include <chrono>
-#include <fftw3.h>
 
 GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())

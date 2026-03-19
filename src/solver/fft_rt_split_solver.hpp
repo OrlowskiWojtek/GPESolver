@@ -2,7 +2,12 @@
 #define REAL_TIME_SPLIT_SOLVER_HPP
 
 #include "solver/fft_context.hpp"
+#ifdef USE_CUDA
+#include <cufft.h>
+#include <cuda_runtime.h>
+#else
 #include <fftw3.h>
+#endif
 
 /*! class RealTimeSplitSolver.
 *
@@ -21,6 +26,8 @@ private:
     void prepare_transforms() override;
     void prepare_containers() override;
 
+    complex_type *h_rho_r;
+    complex_type *d_rho_r;
     double *kinetic_factor;
 };
 
