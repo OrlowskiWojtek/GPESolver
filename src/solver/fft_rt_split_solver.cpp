@@ -76,7 +76,7 @@ void RealTimeSplitSolver::execute() {
 
     launch_kernel_kinetic(d_rho_k, d_kinetic_factor, N);
     
-    cufftExecZ2Z(plan_fwd, d_rho_k, d_rho_r, CUFFT_INVERSE);
+    cufftExecZ2Z(plan_bwd, d_rho_k, d_rho_r, CUFFT_INVERSE);
     cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(complex_type), cudaMemcpyDeviceToHost);
 #else
     fftw_execute(plan_fwd);
@@ -101,7 +101,7 @@ void RealTimeSplitSolver::execute() {
 
                 size_t idx = (i * ny + j) * nz + k;
                 rpsi(i, j, k) =
-                    std::complex<double>(imag(h_rho_r[idx]), real(h_rho_r[idx])) * norm_factor;
+                    std::complex<double>(real(h_rho_r[idx]), imag(h_rho_r[idx])) * norm_factor;
             }
         }
     }

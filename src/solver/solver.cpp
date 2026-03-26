@@ -50,7 +50,7 @@ void GrossPitaevskiSolver::solve() {
 void GrossPitaevskiSolver::calc_initial_state() {
     OutputFormatter::printInfo("Starting imaginary time evolution");
 
-    for (size_t iter = 0; iter < params->iter_imag; iter++) {
+    for (size_t iter = 1; iter <= params->iter_imag; iter++) {
         imag_time_iter();
         calc_energy();
     }
@@ -68,7 +68,7 @@ void GrossPitaevskiSolver::calc_initial_state() {
 void GrossPitaevskiSolver::calc_evolution() {
     OutputFormatter::printInfo("Starting real time evolution");
 
-    for (size_t iter = 1; iter < params->iter_real; iter++) {
+    for (size_t iter = 1; iter <= params->iter_real; iter++) {
         real_time_iter();
         calc_energy();
 
