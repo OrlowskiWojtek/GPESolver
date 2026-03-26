@@ -50,15 +50,15 @@ public:
     void initialize();
 
     //! Return value of x at given index.
-    inline const double get_x(int ix) const {
+    inline double get_x(int ix) const {
         return x_vec[ix];
     }
     //! Return value of y at given index.
-    inline const double get_y(int iy) const {
+    inline double get_y(int iy) const {
         return y_vec[iy];
     }
     //! Return value of z at given index.
-    inline const double get_z(int iz) const {
+    inline double get_z(int iz) const {
         return z_vec[iz];
     }
 

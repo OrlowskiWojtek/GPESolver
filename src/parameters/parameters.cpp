@@ -1,7 +1,6 @@
 #include "parameters/parameters.hpp"
 #include "output.hpp"
 #include "units.hpp"
-#include <cassert>
 #include <cmath>
 
 PhysicalParameters *PhysicalParameters::instance = nullptr;
@@ -31,10 +30,6 @@ void PhysicalParameters::set_default_values() {
 }
 
 void PhysicalParameters::init_parameters() {
-    assert(nx % 2 == 1);
-    assert(ny % 2 == 1);
-    assert(nz % 2 == 1);
-
     wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
     wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
 
