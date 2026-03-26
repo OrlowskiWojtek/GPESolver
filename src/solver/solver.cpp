@@ -198,7 +198,13 @@ double GrossPitaevskiSolver::pote_released_value(int ix, int iy, int iz) {
 }
 
 void GrossPitaevskiSolver::calc_fi3d() {
+    auto begin = std::chrono::high_resolution_clock::now();
+
     poisson_solver->execute();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    OutputFormatter::printInfo("Time ms = " + std::to_string(dur));
 }
 
 void GrossPitaevskiSolver::calc_norm() {

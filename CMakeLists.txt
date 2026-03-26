@@ -32,10 +32,11 @@ option(USE_CUDA "Build using CUDA" FALSE)
 # add CUDA if option is on
 if(USE_CUDA)
     message("Trying to compile using CUDA")
-    find_package(CUDAToolkit REQUIRED)
+    find_package(CUDA REQUIRED)
+    #find_package(CUDAToolkit REQUIRED)
 
     message("Found CUDA toolkit, ver. " ${CUDAToolkit_VERSION})
-    set(CMAKE_CUDA_ARCHITECTURES 60)  # GTX 1050 = Pascal, compute 6.1
+    set(CMAKE_CUDA_ARCHITECTURES 60 86)  # GTX 1050 = Pascal, compute 6.1, 86 RTX 3050
     set(CMAKE_CUDA_STANDARD 14)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 

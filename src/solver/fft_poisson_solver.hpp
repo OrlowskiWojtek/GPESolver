@@ -27,11 +27,13 @@ private:
     void prepare_transforms() override;
     void prepare_containers() override;
 
-    complex_type* Vdip_k;
+    complex_type *h_Vdip_k;
+    complex_type *d_Vdip_k;
 
     complex_type *h_rho_k;
     complex_type *d_rho_k;
 
+    double *d_output;
     double* d_rho_r;
     double* h_rho_r;
 };

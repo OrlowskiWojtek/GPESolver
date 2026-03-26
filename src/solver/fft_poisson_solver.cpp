@@ -2,9 +2,11 @@
 #include "output.hpp"
 #include "parameters/parameters.hpp"
 #include <cmath>
+
 #ifdef USE_CUDA
 #include <cufft.h>
 #include <cuda_runtime.h>
+#include "cuda_kernels.hpp"
 #else
 #include <fftw3.h>
 #endif
@@ -26,7 +28,7 @@ void PoissonSolver::prepare_containers() {
 
     int N = nx * ny * (nz / 2 + 1);
 
-    Vdip_k = new complex_type[N];
+    h_Vdip_k = new complex_type[N];
 
     for (int i = 0; i < nx; ++i) {
         double kx = (i <= (nx / 2)) ? i * dkx : (i - nx) * dkx;
@@ -39,15 +41,25 @@ void PoissonSolver::prepare_containers() {
                 double k2  = kx * kx + ky * ky + kz * kz;
 
                 if (k2 > 1e-30) {
-                    real(Vdip_k[idx]) = (kz * kz / k2);
-                    imag(Vdip_k[idx]) = 0.0;
+                    real(h_Vdip_k[idx]) = (kz * kz / k2);
+                    imag(h_Vdip_k[idx]) = 0.0;
                 } else {
-                    real(Vdip_k[idx]) = 0.0;
-                    imag(Vdip_k[idx]) = 0.0;
+                    real(h_Vdip_k[idx]) = 0.0;
+                    imag(h_Vdip_k[idx]) = 0.0;
                 }
             }
         }
     }
+
+#ifdef USE_CUDA
+    auto err = cudaMalloc(&d_Vdip_k, sizeof(complex_type) * N);
+    if(err != cudaSuccess){   
+        OutputFormatter::printError("Can't aloc memory");
+        OutputFormatter::printError(cudaGetErrorString(err));
+    }
+
+    cudaMemcpy(d_Vdip_k, h_Vdip_k, N * sizeof(complex_type), cudaMemcpyHostToDevice);
+#endif
 }
 
 void PoissonSolver::execute() {
@@ -58,6 +70,7 @@ void PoissonSolver::execute() {
     int N_out = nx * ny * (nz / 2 + 1);
 
     auto &rpsi = *psi;
+
     for (int i = 0; i < nx; ++i) {
         for (int j = 0; j < ny; ++j) {
             for (int k = 0; k < nz; ++k) {
@@ -71,41 +84,27 @@ void PoissonSolver::execute() {
         }
     }
 
-    std::cout << h_rho_r[600000] << "\t";
-
 #ifdef USE_CUDA
     cudaMemcpy(d_rho_r, h_rho_r, N * sizeof(double), cudaMemcpyHostToDevice);
     cufftExecD2Z(plan_fwd, d_rho_r, d_rho_k);
-    cudaMemcpy(h_rho_k, d_rho_k, N_out * sizeof(cufftDoubleComplex), cudaMemcpyDeviceToHost);
+    launch_kernel_multiply_dipole(d_rho_k, d_Vdip_k, N_out);
+    cufftExecZ2D(plan_bwd, d_rho_k, d_rho_r);
+    cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(double), cudaMemcpyDeviceToHost);
 #else
     fftw_execute(plan_fwd);
-#endif
 
-    std::cout << real(h_rho_k[10]) << "\t";
-
-    int N_cplx = nx * ny * (nz / 2 + 1);
-    for (int idx = 0; idx < N_cplx; ++idx) {
+    for (int idx = 0; idx < N_out; ++idx) {
         double ar     = real(h_rho_k[idx]);
         double ai     = imag(h_rho_k[idx]);
-        double br     = real(Vdip_k[idx]);
-        double bi     = imag(Vdip_k[idx]);
+        double br     = real(h_Vdip_k[idx]);
+        double bi     = imag(h_Vdip_k[idx]);
         real(h_rho_k[idx]) = ar * br - ai * bi;
         imag(h_rho_k[idx]) = ar * bi + ai * br;
     }
 
-    std::cout << real(h_rho_k[10]) << "\t";
-
-#ifdef USE_CUDA
-    cudaMemcpy(d_rho_k, h_rho_k, N_out * sizeof(cufftDoubleComplex), cudaMemcpyHostToDevice);
-    cufftExecZ2D(plan_bwd, d_rho_k, d_rho_r);
-    cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(double), cudaMemcpyDeviceToHost);
-#else
     fftw_execute(plan_bwd);
 #endif
 
-    std::cout << h_rho_r[10] << std::endl;
-
-    // Normalize and extract the real-space result (first octant only)
     double norm_factor = 1.0 / static_cast<double>(N);
     auto &rfi3d        = *fi3d;
     for (int i = 0; i < nx / 2; i++) {
@@ -116,12 +115,16 @@ void PoissonSolver::execute() {
             }
         }
     }
+
 }
 
 PoissonSolver::~PoissonSolver() {
 #ifdef USE_CUDA
     cudaFree(d_rho_r);
     cudaFree(d_rho_k);
+    cudaFree(d_Vdip_k);
+    cudaFree(d_output);
+
     free(h_rho_r);
     free(h_rho_k);
 #else 
@@ -130,7 +133,7 @@ PoissonSolver::~PoissonSolver() {
 #endif
 
 
-    delete[] Vdip_k;
+    delete[] h_Vdip_k;
 }
 
 void PoissonSolver::prepare_transforms() {
@@ -153,6 +156,12 @@ void PoissonSolver::prepare_transforms() {
         OutputFormatter::printError("Can't aloc memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
+
+    err = cudaMalloc(&d_output, sizeof(double) * (nx/2) * (ny/2) * (nz/2));
+    if(err != cudaSuccess){   
+        OutputFormatter::printError("Can't aloc memory");
+        OutputFormatter::printError(cudaGetErrorString(err));
+}
     
     cudaMallocHost(&h_rho_r, sizeof(double) * N);
     cudaMallocHost(&h_rho_k, sizeof(complex_type) * N_out); 

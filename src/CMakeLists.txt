@@ -34,19 +34,17 @@ endif()
 
 if(USE_CUDA)
     enable_language(CUDA)
-    add_library(SolverKernels SHARED
+
+    target_sources(SolverManager PRIVATE
         solver/cuda_kernels.cu
     )
     
-    target_compile_options(SolverKernels PRIVATE
-        --use_fast_math
-        -arch=sm_60  # Pascal for GTX 1050
-    )
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
     
-    target_link_libraries(SolverKernels PUBLIC
-        CUDA::cufft
+    target_link_libraries(SolverManager PUBLIC
         CUDA::cudart
+        CUDA::cufft
     )
 
-    target_link_libraries(SolverManager PUBLIC SolverKernels)
+    #target_link_libraries(SolverManager PUBLIC SolverKernels)
 endif()
