@@ -107,6 +107,14 @@ void RealTimeSplitSolver::execute() {
     }
 }
 
+void RealTimeSplitSolver::execute_half_potential_step() {
+    //int nx = p->nx;
+    //int ny = p->ny;
+    //int nz = p->nz;
+
+    //launch_kernel_half_potential_step(d_rho_r, );
+}
+
 RealTimeSplitSolver::~RealTimeSplitSolver() {
 #ifdef USE_CUDA
     cudaFree(d_rho_r);
@@ -132,6 +140,12 @@ void RealTimeSplitSolver::prepare_transforms() {
     auto err = cudaMalloc(&d_rho_r, sizeof(cufftDoubleComplex) * N);
     if (err != cudaSuccess) {
         OutputFormatter::printError("Can't aloc d_rho_r memory");
+        OutputFormatter::printError(cudaGetErrorString(err));
+    }
+
+    err = cudaMalloc(&d_rho_k, sizeof(cufftDoubleComplex) * N);
+    if (err != cudaSuccess) {
+        OutputFormatter::printError("Can't aloc d_rho_k memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
 

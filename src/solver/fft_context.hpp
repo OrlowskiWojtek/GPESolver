@@ -45,7 +45,7 @@ public:
     FFTContext();
     virtual ~FFTContext();
 
-    void prepare(wavefunction_t *psi, potential_t *fi3d);
+    void prepare(wavefunction_t *psi, potential_t *fi3d, potential_t *pote);
     virtual void execute() = 0;
 
 private:
@@ -55,6 +55,7 @@ private:
 protected:
     wavefunction_t *psi;
     potential_t *fi3d;
+    potential_t *pote;
     PhysicalParameters *p;
 
     static int FFTW_N_THREADS;

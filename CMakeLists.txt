@@ -6,24 +6,27 @@ add_library(compiler_flags INTERFACE)
 
 set(CMAKE_CXX_STANDARD 14)
 
-target_compile_options(compiler_flags INTERFACE
-        -march=native -O3 -ffast-math -funroll-loops
-)
 # Dla kompilatorów intela
-# a więc u mnie nie ma wielkiej różnicy w czasie  ->
 if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
     # IntelLLVM = icpx, Intel = icpc
     target_compile_options(compiler_flags INTERFACE
-        -O3 -xHost -fp-model fast=2
-        -qopt-zmm-usage=high
+        -O3
+        #-ffast-math
+        -axCORE-AVX2,CORE-AVX512
+        #-axarch
+        #-xHost 
+        #-fp-model 
+        #fast=2
         #-ipo                          # link-time optimization
-        -qopenmp
     )
 else()
     # GCC / Clang
     # TODO: add Wall
     target_compile_options(compiler_flags INTERFACE
-        -O3 -march=native -ffast-math -funroll-loops
+        -Wall
+        -O3 
+        -ffast-math 
+        -funroll-loops
     )
 endif()
 

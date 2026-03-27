@@ -23,9 +23,10 @@ FFTContext::~FFTContext() {
 #endif
 }
 
-void FFTContext::prepare(wavefunction_t *cpsi, potential_t *_fi3d) {
+void FFTContext::prepare(wavefunction_t *cpsi, potential_t *_fi3d, potential_t *_pote) {
     psi  = cpsi;
     fi3d = _fi3d;
+    pote = _pote;
 
 #ifndef USE_CUDA
     FFTW_N_THREADS = p->fftw_n_threads;

@@ -5,20 +5,23 @@
 #include "solver/numerical_params.hpp"
 #include "units.hpp"
 #include <chrono>
+ 
+double NumericalParameters::real_time_dt = 1.00e10;
+double NumericalParameters::imag_time_dt = 1.25e11;
 
 GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
-    , p_sctx(SimulationContext::getInstance())
     , poisson_solver(std::make_unique<PoissonSolver>())
     , rt_split_solver(std::make_unique<RealTimeSplitSolver>())
-    , p_mediator(mediator) {
+    , p_mediator(mediator)
+    , p_sctx(SimulationContext::getInstance()) {
 }
 
 void GrossPitaevskiSolver::initialize() {
     init_containers();
 
-    poisson_solver->prepare(&cpsi, &fi3d);
-    rt_split_solver->prepare(&cpsi, &fi3d);
+    poisson_solver->prepare(&cpsi, &fi3d, &pote);
+    rt_split_solver->prepare(&cpsi, &fi3d, &pote);
 
     calc_norm();
     normalize();
@@ -78,6 +81,10 @@ void GrossPitaevskiSolver::calc_evolution() {
     }
 
     OutputFormatter::printInfo("Real time evolution completed");
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Finished on energy [meV]: ",
+                                       UnitConverter::ene_au_to_meV(ene.e_total));
+    OutputFormatter::printBorderLine();
 
     p_mediator->save_data(cpsi);
     p_mediator->save_energies(enes);
@@ -85,12 +92,43 @@ void GrossPitaevskiSolver::calc_evolution() {
 
 void GrossPitaevskiSolver::imag_time_iter() {
     calc_fi3d();
-
     imag_iter_linear_step();
     imag_iter_nonlinear_step();
-
     calc_norm();
     normalize();
+
+    //{
+    //    auto start = std::chrono::high_resolution_clock::now();
+    //    calc_fi3d();
+    //    auto end = std::chrono::high_resolution_clock::now();
+    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    //    std::cout << "calc_fi3d: " << duration.count() << " ms\n";
+    //}
+
+    //{
+    //    auto start = std::chrono::high_resolution_clock::now();
+    //    imag_iter_linear_step();
+    //    auto end = std::chrono::high_resolution_clock::now();
+    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    //    std::cout << "imag_iter_linear_step: " << duration.count() << " ms\n";
+    //}
+
+    //{
+    //    auto start = std::chrono::high_resolution_clock::now();
+    //    imag_iter_nonlinear_step();
+    //    auto end = std::chrono::high_resolution_clock::now();
+    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    //    std::cout << "imag_iter_nonlinear_step: " << duration.count() << " ms\n";
+    //}
+
+    //{
+    //    auto start = std::chrono::high_resolution_clock::now();
+    //    calc_norm();
+    //    normalize();
+    //    auto end = std::chrono::high_resolution_clock::now();
+    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    //    std::cout << "calc_norm: " << duration.count() << " ms\n";
+    //}
 }
 
 void GrossPitaevskiSolver::imag_iter_linear_step() {
@@ -130,7 +168,7 @@ void GrossPitaevskiSolver::imag_iter_nonlinear_step() {
                                          ((params->ggp11 - params->cdd / 3) *
                                               std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
                                           params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
-                                              cpsi(i, j, k) * std::pow(w, 1.5));
+                                              cpsi(i, j, k) * params->w_15);
             }
         }
     }
@@ -139,10 +177,39 @@ void GrossPitaevskiSolver::imag_iter_nonlinear_step() {
 }
 
 void GrossPitaevskiSolver::real_time_iter() {
+
     real_fft_potential_half_step();
     calc_fi3d();
     real_fft_kinetic_step();
     real_fft_potential_half_step();
+
+//    // Timing for real_fft_potential_half_step()
+//    auto start1 = std::chrono::high_resolution_clock::now();
+//    real_fft_potential_half_step();
+//    auto end1 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+//    std::cout << "real_fft_potential_half_step: " << elapsed1.count() << " ms\n";
+//
+//    // Timing for calc_fi3d()
+//    auto start2 = std::chrono::high_resolution_clock::now();
+//    calc_fi3d();
+//    auto end2 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+//    std::cout << "calc_fi3d: " << elapsed2.count() << " ms\n";
+//
+//    // Timing for real_fft_kinetic_step()
+//    auto start3 = std::chrono::high_resolution_clock::now();
+//    real_fft_kinetic_step();
+//    auto end3 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+//    std::cout << "real_fft_kinetic_step: " << elapsed3.count() << " ms\n";
+//
+//    // Timing for real_fft_potential_half_step()
+//    auto start4 = std::chrono::high_resolution_clock::now();
+//    real_fft_potential_half_step();
+//    auto end4 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
+//    std::cout << "real_fft_potential_half_step: " << elapsed4.count() << " ms\n";
 }
 
 
@@ -198,6 +265,21 @@ double GrossPitaevskiSolver::pote_released_value(int ix, int iy, int iz) {
     return vx + vy + vz;
 }
 
+double GrossPitaevskiSolver::pote_offset_value(int ix, int iy, int iz) {
+    double x = p_sctx->get_x(ix);
+    double y = p_sctx->get_y(iy);
+    double z = p_sctx->get_z(iz);
+
+    double vx = 0;
+    if(x < 0)
+        vx = params->aa * std::pow(x ,4);
+
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->wrl, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->wzl, 2);
+
+    return vx + vy + vz;
+}
+
 void GrossPitaevskiSolver::calc_fi3d() {
     poisson_solver->execute();
 }
@@ -243,7 +325,8 @@ void GrossPitaevskiSolver::free_potential_well() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                pote(i, j, k) = pote_released_value(i, j, k);
+                //pote(i, j, k) = pote_released_value(i, j, k);
+                pote(i, j, k) = pote_offset_value(i, j, k);
             }
         }
     }
@@ -315,8 +398,8 @@ void GrossPitaevskiSolver::run_speed_test() {
     params->print();
     init_containers();
 
-    poisson_solver->prepare(&cpsi, &fi3d);
-    rt_split_solver->prepare(&cpsi, &fi3d);
+    poisson_solver->prepare(&cpsi, &fi3d, &pote);
+    rt_split_solver->prepare(&cpsi, &fi3d, &pote);
 
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t iter = 0; iter < NumericalParameters::iter_imag_speed_test; iter++) {
@@ -362,6 +445,10 @@ void GrossPitaevskiSolver::real_fft_potential_half_step() {
     double w         = params->n_atoms;
     double dt_factor = NumericalParameters::real_time_dt / 2.;
 
+    double psi_re;
+    double psi_im;
+    double s;
+    double c;
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
@@ -370,11 +457,17 @@ void GrossPitaevskiSolver::real_fft_potential_half_step() {
 
                 double v_int =
                     (params->ggp11 - params->cdd / 3) * density * w +
-                    params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * std::pow(w, 1.5);
+                    params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * params->w_15;
 
                 double total_potential = v_ext + params->cdd * fi3d(i, j, k) + v_int;
 
-                cpsi(i, j, k) *= std::exp(std::complex<double>(0.0, -dt_factor * total_potential));
+                //cpsi(i, j, k) *= std::exp(std::complex<double>(0.0, -dt_factor * total_potential));
+                psi_re = cpsi(i,j,k).real();
+                psi_im = cpsi(i,j,k).imag();
+                sincos(-dt_factor * total_potential, &s, &c);
+
+                cpsi(i,j,k).imag(psi_re * s + psi_im * c);
+                cpsi(i,j,k).real(psi_re * c - psi_im * s);
             }
         }
     }

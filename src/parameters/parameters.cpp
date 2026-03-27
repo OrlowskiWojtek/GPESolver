@@ -45,6 +45,7 @@ void PhysicalParameters::init_parameters() {
 
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
+    w_15  = std::pow(n_atoms, 1.5);
 }
 
 double PhysicalParameters::get_dxdydz() {

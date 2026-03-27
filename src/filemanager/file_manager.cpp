@@ -11,8 +11,8 @@ const char FileManager::BINARY_FILE_EXTENSION[] = ".gpe.bin";
 const char FileManager::ENERGIES_FILENAME[]     = "energy.gpe.dat";
 
 FileManager::FileManager(AbstractSimulationMediator *mediator)
-    : params(PhysicalParameters::getInstance())
-    , mediator(mediator) {
+    : mediator(mediator)
+    , params(PhysicalParameters::getInstance()) {
 }
 
 FileManager::~FileManager() {

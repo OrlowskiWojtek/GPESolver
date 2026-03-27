@@ -15,6 +15,7 @@ public:
     ~RealTimeSplitSolver();
 
     void execute() override;
+    void execute_half_potential_step();
 private:
 
     void prepare_transforms() override;

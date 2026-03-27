@@ -37,6 +37,8 @@ struct PhysicalParameters {
     //! Used in mexican hat potential in x direction.
     //! x^2 term
     double b;
+    //! x^2 term
+    double w_15;
 
     double ggp11;
     double gamma;

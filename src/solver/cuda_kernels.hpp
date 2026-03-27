@@ -50,6 +50,19 @@ void launch_kernel_kinetic(
     const real_type* kernel, 
     int N);
 
+// ============================== //
+
+__global__
+void kernel_half_potential_step(
+    complex_type* psi,
+    real_type* pote
+);
+
+void launch_kernel_half_potential_step(
+    complex_type* psi,
+    real_type* pote
+);
+
 #ifdef __cplusplus
 }
 #endif

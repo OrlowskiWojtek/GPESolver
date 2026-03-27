@@ -1,4 +1,5 @@
 #include "cuda_kernels.hpp"
+#include "cuComplex.h"
 
 // ========Kernel multiply dipole======= //
 
@@ -99,4 +100,70 @@ void launch_kernel_kinetic(
     int N)
 {
     kernel_kinetic<<<(N+255)/256, 256>>>(rho, kernel, N);
+}
+
+// ===============Kernel half potential step ============ //
+
+__global__
+void kernel_half_potential_step(
+    complex_type* psi,
+    const real_type* pote,
+    const real_type* fi3d,
+    const double* params_buffer,
+    int nx, int ny, int nz){
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+
+    int idx = i * ny * nz +  j * nz + k;
+
+    if (i < 1 || i >= nx - 1 || j < 1 || j >= ny - 1 || k < 1 || k >= nz - 1) {
+        return;
+    }
+
+    double w         = params_buffer[0];
+    double dt_factor = params_buffer[1];
+    double ggp11     = params_buffer[2];
+    double cdd       = params_buffer[3];
+    double gamma     = params_buffer[4];
+    double w_15      = params_buffer[5];
+
+    double v_ext   = pote[idx];
+    double density = psi[idx].x * psi[idx].x + psi[idx].y * psi[idx].y;
+
+    double v_int =
+        (ggp11 - cdd / 3) * density * w +
+        gamma * pow(cuCabs(psi[idx]), 3) * w_15;
+
+    double total_potential = v_ext + cdd * fi3d[idx] + v_int;
+
+    double psi_re = psi[idx].x;
+    double psi_im = psi[idx].y;
+
+    double s;
+    double c;
+    sincos(-dt_factor * total_potential, &s, &c);
+
+    psi[idx].x = psi_re * s + psi_im * c;
+    psi[idx].y = psi_re * c - psi_im * s;
+}
+
+void launch_kernel_half_potential_step(
+    complex_type* d_psi,
+    const real_type* d_pote,
+    const real_type* d_fi3d,
+    const double* d_params,
+    int nx, int ny, int nz)
+{
+    dim3 block(8, 8, 8);
+    dim3 grid((nx + 7) / 8, (ny + 7) / 8, (nz + 7) / 8);
+
+    kernel_half_potential_step<<<grid, block>>>(
+        d_psi,
+        d_pote,
+        d_fi3d,
+        d_params,
+        nx, ny, nz
+    );
 }
