@@ -5,7 +5,7 @@
 #include "solver/numerical_params.hpp"
 #include "units.hpp"
 #include <chrono>
- 
+
 double NumericalParameters::real_time_dt = 1.00e10;
 double NumericalParameters::imag_time_dt = 1.25e11;
 
@@ -183,35 +183,34 @@ void GrossPitaevskiSolver::real_time_iter() {
     real_fft_kinetic_step();
     real_fft_potential_half_step();
 
-//    // Timing for real_fft_potential_half_step()
-//    auto start1 = std::chrono::high_resolution_clock::now();
-//    real_fft_potential_half_step();
-//    auto end1 = std::chrono::high_resolution_clock::now();
-//    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-//    std::cout << "real_fft_potential_half_step: " << elapsed1.count() << " ms\n";
-//
-//    // Timing for calc_fi3d()
-//    auto start2 = std::chrono::high_resolution_clock::now();
-//    calc_fi3d();
-//    auto end2 = std::chrono::high_resolution_clock::now();
-//    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-//    std::cout << "calc_fi3d: " << elapsed2.count() << " ms\n";
-//
-//    // Timing for real_fft_kinetic_step()
-//    auto start3 = std::chrono::high_resolution_clock::now();
-//    real_fft_kinetic_step();
-//    auto end3 = std::chrono::high_resolution_clock::now();
-//    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-//    std::cout << "real_fft_kinetic_step: " << elapsed3.count() << " ms\n";
-//
-//    // Timing for real_fft_potential_half_step()
-//    auto start4 = std::chrono::high_resolution_clock::now();
-//    real_fft_potential_half_step();
-//    auto end4 = std::chrono::high_resolution_clock::now();
-//    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
-//    std::cout << "real_fft_potential_half_step: " << elapsed4.count() << " ms\n";
+    //    // Timing for real_fft_potential_half_step()
+    //    auto start1 = std::chrono::high_resolution_clock::now();
+    //    real_fft_potential_half_step();
+    //    auto end1 = std::chrono::high_resolution_clock::now();
+    //    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+    //    std::cout << "real_fft_potential_half_step: " << elapsed1.count() << " ms\n";
+    //
+    //    // Timing for calc_fi3d()
+    //    auto start2 = std::chrono::high_resolution_clock::now();
+    //    calc_fi3d();
+    //    auto end2 = std::chrono::high_resolution_clock::now();
+    //    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+    //    std::cout << "calc_fi3d: " << elapsed2.count() << " ms\n";
+    //
+    //    // Timing for real_fft_kinetic_step()
+    //    auto start3 = std::chrono::high_resolution_clock::now();
+    //    real_fft_kinetic_step();
+    //    auto end3 = std::chrono::high_resolution_clock::now();
+    //    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+    //    std::cout << "real_fft_kinetic_step: " << elapsed3.count() << " ms\n";
+    //
+    //    // Timing for real_fft_potential_half_step()
+    //    auto start4 = std::chrono::high_resolution_clock::now();
+    //    real_fft_potential_half_step();
+    //    auto end4 = std::chrono::high_resolution_clock::now();
+    //    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
+    //    std::cout << "real_fft_potential_half_step: " << elapsed4.count() << " ms\n";
 }
-
 
 void GrossPitaevskiSolver::init_containers() {
     init_potential();
@@ -247,8 +246,9 @@ double GrossPitaevskiSolver::pote_value(int ix, int iy, int iz) {
     double z = p_sctx->get_z(iz);
 
     double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4);
-    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->wrl, 2);
-    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->wzl, 2);
+
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
     return vx + vy + vz;
 }
@@ -259,8 +259,8 @@ double GrossPitaevskiSolver::pote_released_value(int ix, int iy, int iz) {
     double z = p_sctx->get_z(iz);
 
     double vx = params->aa * std::pow(x, 4);
-    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->wrl, 2);
-    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->wzl, 2);
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
     return vx + vy + vz;
 }
@@ -271,11 +271,11 @@ double GrossPitaevskiSolver::pote_offset_value(int ix, int iy, int iz) {
     double z = p_sctx->get_z(iz);
 
     double vx = 0;
-    if(x < 0)
-        vx = params->aa * std::pow(x ,4);
+    if (x < 0)
+        vx = params->aa * std::pow(x, 4);
 
-    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->wrl, 2);
-    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->wzl, 2);
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
     return vx + vy + vz;
 }
@@ -325,7 +325,7 @@ void GrossPitaevskiSolver::free_potential_well() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                //pote(i, j, k) = pote_released_value(i, j, k);
+                // pote(i, j, k) = pote_released_value(i, j, k);
                 pote(i, j, k) = pote_offset_value(i, j, k);
             }
         }
@@ -455,19 +455,19 @@ void GrossPitaevskiSolver::real_fft_potential_half_step() {
                 double v_ext   = pote(i, j, k);
                 double density = std::norm(cpsi(i, j, k));
 
-                double v_int =
-                    (params->ggp11 - params->cdd / 3) * density * w +
-                    params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * params->w_15;
+                double v_int = (params->ggp11 - params->cdd / 3) * density * w +
+                               params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * params->w_15;
 
                 double total_potential = v_ext + params->cdd * fi3d(i, j, k) + v_int;
 
-                //cpsi(i, j, k) *= std::exp(std::complex<double>(0.0, -dt_factor * total_potential));
-                psi_re = cpsi(i,j,k).real();
-                psi_im = cpsi(i,j,k).imag();
+                // cpsi(i, j, k) *= std::exp(std::complex<double>(0.0, -dt_factor *
+                // total_potential));
+                psi_re = cpsi(i, j, k).real();
+                psi_im = cpsi(i, j, k).imag();
                 sincos(-dt_factor * total_potential, &s, &c);
 
-                cpsi(i,j,k).imag(psi_re * s + psi_im * c);
-                cpsi(i,j,k).real(psi_re * c - psi_im * s);
+                cpsi(i, j, k).imag(psi_re * s + psi_im * c);
+                cpsi(i, j, k).real(psi_re * c - psi_im * s);
             }
         }
     }

@@ -18,6 +18,9 @@ public:
 
     static double mass_Da_to_au(double Da);
     static double mass_au_to_Da(double au);
+
+    static double freq_Hz_to_au(double Hz);
+    static double freq_au_to_Hz(double au);
 };
 
 #endif

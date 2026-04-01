@@ -19,10 +19,13 @@ struct PhysicalParameters {
         return instance;
     }
 
-    //! Oscilator omega in z direction.
-    double wzl;
-    //! Oscilator omega in y direction.
-    double wrl;
+    //! Trap angular frequency in x direction | default 60 Hz
+    double omega_x;
+    //! Trap angular frequency in y direction | default 60 Hz
+    double omega_y;
+    //! Trap angular frequency in z direction | defuault 120 Hz
+    double omega_z;
+
     //! Smallest trap frequency in system.
     double omega0;
     //! Mass of atom;
