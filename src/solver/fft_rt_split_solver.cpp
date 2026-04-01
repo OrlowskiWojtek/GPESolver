@@ -98,7 +98,6 @@ void RealTimeSplitSolver::execute() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-
                 size_t idx = (i * ny + j) * nz + k;
                 rpsi(i, j, k) =
                     std::complex<double>(real(h_rho_r[idx]), imag(h_rho_r[idx])) * norm_factor;

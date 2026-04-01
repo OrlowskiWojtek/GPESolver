@@ -31,11 +31,12 @@ void GrossPitaevskiSolver::solve() {
     switch (params->calc_strategy.type) {
     case CalcStrategy::Type::IMAGINARY_TIME:
         calc_initial_state();
-
         p_mediator->save_initial_state(cpsi);
         break;
     case CalcStrategy::Type::REAL_TIME:
         free_potential_well();
+        move_cradle();
+        p_mediator->save_checkpoint(cpsi);
         calc_evolution();
         break;
     case CalcStrategy::Type::FULL:
@@ -56,6 +57,9 @@ void GrossPitaevskiSolver::calc_initial_state() {
     for (size_t iter = 1; iter <= params->iter_imag; iter++) {
         imag_time_iter();
         calc_energy();
+        if (iter % 50 == 0) {
+            p_mediator->save_checkpoint(cpsi);
+        }
     }
 
     OutputFormatter::printInfo("Imaginary time evolution completed");
@@ -234,7 +238,7 @@ void GrossPitaevskiSolver::init_potential() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                pote(i, j, k) = pote_value(i, j, k);
+                pote(i, j, k) = pote_cradle_value(i, j, k);
             }
         }
     }
@@ -259,6 +263,30 @@ double GrossPitaevskiSolver::pote_released_value(int ix, int iy, int iz) {
     double z = p_sctx->get_z(iz);
 
     double vx = params->aa * std::pow(x, 4);
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+    return vx + vy + vz;
+}
+
+double GrossPitaevskiSolver::pote_cradle_value(int ix, int iy, int iz) {
+    double x = p_sctx->get_x(ix);
+    double y = p_sctx->get_y(iy);
+    double z = p_sctx->get_z(iz);
+
+    double bec_spacing = params->nx * params->dx / (params->bec_droplets_x + 1);
+    double l_bound     = -(params->bec_droplets_x / 2.) * bec_spacing;
+    double r_bound     = (params->bec_droplets_x / 2.) * bec_spacing;
+
+    double vx = 0;
+    if (x < l_bound) {
+        vx = 0.5 * params->m * std::pow(params->omega_x, 2) * std::pow(x - l_bound, 2);
+    }
+
+    if (x > r_bound) {
+        vx = 0.5 * params->m * std::pow(params->omega_x, 2) * std::pow(x - r_bound, 2);
+    }
+
     double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
     double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
@@ -325,8 +353,8 @@ void GrossPitaevskiSolver::free_potential_well() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                // pote(i, j, k) = pote_released_value(i, j, k);
-                pote(i, j, k) = pote_offset_value(i, j, k);
+                pote(i, j, k) = pote_cradle_value(i, j, k);
+                // pote(i, j, k) = pote_offset_value(i, j, k);
             }
         }
     }
@@ -483,4 +511,27 @@ void GrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
 
     calc_norm();
     normalize();
+}
+
+void GrossPitaevskiSolver::move_cradle() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    int move_by   = 10;
+    double tot_x  = nx * params->dx;
+    double spacing_x = tot_x / (params->bec_droplets_x + 1);
+    double border = -0.5 * spacing_x;
+
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double x = p_sctx->get_x(i);
+                if (x < border && i > move_by) {
+                    cpsi(i - move_by, j, k) = cpsi(i, j, k);
+                    cpsi(i,j,k) = 0;
+                }
+            }
+        }
+    }
 }

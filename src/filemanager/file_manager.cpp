@@ -336,6 +336,21 @@ void FileManager::load_from_binary_file(std::string filename) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
     }
 
+    double dx_file, dy_file, dz_file;
+    file.read(reinterpret_cast<char *>(&dx_file), sizeof(double));
+    file.read(reinterpret_cast<char *>(&dy_file), sizeof(double));
+    file.read(reinterpret_cast<char *>(&dz_file), sizeof(double));
+
+    dx_file = UnitConverter::len_nm_to_au(dx_file);
+    dy_file = UnitConverter::len_nm_to_au(dy_file);
+    dz_file = UnitConverter::len_nm_to_au(dz_file);
+
+    if (std::abs(dx_file - params->dx) > 1e-3 || std::abs(dy_file - params->dy) > 1e-3 ||
+        std::abs(dz_file - params->dz) > 1e-3) {
+        throw std::runtime_error("Grid size in the file do not match current parameters.");
+    }
+
+
     psi_loading_buffer.resize(nx_file, ny_file, nz_file);
 
     for (size_t i = 0; i < psi_loading_buffer.size(); i++) {
@@ -370,7 +385,7 @@ void FileManager::load_from_binary_file(std::string filename,
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
     }
 
-    int dx_file, dy_file, dz_file;
+    double dx_file, dy_file, dz_file;
     file.read(reinterpret_cast<char *>(&dx_file), sizeof(double));
     file.read(reinterpret_cast<char *>(&dy_file), sizeof(double));
     file.read(reinterpret_cast<char *>(&dz_file), sizeof(double));
@@ -379,8 +394,8 @@ void FileManager::load_from_binary_file(std::string filename,
     dy_file = UnitConverter::len_nm_to_au(dy_file);
     dz_file = UnitConverter::len_nm_to_au(dz_file);
 
-    if (std::abs(dx_file - params->dx) > 1e-3 || std::abs(dy_file - params->dz) > 1e-3 ||
-        std::abs(dy_file - params->dz) > 1e-3) {
+    if (std::abs(dx_file - params->dx) > 1e-3 || std::abs(dy_file - params->dy) > 1e-3 ||
+        std::abs(dz_file - params->dz) > 1e-3) {
         throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 

@@ -64,6 +64,8 @@ private:
     void real_fft_potential_half_step();
     void real_fft_kinetic_step();
 
+    void move_cradle();
+    double pote_cradle_value(int ix, int iy, int iz);
     double pote_value(int ix, int iy, int iz);
     double pote_released_value(int ix, int iy, int iz);
     double pote_offset_value(int ix, int iy, int iz);
