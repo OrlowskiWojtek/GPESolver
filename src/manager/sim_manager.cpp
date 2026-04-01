@@ -27,12 +27,12 @@ void SimulationManager::run_simulation() {
 
 void SimulationManager::save_data(const wavefunction_t &wvf) {
     std::string filename = "bec_wavefunction";
-    m_file_manager->save_to_text_file(wvf, filename);
+    m_file_manager->save_to_binary_file(wvf, filename);
 }
 
 void SimulationManager::save_checkpoint(const wavefunction_t &wvf) {
     std::string filename = "wavefunction_" + std::to_string(checkpoint_counter);
-    m_file_manager->save_to_text_file(wvf, filename);
+    m_file_manager->save_to_binary_file(wvf, filename);
 
     checkpoint_counter++;
 }

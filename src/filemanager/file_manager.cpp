@@ -268,6 +268,10 @@ void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string fil
     int ny = params->ny;
     int nz = params->nz;
 
+    double dx = UnitConverter::len_au_to_nm(params->dx);
+    double dy = UnitConverter::len_au_to_nm(params->dy);
+    double dz = UnitConverter::len_au_to_nm(params->dz);
+
     if (!file.is_open()) {
         OutputFormatter::printError("Could not open last state file for writing.");
         return;
@@ -276,6 +280,10 @@ void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string fil
     file.write(reinterpret_cast<char *>(&nx), sizeof(int));
     file.write(reinterpret_cast<char *>(&ny), sizeof(int));
     file.write(reinterpret_cast<char *>(&nz), sizeof(int));
+
+    file.write(reinterpret_cast<char *>(&dx), sizeof(double));
+    file.write(reinterpret_cast<char *>(&dy), sizeof(double));
+    file.write(reinterpret_cast<char *>(&dz), sizeof(double));
 
     for (size_t i = 0; i < psi.size(); i++) {
         auto val    = psi(i);
