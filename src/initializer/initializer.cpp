@@ -1,5 +1,6 @@
 #include "initializer/initializer.hpp"
 #include "output.hpp"
+#include <tuple>
 
 DataInitializer::DataInitializer(AbstractSimulationMediator *_mediator)
     : params(PhysicalParameters::getInstance())
@@ -19,6 +20,9 @@ void DataInitializer::initialize_wavefunction() {
         break;
     case InitializationOption::Type::MULTIPLE_GAUSS:
         init_with_multiple_gaussian();
+        break;
+    case InitializationOption::Type::SETUP_GAUSS:
+        init_with_setup_gaussian();
         break;
     case InitializationOption::Type::FROM_BINARY_FILE:
         init_from_binary_file();
@@ -84,6 +88,69 @@ void DataInitializer::init_with_gaussian() {
             }
         }
     }
+
+
+}
+
+void DataInitializer::init_with_setup_gaussian() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+    _data.resize(nx, ny, nz);
+
+    int n_maximas = params->bec_droplets_x * params->bec_droplets_y * params->bec_droplets_z;
+    std::vector<std::tuple<double, double, double>> centers(n_maximas);
+
+    double x_tot = params->nx * params->dx;
+    double y_tot = params->ny * params->dy;
+    double z_tot = params->nz * params->dz;
+
+    for (int i = 0; i < params->bec_droplets_x; i++) {
+        for (int j = 0; j < params->bec_droplets_y; j++) {
+            for (int k = 0; k < params->bec_droplets_z; k++) {
+                int idx = i * params->bec_droplets_y * params->bec_droplets_z + j * params->bec_droplets_z + k;
+    
+                double spacing_x = x_tot / static_cast<double>(params->bec_droplets_x + 1);
+                double spacing_y = y_tot / static_cast<double>(params->bec_droplets_y + 1);
+                double spacing_z = z_tot / static_cast<double>(params->bec_droplets_z + 1);
+                
+                double cx = - x_tot / 2 + spacing_x * (i + 1);
+                double cy = - y_tot / 2 + spacing_y * (j + 1);
+                double cz = - z_tot / 2 + spacing_z * (k + 1);
+
+                centers[idx] = {cx, cy, cz};
+            }
+        }
+    }
+
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double x = p_sctx->get_x(i);
+                double y = p_sctx->get_y(j);
+                double z = p_sctx->get_z(k);
+
+                double sigma_x = (params->nx * params->dx) / 20.;
+                double sigma_y = (params->ny * params->dy) / 20.;
+                double sigma_z = (params->nz * params->dz) / 20.;
+
+                double val = 0.0;
+                for (int m = 0; m < n_maximas; m++) {
+                    double xc = x - std::get<0>(centers[m]);
+                    double yc = y - std::get<1>(centers[m]);
+                    double zc = z - std::get<2>(centers[m]);
+
+                    val += std::exp(-0.5 * (xc * xc) / (sigma_x * sigma_x)) *
+                           std::exp(-0.5 * (yc * yc) / (sigma_y * sigma_y)) *
+                           std::exp(-0.5 * (zc * zc) / (sigma_z * sigma_z));
+                }
+
+                std::complex<double> cval = std::complex<double>(val, 0.);
+                _data(i, j, k)            = cval;
+            }
+        }
+    }
+
 }
 
 void DataInitializer::init_with_multiple_gaussian() {
@@ -102,7 +169,7 @@ void DataInitializer::init_with_multiple_gaussian() {
         if (n_maximas % 2 == 1) {
 
             int center_y_idx = n_maximas / 2;
-            double y_offset = (idx - center_y_idx) * (params->ny * params->dy) / (n_maximas + 1.);
+            double y_offset  = (idx - center_y_idx) * (params->ny * params->dy) / (n_maximas + 1.);
 
             centers_y[idx] = y_offset;
         }

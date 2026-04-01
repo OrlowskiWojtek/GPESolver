@@ -58,6 +58,7 @@ public:
         COS,              //!< Initialize with cosine function
         GAUSS,            //!< Initialize with single Gaussian
         MULTIPLE_GAUSS,   //!< Initialize with multiple Gaussians
+        SETUP_GAUSS,      //!< Initialize with Gaussians spacially setupped
         FROM_BINARY_FILE, //!< Initialize from binary file
         FROM_TEXT_FILE,   //!< Initialize from text file
     };
@@ -70,6 +71,8 @@ public:
             return "GAUSS";
         case Type::MULTIPLE_GAUSS:
             return "MULTIPLE_GAUSS";
+        case Type::SETUP_GAUSS:
+            return "SETUP_GAUSS";
         case Type::FROM_BINARY_FILE:
             return "BINARY_FILE";
         case Type::FROM_TEXT_FILE:
@@ -85,6 +88,8 @@ public:
             type = Type::GAUSS;
         if (str == "MULTIPLE_GAUSS")
             type = Type::MULTIPLE_GAUSS;
+        if (str == "SETUP_GAUSS")
+            type = Type::SETUP_GAUSS;
         if (str == "BINARY_FILE")
             type = Type::FROM_BINARY_FILE;
         if (str == "TEXT_FILE")

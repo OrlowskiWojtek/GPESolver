@@ -43,6 +43,9 @@ void FileManager::save_params() {
     j["omega_x"]         = UnitConverter::freq_au_to_Hz(params->omega_x);
     j["omega_y"]         = UnitConverter::freq_au_to_Hz(params->omega_y);
     j["omega_z"]         = UnitConverter::freq_au_to_Hz(params->omega_z);
+    j["bec_droplets_x"]  = params->bec_droplets_x;
+    j["bec_droplets_y"]  = params->bec_droplets_y;
+    j["bec_droplets_z"]  = params->bec_droplets_z;
 
     std::ofstream file(PARAMS_FILENAME);
     file << j.dump(4);
@@ -79,7 +82,6 @@ void FileManager::load_params() {
 
     params->edd           = j["edd"];
     params->load_filename = j["load_filename"];
-    params->n_gauss_max   = j["initial_maximas"];
     params->iter_imag     = j["iter_imag"];
     params->iter_real     = j["iter_real"];
 
@@ -87,6 +89,11 @@ void FileManager::load_params() {
 
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->init_strategy.from_string(j["init_strategy"]);
+
+    params->n_gauss_max    = j["initial_maximas"];
+    params->bec_droplets_x = j["bec_droplets_x"];
+    params->bec_droplets_y = j["bec_droplets_y"];
+    params->bec_droplets_z = j["bec_droplets_z"];
 
     mediator->on_params_loaded();
     check_params();
@@ -154,8 +161,7 @@ void FileManager::load_from_text_file(std::string filename) {
     dy = UnitConverter::len_nm_to_au(dy);
     dz = UnitConverter::len_nm_to_au(dz);
 
-    if (std::abs(dx - params->dx) > 1e-3 ||
-        std::abs(dy - params->dz) > 1e-3 ||
+    if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dz) > 1e-3 ||
         std::abs(dy - params->dz) > 1e-3) {
         throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
@@ -194,6 +200,20 @@ void FileManager::load_from_text_file(std::string filename,
 
     if (nx != params->nx || ny != params->ny || nz != params->nz) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    int dx;
+    int dy;
+    int dz;
+
+    file >> dx >> dy >> dz;
+    dx = UnitConverter::len_nm_to_au(dx);
+    dy = UnitConverter::len_nm_to_au(dy);
+    dz = UnitConverter::len_nm_to_au(dz);
+
+    if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dz) > 1e-3 ||
+        std::abs(dy - params->dz) > 1e-3) {
+        throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx, ny, nz);
@@ -348,6 +368,20 @@ void FileManager::load_from_binary_file(std::string filename,
 
     if (nx_file != params->nx || ny_file != params->ny || nz_file != params->nz) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    int dx_file, dy_file, dz_file;
+    file.read(reinterpret_cast<char *>(&dx_file), sizeof(double));
+    file.read(reinterpret_cast<char *>(&dy_file), sizeof(double));
+    file.read(reinterpret_cast<char *>(&dz_file), sizeof(double));
+
+    dx_file = UnitConverter::len_nm_to_au(dx_file);
+    dy_file = UnitConverter::len_nm_to_au(dy_file);
+    dz_file = UnitConverter::len_nm_to_au(dz_file);
+
+    if (std::abs(dx_file - params->dx) > 1e-3 || std::abs(dy_file - params->dz) > 1e-3 ||
+        std::abs(dy_file - params->dz) > 1e-3) {
+        throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx_file, ny_file, nz_file);

@@ -76,6 +76,14 @@ struct PhysicalParameters {
     //! Used only if initializing from multiple gaussians.
     int n_gauss_max;
 
+    //! Used only if initializion from setup gauss
+    //! Initial number of droplets in x dimension
+    int bec_droplets_x;
+    //! Initial number of droplets in y dimension
+    int bec_droplets_y;
+    //! Initial number of droplets in z dimension
+    int bec_droplets_z;
+
     //! Filename to load data from.
     //! Used only when initializing from file.
     std::string load_filename;

@@ -13,7 +13,8 @@ void PhysicalParameters::set_default_values() {
 
     omega_x = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - x direction
     omega_y = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
-    omega_z = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction fixed
+    omega_z =
+        120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction fixed
 
     nx = 40 * 2 + 1;
     ny = 40 * 2 + 1;
@@ -53,21 +54,27 @@ double PhysicalParameters::get_dxdydz() {
     return dxdydz;
 }
 
-void PhysicalParameters::print_initialization(){
+void PhysicalParameters::print_initialization() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Initialization method:");
     OutputFormatter::printBoxedMessage(init_strategy.to_string());
-    if(init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS){
+    if (init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS) {
         OutputFormatter::printBoxedMessage("Number of initial maximas:");
         OutputFormatter::printBoxedMessage(n_gauss_max);
     }
-    if(init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE){
+    if (init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE) {
         OutputFormatter::printBoxedMessage("Binary file name:");
         OutputFormatter::printBoxedMessage(load_filename);
     }
-    if(init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE){
+    if (init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE) {
         OutputFormatter::printBoxedMessage("Text file name:");
         OutputFormatter::printBoxedMessage(load_filename);
+    }
+    if (init_strategy.type == InitializationOption::Type::SETUP_GAUSS) {
+        OutputFormatter::printBoxedMessage("Gaussians configuration:");
+        OutputFormatter::printBoxedMessage(std::to_string(bec_droplets_x) + " x " +
+                                           std::to_string(bec_droplets_y) + " x " +
+                                           std::to_string(bec_droplets_z));
     }
 
     OutputFormatter::printBorderLine();
