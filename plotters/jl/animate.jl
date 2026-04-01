@@ -10,6 +10,109 @@ include("units.jl")
 
 set_theme!(theme_latexfonts(), rowgap = 0, colgap = 0)
 
+function animate_iso_bce_interactive_prefetch(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure(figure_padding = 0, backgroundcolor = :gray97)
+    ax = Axis3(fig[1, 1],
+               aspect=:data,
+               xautolimitmargin = (0., 0.),
+               yautolimitmargin = (0., 0.),
+               zautolimitmargin = (0., 0.),
+               xlabel = "x [nm]",
+               )
+
+    # Prefetch all frames into memory
+    println("Prefetching $n_frames frames...")
+    contexts = [load_from_binary(joinpath(data_dir, file)) for file in files]
+    println("Done prefetching!")
+
+    BCEContext = contexts[1]
+    BCEslice = get_BEC_slice(BCEContext)
+    x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
+
+    # Precompute all normalized rho and heatmap data
+    println("Precomputing normalized data...")
+    rho_data = Vector{Float64}(undef, n_frames)
+    all_rho = Vector{Array{Float64,3}}(undef, n_frames)
+    all_hm_rho = Vector{Array{Float64,2}}(undef, n_frames)
+
+    hm_x = BCEslice.x
+    hm_y = BCEslice.y
+
+    for (idx, context) in enumerate(contexts)
+        raw_rho = abs.(context.psi)
+        all_rho[idx] = (raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho)))
+        
+        slice = get_BEC_slice(context)
+        all_hm_rho[idx] = abs.(slice.psi) .^ 2
+    end
+    println("Done precomputing!")
+
+    # Create observables with first frame
+    rho = Observable(all_rho[1])
+    hm_rho = Observable(all_hm_rho[1])
+
+    max_val = maximum(rho[])
+    alphas = [0.3, 0.8]
+    isovals = [0.2 * max_val, 0.8 * max_val]
+
+    # Custom colormap
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
+
+    # Set lighting
+    set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
+
+    for (i, isovalue) in enumerate(isovals)
+        volume!(ax,
+                (x[begin], x[end]),
+                (y[begin], y[end]),
+                (z[begin], z[end]),
+                rho,
+                algorithm = :iso,
+                isovalue = isovalue,
+                alpha = alphas[i],
+                colormap = colormap,
+                transparency = true,
+                isorange = 0.1 * max_val)
+    end
+
+    # Add heatmap at z[begin + 2]
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  transparency = true,
+                  colormap = colormap,
+                  transformation=(:xy, z[begin + 2]))
+
+    # Add slider for frame control
+    slider = Slider(fig[2, 1], range = 1:n_frames, startvalue = 1)
+    
+    on(slider.value) do frame
+        println("Showing frame $frame")
+        rho[] = all_rho[frame]
+        notify(rho)
+        
+        hm_rho[] = all_hm_rho[frame]
+        notify(hm_rho)
+    end
+
+    display(fig)
+end
+
 function animate_iso_bce(data_dir::String, output_file::String)
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
