@@ -11,8 +11,8 @@ const char FileManager::BINARY_FILE_EXTENSION[] = ".gpe.bin";
 const char FileManager::ENERGIES_FILENAME[]     = "energy.gpe.dat";
 
 FileManager::FileManager(AbstractSimulationMediator *mediator)
-    : params(PhysicalParameters::getInstance())
-    , mediator(mediator) {
+    : mediator(mediator)
+    , params(PhysicalParameters::getInstance()) {
 }
 
 FileManager::~FileManager() {
@@ -22,6 +22,7 @@ void FileManager::save_params() {
     OutputFormatter::printInfo("Saving simulation parameters to" + std::string(PARAMS_FILENAME));
 
     nlohmann::json j;
+
     j["n_atoms"]         = params->n_atoms;
     j["m"]               = UnitConverter::mass_au_to_Da(params->m);
     j["dd"]              = UnitConverter::len_au_to_nm(params->dd);
@@ -37,6 +38,11 @@ void FileManager::save_params() {
     j["init_strategy"]   = params->init_strategy.to_string();
     j["load_filename"]   = params->load_filename;
     j["initial_maximas"] = params->n_gauss_max;
+    j["iter_imag"]       = params->iter_imag;
+    j["iter_real"]       = params->iter_real;
+    j["omega_x"]         = UnitConverter::freq_au_to_Hz(params->omega_x);
+    j["omega_y"]         = UnitConverter::freq_au_to_Hz(params->omega_y);
+    j["omega_z"]         = UnitConverter::freq_au_to_Hz(params->omega_z);
 
     std::ofstream file(PARAMS_FILENAME);
     file << j.dump(4);
@@ -56,19 +62,29 @@ void FileManager::load_params() {
     file >> j;
     file.close();
 
-    params->n_atoms        = j["n_atoms"];
-    params->m              = UnitConverter::mass_Da_to_au(j["m"]);
-    params->dd             = UnitConverter::len_nm_to_au(j["dd"]);
-    params->edd            = j["edd"];
-    params->dx             = UnitConverter::len_nm_to_au(j["dx"]);
-    params->dy             = UnitConverter::len_nm_to_au(j["dy"]);
-    params->dz             = UnitConverter::len_nm_to_au(j["dz"]);
-    params->nx             = j["nx"];
-    params->ny             = j["ny"];
-    params->nz             = j["nz"];
+    params->n_atoms = j["n_atoms"];
+    params->m       = UnitConverter::mass_Da_to_au(j["m"]);
+
+    params->dd = UnitConverter::len_nm_to_au(j["dd"]);
+    params->dx = UnitConverter::len_nm_to_au(j["dx"]);
+    params->dy = UnitConverter::len_nm_to_au(j["dy"]);
+    params->dz = UnitConverter::len_nm_to_au(j["dz"]);
+    params->nx = j["nx"];
+    params->ny = j["ny"];
+    params->nz = j["nz"];
+
+    params->omega_x = UnitConverter::freq_Hz_to_au(j["omega_x"]);
+    params->omega_y = UnitConverter::freq_Hz_to_au(j["omega_y"]);
+    params->omega_z = UnitConverter::freq_Hz_to_au(j["omega_z"]);
+
+    params->edd           = j["edd"];
+    params->load_filename = j["load_filename"];
+    params->n_gauss_max   = j["initial_maximas"];
+    params->iter_imag     = j["iter_imag"];
+    params->iter_real     = j["iter_real"];
+
     params->fftw_n_threads = j["fftw_n_threads"];
-    params->load_filename  = j["load_filename"];
-    params->n_gauss_max    = j["initial_maximas"];
+
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->init_strategy.from_string(j["init_strategy"]);
 
@@ -86,12 +102,17 @@ void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filen
     int ny = params->ny;
     int nz = params->nz;
 
+    int dx = UnitConverter::len_au_to_nm(params->dx);
+    int dy = UnitConverter::len_au_to_nm(params->dy);
+    int dz = UnitConverter::len_au_to_nm(params->dz);
+
     if (!file.is_open()) {
         OutputFormatter::printError("Can't open initial state file for writing.");
         return;
     }
 
     file << nx << "\n" << ny << "\n" << nz << "\n";
+    file << dx << "\n" << dy << "\n" << dz << "\n";
 
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
@@ -117,10 +138,26 @@ void FileManager::load_from_text_file(std::string filename) {
     int nx;
     int ny;
     int nz;
+
     file >> nx >> ny >> nz;
 
     if (nx != params->nx || ny != params->ny || nz != params->nz) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    int dx;
+    int dy;
+    int dz;
+
+    file >> dx >> dy >> dz;
+    dx = UnitConverter::len_nm_to_au(dx);
+    dy = UnitConverter::len_nm_to_au(dy);
+    dz = UnitConverter::len_nm_to_au(dz);
+
+    if (std::abs(dx - params->dx) > 1e-3 ||
+        std::abs(dy - params->dz) > 1e-3 ||
+        std::abs(dy - params->dz) > 1e-3) {
+        throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx, ny, nz);
@@ -186,7 +223,39 @@ void FileManager::check_params() {
     }
     if (params->n_atoms <= 0) {
         throw std::runtime_error("Number of atoms must be positive.");
+        if (params->n_atoms <= 0) {
+            throw std::runtime_error("Number of atoms must be positive.");
+        }
+        if (params->m <= 0) {
+            throw std::runtime_error("Mass must be positive.");
+        }
+        if (params->fftw_n_threads <= 0) {
+            throw std::runtime_error("FFTW number of threads must be positive.");
+        }
+        if (params->n_gauss_max <= 0) {
+            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+        }
+
+        if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) ||
+            !is_fft_compatible(params->nz)) {
+            OutputFormatter::printWarning("Grid dimensions may be slow for FFTW. Consider using "
+                                          "dimensions that factor into small primes (2, 3, 5, 7).");
+        }
     }
+}
+
+bool FileManager::is_fft_compatible(int n) {
+    // Check if n has only small prime factors (2, 3, 5, 7) which are efficient for FFTW
+    int temp = n;
+    while (temp % 2 == 0)
+        temp /= 2;
+    while (temp % 3 == 0)
+        temp /= 3;
+    while (temp % 5 == 0)
+        temp /= 5;
+    while (temp % 7 == 0)
+        temp /= 7;
+    return temp == 1;
 }
 
 void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string filename) {

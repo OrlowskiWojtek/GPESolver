@@ -2,13 +2,12 @@
 #define REAL_TIME_SPLIT_SOLVER_HPP
 
 #include "solver/fft_context.hpp"
-#include <fftw3.h>
 
 /*! class RealTimeSplitSolver.
 *
 * \brief class implements split step method for real time evolution.
 *
-* FFTW has been used in calculations.
+* FFTW / cuFFT has been used in calculations.
 */
 class RealTimeSplitSolver : public FFTContext {
 public:
@@ -16,12 +15,20 @@ public:
     ~RealTimeSplitSolver();
 
     void execute() override;
+    void execute_half_potential_step();
 private:
 
     void prepare_transforms() override;
     void prepare_containers() override;
 
-    double *kinetic_factor;
+    complex_type *h_rho_r;
+    complex_type *d_rho_r;
+
+    complex_type *h_rho_k;
+    complex_type *d_rho_k;
+
+    real_type *h_kinetic_factor;
+    real_type *d_kinetic_factor;
 };
 
 #endif

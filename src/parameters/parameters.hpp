@@ -19,10 +19,13 @@ struct PhysicalParameters {
         return instance;
     }
 
-    //! Oscilator omega in z direction.
-    double wzl;
-    //! Oscilator omega in y direction.
-    double wrl;
+    //! Trap angular frequency in x direction | default 60 Hz
+    double omega_x;
+    //! Trap angular frequency in y direction | default 60 Hz
+    double omega_y;
+    //! Trap angular frequency in z direction | defuault 120 Hz
+    double omega_z;
+
     //! Smallest trap frequency in system.
     double omega0;
     //! Mass of atom;
@@ -37,6 +40,8 @@ struct PhysicalParameters {
     //! Used in mexican hat potential in x direction.
     //! x^2 term
     double b;
+    //! x^2 term
+    double w_15;
 
     double ggp11;
     double gamma;
@@ -51,6 +56,11 @@ struct PhysicalParameters {
     int ny;
     //! Number of nodes in calculations - z direction.
     int nz;
+
+    //! Number of iterations for imaginary time evolution.
+    size_t iter_imag;
+    //! Number of iterations for real time evolution.
+    size_t iter_real;
 
     //! Distance per node - x direction
     double dx;

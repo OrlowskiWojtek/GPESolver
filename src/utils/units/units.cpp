@@ -31,3 +31,11 @@ double UnitConverter::mass_Da_to_au(double Da) {
 double UnitConverter::mass_au_to_Da(double au) {
     return au * 0.000548579909;
 }
+
+double UnitConverter::freq_Hz_to_au(double Hz) {
+    return Hz * (4.1356e-12 / 27211.6);
+}
+
+double UnitConverter::freq_au_to_Hz(double au) {
+    return au / (4.1356e-12 / 27211.6);
+}

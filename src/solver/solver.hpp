@@ -66,6 +66,7 @@ private:
 
     double pote_value(int ix, int iy, int iz);
     double pote_released_value(int ix, int iy, int iz);
+    double pote_offset_value(int ix, int iy, int iz);
 };
 
 #endif

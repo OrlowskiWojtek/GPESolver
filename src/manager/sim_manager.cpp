@@ -3,11 +3,11 @@
 #include "output.hpp"
 
 SimulationManager::SimulationManager()
-    : m_file_manager(std::make_unique<FileManager>(this))
-    , m_gpe_solver(std::make_unique<GrossPitaevskiSolver>(this))
-    , m_initializer(std::make_unique<DataInitializer>(this))
+    : params(PhysicalParameters::getInstance())
     , p_sctx(SimulationContext::getInstance())
-    , params(PhysicalParameters::getInstance()) {
+    , m_file_manager(std::make_unique<FileManager>(this))
+    , m_gpe_solver(std::make_unique<GrossPitaevskiSolver>(this))
+    , m_initializer(std::make_unique<DataInitializer>(this)) {
 }
 
 void SimulationManager::initialize() {

@@ -38,15 +38,6 @@ function plot_iso_bce(BECContext::IsoBECContext)
     fig
 end
 
-function plot_heatmap_cut(data)
-    fig = Figure()
-    ax  = Axis(fig[1, 1], xlabel="X", ylabel="Y", title="Density Cut at Z=0")
-
-    heatmap!(ax, data, colormap = :viridis)
-
-    fig
-end
-
 function plot_energies(context::EnergiesContext)
     fig = Figure()
     ax = Axis(fig[1, 1], xlabel="Iteration", ylabel="Energy (meV)")
@@ -64,3 +55,17 @@ function plot_energies(context::EnergiesContext)
     axislegend(ax)
     fig
 end
+
+function plot_slice(slice::IsoBECSlice)
+    fig = Figure()
+    ax = Axis(fig[1,1], xlabel = "x [nm]", ylabel = "y [nm]")
+
+    rho = abs.(slice.psi)
+    hm = heatmap!(ax, slice.x, slice.y, rho, colormap = :plasma)
+    Colorbar(fig[1,2], hm, label = "|Ψ|")
+
+
+    return fig;
+end
+
+

@@ -1,7 +1,6 @@
 #include "parameters/parameters.hpp"
 #include "output.hpp"
 #include "units.hpp"
-#include <cassert>
 #include <cmath>
 
 PhysicalParameters *PhysicalParameters::instance = nullptr;
@@ -12,11 +11,18 @@ void PhysicalParameters::set_default_values() {
 
     dd = UnitConverter::len_nm_to_au(1500.0);
 
+    omega_x = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - x direction
+    omega_y = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
+    omega_z = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction fixed
+
     nx = 40 * 2 + 1;
     ny = 40 * 2 + 1;
     nz = 20 * 2 + 1;
 
-    edd                = 1.45;
+    iter_imag = 10000;
+    iter_real = 300000;
+
+    edd = 1.45;
 
     dx = UnitConverter::len_nm_to_au(150);
     dy = UnitConverter::len_nm_to_au(150);
@@ -28,15 +34,8 @@ void PhysicalParameters::set_default_values() {
 }
 
 void PhysicalParameters::init_parameters() {
-    assert(nx % 2 == 1);
-    assert(ny % 2 == 1);
-    assert(nz % 2 == 1);
-
-    wzl = 120 * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - z direction
-    wrl = 60. * 4.1356e-12 / 27211.6; // angular frequency of harmonic potential - y direction
-
-    aa = m * std::pow(wrl, 2) / 4. / std::pow(dd, 2);
-    b  = 0.5 * m * std::pow(wrl, 2);
+    aa = m * std::pow(omega_x, 2) / 4. / std::pow(dd, 2);
+    b  = 0.5 * m * std::pow(omega_x, 2);
 
     dxdydz = dx * dy * dz;
 
@@ -47,6 +46,7 @@ void PhysicalParameters::init_parameters() {
 
     ggp11 = 4. * M_PI * a / m;
     gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
+    w_15  = std::pow(n_atoms, 1.5);
 }
 
 double PhysicalParameters::get_dxdydz() {
@@ -77,6 +77,11 @@ void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Parameters");
     OutputFormatter::printBorderLine();
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Number if iterations");
+    OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));
+    OutputFormatter::printBoxedMessage("REAL -  " + std::to_string(iter_real));
+    OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Calculation strategy:");
     OutputFormatter::printBoxedMessage(calc_strategy.to_string());
     print_initialization();
@@ -90,9 +95,11 @@ void PhysicalParameters::print() {
     OutputFormatter::printBoxedMessage("Cdd (au): ", cdd);
     OutputFormatter::printBoxedMessage("epsilon_dd: ", edd);
     OutputFormatter::printBorderLine();
+
     OutputFormatter::printBoxedMessage("Trap frequencies:");
-    OutputFormatter::printBoxedMessage("wrl (y direction) (au): ", wrl);
-    OutputFormatter::printBoxedMessage("wzl (z direction) (au): ", wzl);
+    OutputFormatter::printBoxedMessage("omega_x (Hz): ", UnitConverter::freq_au_to_Hz(omega_x));
+    OutputFormatter::printBoxedMessage("omega_y (Hz): ", UnitConverter::freq_au_to_Hz(omega_y));
+    OutputFormatter::printBoxedMessage("omega_z (Hz): ", UnitConverter::freq_au_to_Hz(omega_z));
 
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Grid size");

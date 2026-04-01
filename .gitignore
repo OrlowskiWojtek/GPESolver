@@ -1,4 +1,5 @@
 build/
+build*/
 build_fort/
 to_save/
 compile_commands.json
