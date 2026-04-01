@@ -325,5 +325,6 @@ function get_BEC_maxrho(context::IsoBECContext)
     return maxrhos
 end
 
-Base.show(io::IO, context::IsoBECContext) = print(io, "BEC data with size ($(context.nx), $(context.ny), $(context.nz))")
+Base.show(io::IO, context::IsoBECContext) = print(io,
+                                                  "BEC data with size ($(context.nx), $(context.ny), $(context.nz)) and spacings ($(context.dx) x $(context.dy) x $(context.dz))")
 Base.show(io::IO, context::IsoBECSlice) = print(io, "BEC slice with size ($(context.nx), $(context.ny))")

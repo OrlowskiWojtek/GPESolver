@@ -102,12 +102,17 @@ void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filen
     int ny = params->ny;
     int nz = params->nz;
 
+    int dx = UnitConverter::len_au_to_nm(params->dx);
+    int dy = UnitConverter::len_au_to_nm(params->dy);
+    int dz = UnitConverter::len_au_to_nm(params->dz);
+
     if (!file.is_open()) {
         OutputFormatter::printError("Can't open initial state file for writing.");
         return;
     }
 
     file << nx << "\n" << ny << "\n" << nz << "\n";
+    file << dx << "\n" << dy << "\n" << dz << "\n";
 
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
@@ -133,10 +138,26 @@ void FileManager::load_from_text_file(std::string filename) {
     int nx;
     int ny;
     int nz;
+
     file >> nx >> ny >> nz;
 
     if (nx != params->nx || ny != params->ny || nz != params->nz) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    }
+
+    int dx;
+    int dy;
+    int dz;
+
+    file >> dx >> dy >> dz;
+    dx = UnitConverter::len_nm_to_au(dx);
+    dy = UnitConverter::len_nm_to_au(dy);
+    dz = UnitConverter::len_nm_to_au(dz);
+
+    if (std::abs(dx - params->dx) > 1e-3 ||
+        std::abs(dy - params->dz) > 1e-3 ||
+        std::abs(dy - params->dz) > 1e-3) {
+        throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx, ny, nz);

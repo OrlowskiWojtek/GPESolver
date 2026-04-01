@@ -11,7 +11,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
     # IntelLLVM = icpx, Intel = icpc
     target_compile_options(compiler_flags INTERFACE
         -O3
-        #-ffast-math
+        -ffast-math
         -axCORE-AVX2,CORE-AVX512
         #-axarch
         #-xHost 
