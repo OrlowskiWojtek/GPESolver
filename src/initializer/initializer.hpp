@@ -3,11 +3,13 @@
 
 #include "context/context.hpp"
 #include "manager/sim_mediator.hpp"
+#include <functional>
 
 class DataInitializer {
 public:
     DataInitializer(AbstractSimulationMediator*);
     void initialize_wavefunction();
+    void initialize_potential();
 
 private:
     //! Init for psi text file
@@ -23,7 +25,20 @@ private:
     //! Init with cosinus
     void init_with_cos();
 
+    //! Potential initializers 
+    //! Init with potential in x direction in form of V(x) = \alpha * x^4
+    void set_pote_regular();
+    //! Init with potential in x direction in form of V(x) = \alpha * x^4 - \beta * x^2
+    void set_pote_mexican();
+    //! Init with potential in x direction in form of V(x) = TODO
+    void set_pote_cradle();
+    //! apply already set pote function to _pote container
+    void init_pote();
+
     wavefunction_t _data;
+    potential_t _pote;
+    std::function<double(int,int,int)> _pote_func;
+
     PhysicalParameters* params;
     AbstractSimulationMediator* p_mediator;
     SimulationContext* p_sctx;

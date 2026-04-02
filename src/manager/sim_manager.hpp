@@ -17,6 +17,7 @@ public:
     void on_params_loaded() override;
     void on_data_loaded(const wavefunction_t&) override;
     void on_data_initialized(const wavefunction_t&) override;
+    void on_pote_initialized(const potential_t&) override;
 
     void request_load_from_binary(wavefunction_t&) override;
     void request_load_from_text(wavefunction_t&) override;

@@ -36,6 +36,7 @@ void FileManager::save_params() {
     j["fftw_n_threads"]  = params->fftw_n_threads;
     j["calc_strategy"]   = params->calc_strategy.to_string();
     j["init_strategy"]   = params->init_strategy.to_string();
+    j["pote_strategy"]   = params->pote_strategy.to_string();
     j["load_filename"]   = params->load_filename;
     j["initial_maximas"] = params->n_gauss_max;
     j["iter_imag"]       = params->iter_imag;
@@ -89,6 +90,7 @@ void FileManager::load_params() {
 
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->init_strategy.from_string(j["init_strategy"]);
+    params->pote_strategy.from_string(j["pote_strategy"]);
 
     params->n_gauss_max    = j["initial_maximas"];
     params->bec_droplets_x = j["bec_droplets_x"];
@@ -350,7 +352,6 @@ void FileManager::load_from_binary_file(std::string filename) {
         throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
-
     psi_loading_buffer.resize(nx_file, ny_file, nz_file);
 
     for (size_t i = 0; i < psi_loading_buffer.size(); i++) {
@@ -426,6 +427,39 @@ void FileManager::save_energies(const energies_container_t &energies) {
         file << iter << "\t" << enes.e_kin << "\t" << enes.e_pot << "\t" << enes.e_int << "\t"
              << enes.e_ext << "\t" << enes.e_bmf << "\t" << enes.e_total << std::endl;
         iter++;
+    }
+
+    file.close();
+}
+
+void FileManager::save_pote_to_text_file(const potential_t &pote, std::string filename) {
+    filename.append(TEXT_FILE_EXTENSION);
+    OutputFormatter::printInfo("Saving to text file: " + std::string(filename));
+
+    std::ofstream file(filename);
+
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    int dx = UnitConverter::len_au_to_nm(params->dx);
+    int dy = UnitConverter::len_au_to_nm(params->dy);
+    int dz = UnitConverter::len_au_to_nm(params->dz);
+
+    if (!file.is_open()) {
+        OutputFormatter::printError("Can't open initial state file for writing.");
+        return;
+    }
+
+    file << "# nx = " << nx << "\n";
+    file << "# ny = " << ny << "\n";
+    file << "# nz = " << nz << "\n";
+    file << "# dx = " << dx << "\n";
+    file << "# dy = " << dy << "\n";
+    file << "# dz = " << dz << "\n";
+
+    for (size_t i = 0; i < pote.size(); i++) {
+        file << pote(i) << "\n";
     }
 
     file.close();

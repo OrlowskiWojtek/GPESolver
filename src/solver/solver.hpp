@@ -20,6 +20,7 @@ public:
 
     void initialize();
     void load_buffer(const wavefunction_t&);
+    void load_pote(const potential_t&);
 private:
     PhysicalParameters *params;
 
@@ -28,7 +29,7 @@ private:
     wavefunction_t cpsii;
     wavefunction_t cpsi;
 
-    //! Map of dipole-dipole potential - copy
+    //! Map of dipole-dipole potential
     potential_t fi3d;
 
     //! Map of external potential
@@ -51,7 +52,6 @@ private:
     void run_speed_test();
 
     void init_containers();
-    void init_potential();
     void free_potential_well();
     void imag_time_iter();
     void real_time_iter();
@@ -63,12 +63,6 @@ private:
     void imag_iter_nonlinear_step();
     void real_fft_potential_half_step();
     void real_fft_kinetic_step();
-
-    void move_cradle();
-    double pote_cradle_value(int ix, int iy, int iz);
-    double pote_value(int ix, int iy, int iz);
-    double pote_released_value(int ix, int iy, int iz);
-    double pote_offset_value(int ix, int iy, int iz);
 };
 
 #endif

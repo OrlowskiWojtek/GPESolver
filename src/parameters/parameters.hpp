@@ -93,6 +93,9 @@ struct PhysicalParameters {
 
     //! Initialization option
     InitializationOption init_strategy;
+    
+    //! Type of potential used for initial state finding
+    PotentialType pote_strategy;
 
     double get_dxdydz();
 

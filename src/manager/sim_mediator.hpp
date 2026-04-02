@@ -7,6 +7,7 @@ class AbstractSimulationMediator{
 public:
     virtual void on_data_loaded(const wavefunction_t&) = 0;
     virtual void on_data_initialized(const wavefunction_t& ) = 0;
+    virtual void on_pote_initialized(const potential_t& ) = 0;
     virtual void on_params_loaded() = 0;
 
     virtual void request_load_from_binary(wavefunction_t&) = 0;

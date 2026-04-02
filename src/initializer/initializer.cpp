@@ -35,6 +35,25 @@ void DataInitializer::initialize_wavefunction() {
     p_mediator->on_data_initialized(_data);
 }
 
+void DataInitializer::initialize_potential() {
+    OutputFormatter::printInfo("Initializing potential");
+
+    switch (params->pote_strategy.type) {
+    case PotentialType::Type::REGULAR:
+        set_pote_regular();
+        break;
+    case PotentialType::Type::MEXICAN:
+        set_pote_mexican();
+        break;
+    case PotentialType::Type::CRADLE:
+        set_pote_cradle();
+        break;
+    }
+
+    init_pote();
+    p_mediator->on_pote_initialized(_pote);
+}
+
 void DataInitializer::init_with_cos() {
     int nx = params->nx;
     int ny = params->ny;
@@ -88,8 +107,6 @@ void DataInitializer::init_with_gaussian() {
             }
         }
     }
-
-
 }
 
 void DataInitializer::init_with_setup_gaussian() {
@@ -108,15 +125,16 @@ void DataInitializer::init_with_setup_gaussian() {
     for (int i = 0; i < params->bec_droplets_x; i++) {
         for (int j = 0; j < params->bec_droplets_y; j++) {
             for (int k = 0; k < params->bec_droplets_z; k++) {
-                int idx = i * params->bec_droplets_y * params->bec_droplets_z + j * params->bec_droplets_z + k;
-    
+                int idx = i * params->bec_droplets_y * params->bec_droplets_z +
+                          j * params->bec_droplets_z + k;
+
                 double spacing_x = x_tot / static_cast<double>(params->bec_droplets_x + 1);
                 double spacing_y = y_tot / static_cast<double>(params->bec_droplets_y + 1);
                 double spacing_z = z_tot / static_cast<double>(params->bec_droplets_z + 1);
-                
-                double cx = - x_tot / 2 + spacing_x * (i + 1);
-                double cy = - y_tot / 2 + spacing_y * (j + 1);
-                double cz = - z_tot / 2 + spacing_z * (k + 1);
+
+                double cx = -x_tot / 2 + spacing_x * (i + 1);
+                double cy = -y_tot / 2 + spacing_y * (j + 1);
+                double cz = -z_tot / 2 + spacing_z * (k + 1);
 
                 centers[idx] = {cx, cy, cz};
             }
@@ -150,7 +168,6 @@ void DataInitializer::init_with_setup_gaussian() {
             }
         }
     }
-
 }
 
 void DataInitializer::init_with_multiple_gaussian() {
@@ -218,4 +235,73 @@ void DataInitializer::init_from_text_file() {
 
 void DataInitializer::init_from_binary_file() {
     p_mediator->request_load_from_binary(_data);
+}
+
+void DataInitializer::init_pote() {
+    int nx = params->nx;
+    int ny = params->ny;
+    int nz = params->nz;
+
+    _pote.resize(nx, ny, nz);
+
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                _pote(i, j, k) = _pote_func(i, j, k);
+            }
+        }
+    }
+}
+
+void DataInitializer::set_pote_mexican() {
+    _pote_func = [this](int ix, int iy, int iz) -> double {
+        double x = p_sctx->get_x(ix);
+        double y = p_sctx->get_y(iy);
+        double z = p_sctx->get_z(iz);
+
+        double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4);
+
+        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+        return vx + vy + vz;
+    };
+}
+
+void DataInitializer::set_pote_regular() {
+    _pote_func = [this](int ix, int iy, int iz) -> double {
+        double x = p_sctx->get_x(ix);
+        double y = p_sctx->get_y(iy);
+        double z = p_sctx->get_z(iz);
+
+        double vx = params->aa * std::pow(x, 4);
+        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+        return vx + vy + vz;
+    };
+}
+
+void DataInitializer::set_pote_cradle() {
+    _pote_func = [this](int ix, int iy, int iz) -> double {
+        double x = p_sctx->get_x(ix);
+        double y = p_sctx->get_y(iy);
+        double z = p_sctx->get_z(iz);
+
+        double bec_spacing = params->nx * params->dx / (params->bec_droplets_x + 1);
+        double alpha       = params->m * std::pow(params->omega_x, 2) / (std::pow(bec_spacing, 2));
+        double beta        = params->m * std::pow(params->omega_x, 2) / 2;
+
+        double vx = alpha * std::pow(x, 2);
+
+        for (int i = 0; i < params->bec_droplets_x; i++) {
+            double x_pos = -params->nx * params->dx / 2 + bec_spacing * (i + 1);
+            vx -= beta * std::pow(x - x_pos, 2);
+        }
+
+        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+        return vx + vy + vz;
+    };
 }

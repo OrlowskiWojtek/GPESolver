@@ -99,4 +99,41 @@ public:
     Type type = Type::MULTIPLE_GAUSS;
 };
 
+class PotentialType : public AbstractParam {
+public:
+    enum class Type {
+        REGULAR, //!< Simple potential without barier
+        MEXICAN, //!< Mexican hat potential
+        CRADLE,  //!< Number of minimas equal to number of cradles
+    };
+
+    std::string to_string() override {
+        switch (type) {
+        case Type::REGULAR:
+            return "REGULAR";
+            break;
+        case Type::MEXICAN:
+            return "MEXICAN";
+            break;
+        case Type::CRADLE:
+            return "CRADLE";
+            break;
+        }
+
+        return "";
+    }
+
+    void from_string(std::string str) override {
+        if (str == "REGULAR")
+            type = PotentialType::Type::REGULAR;
+        if (str == "MEXICAN")
+            type = PotentialType::Type::MEXICAN;
+        if (str == "CRADLE")
+            type = PotentialType::Type::CRADLE;
+    }
+
+    Type type = PotentialType::Type::REGULAR;
+};
+
+
 #endif

@@ -17,8 +17,6 @@ void SimulationManager::initialize() {
         OutputFormatter::printWarning("Could not load parameters from file.");
         throw std::runtime_error(e.what());
     }
-
-    m_initializer->initialize_wavefunction();
 }
 
 void SimulationManager::run_simulation() {
@@ -51,6 +49,8 @@ void SimulationManager::on_params_loaded() {
     params->print();
 
     p_sctx->initialize();
+    m_initializer->initialize_wavefunction();
+    m_initializer->initialize_potential();
     m_gpe_solver->initialize();
 }
 
@@ -60,6 +60,11 @@ void SimulationManager::on_data_loaded(const wavefunction_t &wvf) {
 
 void SimulationManager::on_data_initialized(const wavefunction_t &wvf) {
     m_gpe_solver->load_buffer(wvf);
+}
+
+void SimulationManager::on_pote_initialized(const potential_t &pote) {
+    m_file_manager->save_pote_to_text_file(pote, "initial_potential");
+    m_gpe_solver->load_pote(pote);
 }
 
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {
