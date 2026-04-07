@@ -67,6 +67,15 @@ void SimulationManager::on_pote_initialized(const potential_t &pote) {
     m_gpe_solver->load_pote(pote);
 }
 
+void SimulationManager::on_pote_changed(const potential_t &pote) {
+    m_file_manager->save_pote_to_text_file(pote, "changed_potential");
+    m_gpe_solver->load_pote(pote);
+}
+
+void SimulationManager::request_free_potential() {
+    m_initializer->change_potential();
+}
+
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {
     m_file_manager->load_from_text_file(params->load_filename,
                                         [&wvf](wavefunction_t &loaded_buffer) {

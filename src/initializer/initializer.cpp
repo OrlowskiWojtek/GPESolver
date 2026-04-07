@@ -282,26 +282,64 @@ void DataInitializer::set_pote_regular() {
     };
 }
 
+// Potential in form ax^2 + sin(kx), where k designs how many minimas there are
+// void DataInitializer::set_pote_cradle() {
+//    _pote_func = [this](int ix, int iy, int iz) -> double {
+//        double x = p_sctx->get_x(ix);
+//        double y = p_sctx->get_y(iy);
+//        double z = p_sctx->get_z(iz);
+//
+//        int n        = params->bec_droplets_x;
+//        double x0    = params->dd;
+//        double V0    = params->b * std::pow(x0, 2);
+//
+//        double periodic = 0;
+//        if (n % 2 == 0) {
+//            periodic = V0 * std::cos(M_PI * x * n / x0);
+//        } else {
+//            periodic = V0 * std::cos(M_PI * (x - x0) * n / x0);
+//        }
+//
+//        double vx = params->aa * std::pow(x, 4) + periodic;
+//
+//        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+//        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+//
+//        return vx + vy + vz;
+//    };
+//}
+
 void DataInitializer::set_pote_cradle() {
     _pote_func = [this](int ix, int iy, int iz) -> double {
         double x = p_sctx->get_x(ix);
         double y = p_sctx->get_y(iy);
         double z = p_sctx->get_z(iz);
 
-        double bec_spacing = params->nx * params->dx / (params->bec_droplets_x + 1);
-        double alpha       = params->m * std::pow(params->omega_x, 2) / (std::pow(bec_spacing, 2));
-        double beta        = params->m * std::pow(params->omega_x, 2) / 2;
+        int n              = params->bec_droplets_x;
+        double x0          = - params->dd;
+        double step        = 2 * params->dd / n;
+        double V0          = params->b * std::pow(x0, 2);
+        bool is_left       = x < x0 + step;
+        double k           = is_left ? M_PI * n / (2 * x0) : M_PI * n / x0;
+        double step_offset = is_left ? step : 0;
 
-        double vx = alpha * std::pow(x, 2);
-
-        for (int i = 0; i < params->bec_droplets_x; i++) {
-            double x_pos = -params->nx * params->dx / 2 + bec_spacing * (i + 1);
-            vx -= beta * std::pow(x - x_pos, 2);
+        double periodic = 0;
+        if (n % 2 == 0) {
+            periodic = V0 * std::cos(k * (x - step_offset));
+        } else {
+            periodic = V0 * std::cos(k * (x - x0 - step_offset));
         }
 
+        double vx = params->aa * std::pow(x, 4) + periodic;
         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
         return vx + vy + vz;
     };
+}
+
+void DataInitializer::change_potential(){
+    set_pote_regular();
+    init_pote();
+    p_mediator->on_pote_initialized(_pote);
 }

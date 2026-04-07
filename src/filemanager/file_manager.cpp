@@ -111,9 +111,9 @@ void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filen
     int ny = params->ny;
     int nz = params->nz;
 
-    int dx = UnitConverter::len_au_to_nm(params->dx);
-    int dy = UnitConverter::len_au_to_nm(params->dy);
-    int dz = UnitConverter::len_au_to_nm(params->dz);
+    double dx = UnitConverter::len_au_to_nm(params->dx);
+    double dy = UnitConverter::len_au_to_nm(params->dy);
+    double dz = UnitConverter::len_au_to_nm(params->dz);
 
     if (!file.is_open()) {
         OutputFormatter::printError("Can't open initial state file for writing.");
@@ -154,17 +154,17 @@ void FileManager::load_from_text_file(std::string filename) {
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
     }
 
-    int dx;
-    int dy;
-    int dz;
+    double dx;
+    double dy;
+    double dz;
 
     file >> dx >> dy >> dz;
     dx = UnitConverter::len_nm_to_au(dx);
     dy = UnitConverter::len_nm_to_au(dy);
     dz = UnitConverter::len_nm_to_au(dz);
 
-    if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dz) > 1e-3 ||
-        std::abs(dy - params->dz) > 1e-3) {
+    if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dy) > 1e-3 ||
+        std::abs(dz - params->dz) > 1e-3) {
         throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
@@ -204,17 +204,17 @@ void FileManager::load_from_text_file(std::string filename,
         throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
     }
 
-    int dx;
-    int dy;
-    int dz;
+    double dx;
+    double dy;
+    double dz;
 
     file >> dx >> dy >> dz;
     dx = UnitConverter::len_nm_to_au(dx);
     dy = UnitConverter::len_nm_to_au(dy);
     dz = UnitConverter::len_nm_to_au(dz);
 
-    if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dz) > 1e-3 ||
-        std::abs(dy - params->dz) > 1e-3) {
+    if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dy) > 1e-3 ||
+        std::abs(dz - params->dz) > 1e-3) {
         throw std::runtime_error("Grid size in the file do not match current parameters.");
     }
 
@@ -442,9 +442,9 @@ void FileManager::save_pote_to_text_file(const potential_t &pote, std::string fi
     int ny = params->ny;
     int nz = params->nz;
 
-    int dx = UnitConverter::len_au_to_nm(params->dx);
-    int dy = UnitConverter::len_au_to_nm(params->dy);
-    int dz = UnitConverter::len_au_to_nm(params->dz);
+    double dx = UnitConverter::len_au_to_nm(params->dx);
+    double dy = UnitConverter::len_au_to_nm(params->dy);
+    double dz = UnitConverter::len_au_to_nm(params->dz);
 
     if (!file.is_open()) {
         OutputFormatter::printError("Can't open initial state file for writing.");

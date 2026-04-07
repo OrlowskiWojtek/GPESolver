@@ -56,9 +56,6 @@ void GrossPitaevskiSolver::calc_initial_state() {
     for (size_t iter = 1; iter <= params->iter_imag; iter++) {
         imag_time_iter();
         calc_energy();
-        if (iter % 50 == 0) {
-            p_mediator->save_checkpoint(cpsi);
-        }
     }
 
     OutputFormatter::printInfo("Imaginary time evolution completed");
@@ -259,19 +256,7 @@ void GrossPitaevskiSolver::normalize() {
 }
 
 void GrossPitaevskiSolver::free_potential_well() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    pote.resize(nx, ny, nz);
-
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
-                //pote(i, j, k) = pote_released_value(i, j, k);
-            }
-        }
-    }
+    p_mediator->request_free_potential();
 }
 
 void GrossPitaevskiSolver::calc_energy() {
