@@ -1,5 +1,6 @@
 #include "initializer/initializer.hpp"
 #include "output.hpp"
+#include "units.hpp"
 #include <tuple>
 
 DataInitializer::DataInitializer(AbstractSimulationMediator *_mediator)
@@ -268,13 +269,36 @@ void DataInitializer::set_pote_mexican() {
     };
 }
 
+//void DataInitializer::set_pote_regular() {
+//    _pote_func = [this](int ix, int iy, int iz) -> double {
+//        double x = p_sctx->get_x(ix);
+//        double y = p_sctx->get_y(iy);
+//        double z = p_sctx->get_z(iz);
+//
+//        double vx = params->aa * std::pow(x, 4);
+//        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+//        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+//
+//        return vx + vy + vz;
+//    };
+//}
+
 void DataInitializer::set_pote_regular() {
     _pote_func = [this](int ix, int iy, int iz) -> double {
         double x = p_sctx->get_x(ix);
         double y = p_sctx->get_y(iy);
         double z = p_sctx->get_z(iz);
 
-        double vx = params->aa * std::pow(x, 4);
+        double vx = 0;
+        //vx = params->aa * std::pow(x, 4);
+
+        if(x < -params->dd){
+            vx = params->aa * std::pow(x + params->dd, 4);
+        }
+        if(x > params->dd){
+            vx = params->aa * std::pow(x - params->dd, 4);
+        }
+
         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
@@ -282,6 +306,7 @@ void DataInitializer::set_pote_regular() {
     };
 }
 
+// This is some old idea with sinus with changable cos
 // void DataInitializer::set_pote_cradle() {
 //     _pote_func = [this](int ix, int iy, int iz) -> double {
 //         double x = p_sctx->get_x(ix);
@@ -311,19 +336,47 @@ void DataInitializer::set_pote_regular() {
 //     };
 // }
 
+// This is some old idea with gauss, that is supposed to move one bec
+//void DataInitializer::set_pote_cradle() {
+//    _pote_func = [this](int ix, int iy, int iz) -> double {
+//        double x = p_sctx->get_x(ix);
+//        double y = p_sctx->get_y(iy);
+//        double z = p_sctx->get_z(iz);
+//
+//        double x0       = -params->dd;
+//        double step     = 2 * params->dd / params->bec_droplets_x;
+//        double V0       = params->aa * std::pow(params->dd, 4);
+//        double sigma    = step / 3;
+//        double movement = V0 * std::exp(-std::pow((x - x0), 2) / std::pow(sigma, 2));
+//
+//        double vx = params->aa * std::pow(x, 4) - movement;
+//        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+//        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+//
+//        return vx + vy + vz;
+//    };
+//}
+
+// other idea was in Julia to HARD move one BEC fixed number of nodes
+
+// This is never idea -> move whole potential slightly to te left, but make also some zeroes inside (wider potential)
 void DataInitializer::set_pote_cradle() {
     _pote_func = [this](int ix, int iy, int iz) -> double {
         double x = p_sctx->get_x(ix);
         double y = p_sctx->get_y(iy);
         double z = p_sctx->get_z(iz);
+        double offset = params->dd / 2;
 
-        double x0       = -params->dd;
-        double step     = 2 * params->dd / params->bec_droplets_x;
-        double V0       = params->aa * std::pow(params->dd, 4);
-        double sigma    = step / 3;
-        double movement = V0 * std::exp(-std::pow((x - x0), 2) / std::pow(sigma, 2));
+        double vx = 0;
+        //vx = params->aa * std::pow(x, 4);
 
-        double vx = params->aa * std::pow(x, 4) - movement;
+        if(x < -params->dd){
+            vx = params->aa * std::pow((x - offset) + params->dd, 4);
+        }
+        if(x > params->dd){
+            vx = params->aa * std::pow(x - params->dd, 4);
+        }
+
         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 

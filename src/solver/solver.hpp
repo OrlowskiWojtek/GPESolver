@@ -7,6 +7,7 @@
 #include "manager/sim_mediator.hpp"
 
 #include "context/context.hpp"
+#include <chrono>
 #include <memory>
 
 /*! Solver of time dependent Gross Pitaevski equation.
@@ -22,6 +23,9 @@ public:
     void load_buffer(const wavefunction_t&);
     void load_pote(const potential_t&);
 private:
+    // time of last checkpoint
+    std::chrono::time_point<std::chrono::steady_clock> iter_time_ms;
+
     PhysicalParameters *params;
 
     //! Containers
@@ -56,6 +60,7 @@ private:
     void free_potential_well();
     void imag_time_iter();
     void real_time_iter();
+    void summarize_iter();
 
     void calc_fi3d();
     void calc_norm();

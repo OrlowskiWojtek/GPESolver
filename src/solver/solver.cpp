@@ -28,20 +28,24 @@ void GrossPitaevskiSolver::initialize() {
 }
 
 void GrossPitaevskiSolver::solve() {
+    iter_time_ms = std::chrono::steady_clock::now();
+    
     switch (params->calc_strategy.type) {
     case CalcStrategy::Type::IMAGINARY_TIME:
         calc_initial_state();
         p_mediator->save_initial_state(cpsi);
         break;
     case CalcStrategy::Type::REAL_TIME:
-        free_potential_well();
+        //free_potential_well();
         p_mediator->save_checkpoint(cpsi);
+        calc_cradle();
         calc_evolution();
         break;
     case CalcStrategy::Type::FULL:
         calc_initial_state();
         p_mediator->save_initial_state(cpsi);
-        free_potential_well();
+        calc_cradle();
+        // free_potential_well();
         calc_evolution();
         break;
     case CalcStrategy::Type::SPEED_TEST:
@@ -53,12 +57,13 @@ void GrossPitaevskiSolver::solve() {
 void GrossPitaevskiSolver::calc_initial_state() {
     OutputFormatter::printInfo("Starting imaginary time evolution");
 
-    for (size_t iter = 1; iter <= params->iter_imag; iter++) {
+    for (size_t iter = 0; iter <= params->iter_imag; iter++) {
         imag_time_iter();
         calc_energy();
 
         if(iter % 100 == 0){
             p_mediator->save_checkpoint(cpsi);
+            summarize_iter();
         }
     }
 
@@ -216,21 +221,15 @@ void GrossPitaevskiSolver::real_time_iter() {
     //    std::cout << "real_fft_potential_half_step: " << elapsed4.count() << " ms\n";
 }
 
+// moves cradle just a little bit
 void GrossPitaevskiSolver::calc_cradle() {
     OutputFormatter::printInfo("Changing potential to move one droplet");
 
     p_mediator->request_cradle_potential();
-
-    OutputFormatter::printInfo("Starting imaginary time evolution");
-
-    for (size_t iter = 1; iter <= params->iter_imag; iter++) {
-        imag_time_iter();
-        calc_energy();
-
-        if(iter % 100 == 0){
-            p_mediator->save_checkpoint(cpsi);
-        }
+    for(int iter = 0; iter < 2000; iter++){
+        real_time_iter();
     }
+    p_mediator->request_free_potential();
 
     OutputFormatter::printInfo("Imaginary time evolution completed");
 }
@@ -435,4 +434,13 @@ void GrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
 
 void GrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {
     pote = pote_initialized;
+}
+
+void GrossPitaevskiSolver::summarize_iter(){
+    auto now = std::chrono::steady_clock::now();
+    
+    int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
+    OutputFormatter::printInfo("Time per 100 iterations: " + std::to_string(time_elapsed_ms) + " ms");
+
+    iter_time_ms = now;
 }

@@ -18,6 +18,19 @@ struct IsoBECContext
     dz::Float64
 end
 
+struct PoteContext
+    pote::Array{Float64,3}  # 3D array for the potential data
+    x::Vector{Float64}
+    y::Vector{Float64}
+    z::Vector{Float64}
+    nx::Int32
+    ny::Int32
+    nz::Int32
+    dx::Float64
+    dy::Float64
+    dz::Float64
+end
+
 struct EnergiesContext
     iter::Vector{Int32}
     e_kin::Vector{Float64}
@@ -326,4 +339,6 @@ end
 
 Base.show(io::IO, context::IsoBECContext) = print(io,
                                                   "BEC data with size ($(context.nx), $(context.ny), $(context.nz)) and spacings ($(context.dx) x $(context.dy) x $(context.dz))")
+Base.show(io::IO, context::PoteContext) = print(io,
+                                                  "Potential data with size ($(context.nx), $(context.ny), $(context.nz)) and spacings ($(context.dx) x $(context.dy) x $(context.dz))")
 Base.show(io::IO, context::IsoBECSlice) = print(io, "BEC slice with size ($(context.nx), $(context.ny))")

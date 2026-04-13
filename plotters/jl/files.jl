@@ -65,6 +65,36 @@ function load_from_text(file_path::String)
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
 end
 
+function load_pote_from_text(file_path::String)
+    file    = open(file_path, "r")
+
+    nx      = parse(Int32, split(readline(file), '=')[2])
+    ny      = parse(Int32, split(readline(file), '=')[2])
+    nz      = parse(Int32, split(readline(file), '=')[2])
+
+    dx      = parse(Float64, split(readline(file), '=')[2])
+    dy      = parse(Float64, split(readline(file), '=')[2])
+    dz      = parse(Float64, split(readline(file), '=')[2])
+
+    array_3d = zeros(Float64, nx, ny, nz)
+
+    for i in 1:nx
+        for j in 1:ny
+            for k in 1:nz
+                line = readline(file)
+                array_3d[i, j, k] =  parse(Float64, line)
+            end
+        end
+    end
+
+    x = ((1:nx) .- (div(nx, 2) + 1)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 1)) .* dy
+    z = ((1:nz) .- (div(nz, 2) + 1)) .* dz
+
+    close(file)
+    return PoteContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
+end
+
 function save_to_text(psi::IsoBECContext, file_path::String)
     file = open(file_path, "w")
 

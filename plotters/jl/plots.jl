@@ -68,4 +68,23 @@ function plot_slice(slice::IsoBECSlice)
     return fig;
 end
 
+function plot(pote::PoteContext)
+    fig = Figure()
 
+    ax_x = Axis(fig[1,1])
+    ax_y = Axis(fig[1,1])
+    ax_z = Axis(fig[1,1])
+
+    x_pote = pote.pote[:, begin, begin]
+    y_pote = pote.pote[begin, :, begin]
+    z_pote = pote.pote[begin, begin, :]
+
+    lines!(ax_x, pote.x, x_pote, color = :red, label = "x")
+    lines!(ax_y, pote.y, y_pote, color = :blue,label = "y")
+    lines!(ax_z, pote.z, z_pote, color = :orange, label = "z")
+
+    linkxaxes!(ax_x, ax_y)
+    linkxaxes!(ax_x, ax_z)
+
+    return fig;
+end

@@ -3,12 +3,11 @@ using GLMakie
 
 ## Finding correct potential profile for ball hitting (only x dimension right now)
 
-##
-
 x  = LinRange(-20000 / 2, 20000 /2 , 1000) * 18.897261260649092 # nm to au
+x_um = x ./ 18.897261260649092 ./ 1000
 
-dd    = 6000 * 18.897261260649092
-dd_um = 6000 / 1000
+dd    = 1500 * 18.897261260649092
+dd_um = 1500 / 1000
 
 wzl = 120 * 4.1356e-12 / 27211.6; # angular frequency of harmonic potential - z direction
 wrl = 60. * 4.1356e-12 / 27211.6; # angular frequency of harmonic potential - y direction
@@ -89,6 +88,33 @@ ax  = Axis(fig[1,1]);
 
 lines!(ax, x_um, vx, color = :blue)
 lines!(ax, x_um, vx - movement, color = :red)
+vlines!(ax, [-dd_um, dd_um], color = :black, linestyle = :dash)
+
+fig
+
+## Okay newer idea -> x^4 ____ zeroes ____ x^4 (need long for this, lets ___ be denoted by dd)
+
+x0 = -dd
+
+vx_old = @. aa * x^4
+
+vx = Vector{Float64}(undef, length(x))
+for (idx, _x) in enumerate(x)
+    vx[idx] = 0
+    if(_x < -dd)
+        vx[idx] = aa * (_x + dd)^4
+    end
+    if(_x > dd)
+        vx[idx] = aa * (_x - dd)^4
+    end 
+end
+
+
+fig = Figure();
+ax  = Axis(fig[1,1]);
+
+lines!(ax, x_um, vx, color = :blue)
+lines!(ax, x_um, vx_old, color = :gray, linewidth = 1)
 vlines!(ax, [-dd_um, dd_um], color = :black, linestyle = :dash)
 
 fig
