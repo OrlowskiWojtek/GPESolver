@@ -56,6 +56,10 @@ void GrossPitaevskiSolver::calc_initial_state() {
     for (size_t iter = 1; iter <= params->iter_imag; iter++) {
         imag_time_iter();
         calc_energy();
+
+        if(iter % 100 == 0){
+            p_mediator->save_checkpoint(cpsi);
+        }
     }
 
     OutputFormatter::printInfo("Imaginary time evolution completed");
@@ -210,6 +214,25 @@ void GrossPitaevskiSolver::real_time_iter() {
     //    auto end4 = std::chrono::high_resolution_clock::now();
     //    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
     //    std::cout << "real_fft_potential_half_step: " << elapsed4.count() << " ms\n";
+}
+
+void GrossPitaevskiSolver::calc_cradle() {
+    OutputFormatter::printInfo("Changing potential to move one droplet");
+
+    p_mediator->request_cradle_potential();
+
+    OutputFormatter::printInfo("Starting imaginary time evolution");
+
+    for (size_t iter = 1; iter <= params->iter_imag; iter++) {
+        imag_time_iter();
+        calc_energy();
+
+        if(iter % 100 == 0){
+            p_mediator->save_checkpoint(cpsi);
+        }
+    }
+
+    OutputFormatter::printInfo("Imaginary time evolution completed");
 }
 
 void GrossPitaevskiSolver::init_containers() {

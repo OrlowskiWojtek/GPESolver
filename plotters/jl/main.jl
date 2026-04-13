@@ -42,16 +42,11 @@ fig = plot_local_maxima_coordinates_one_ax(slice_vec)
 
 ##
 
-psi = load_from_text(joinpath("../../../data/run_find_initial_states/20k_atoms/4_max", "initial_state.dat"))
+psi = load_from_text(joinpath("../../build", "initial_state.gpe.dat"))
+plot_iso_bce(psi)
 
 ##
 
-fig = plot_evolution("../../../"; step = 10, total_size = 6);
-save("time_3d_edd_15_dd_1500_atoms_30000.png", fig)
-
-##
-
-fig = plot_evolution(""; step = 10, total_size = 6);
-save("time_3d_edd_15_dd_1500_atoms_30000.png", fig)
+animate_iso_bce_interactive_prefetch("../../build")
 
 

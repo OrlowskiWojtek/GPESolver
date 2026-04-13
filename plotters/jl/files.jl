@@ -65,6 +65,30 @@ function load_from_text(file_path::String)
     return IsoBECContext(array_3d, x, y, z, nx, ny, nz, dx, dy, dz)
 end
 
+function save_to_text(psi::IsoBECContext, file_path::String)
+    file = open(file_path, "w")
+
+    # Write header information
+    println(file, psi.nx)
+    println(file, psi.ny)
+    println(file, psi.nz)
+    println(file, psi.dx)
+    println(file, psi.dy)
+    println(file, psi.dz)
+
+    # Write 3D array data
+    for i in 1:psi.nx
+        for j in 1:psi.ny
+            for k in 1:psi.nz
+                val = psi.psi[i, j, k]
+                println(file, "$(real(val))\t$(imag(val))")
+            end
+        end
+    end
+
+    close(file)
+end
+
 function load_energies(filename::String)
     iter = Int32[]
     e_kin = Float64[]

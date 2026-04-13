@@ -282,32 +282,34 @@ void DataInitializer::set_pote_regular() {
     };
 }
 
-// Potential in form ax^2 + sin(kx), where k designs how many minimas there are
 // void DataInitializer::set_pote_cradle() {
-//    _pote_func = [this](int ix, int iy, int iz) -> double {
-//        double x = p_sctx->get_x(ix);
-//        double y = p_sctx->get_y(iy);
-//        double z = p_sctx->get_z(iz);
+//     _pote_func = [this](int ix, int iy, int iz) -> double {
+//         double x = p_sctx->get_x(ix);
+//         double y = p_sctx->get_y(iy);
+//         double z = p_sctx->get_z(iz);
 //
-//        int n        = params->bec_droplets_x;
-//        double x0    = params->dd;
-//        double V0    = params->b * std::pow(x0, 2);
+//         int n              = params->bec_droplets_x;
+//         double x0          = - params->dd;
+//         double step        = 2 * params->dd / n;
+//         double V0          = params->b * std::pow(x0, 2);
+//         bool is_left       = x < x0 + step;
+//         double k           = is_left ? M_PI * n / (2 * x0) : M_PI * n / x0;
+//         double step_offset = is_left ? step : 0;
 //
-//        double periodic = 0;
-//        if (n % 2 == 0) {
-//            periodic = V0 * std::cos(M_PI * x * n / x0);
-//        } else {
-//            periodic = V0 * std::cos(M_PI * (x - x0) * n / x0);
-//        }
+//         double periodic = 0;
+//         if (n % 2 == 0) {
+//             periodic = V0 * std::cos(k * (x - step_offset));
+//         } else {
+//             periodic = V0 * std::cos(k * (x - x0 - step_offset));
+//         }
 //
-//        double vx = params->aa * std::pow(x, 4) + periodic;
+//         double vx = params->aa * std::pow(x, 4) + periodic;
+//         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+//         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 //
-//        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-//        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-//
-//        return vx + vy + vz;
-//    };
-//}
+//         return vx + vy + vz;
+//     };
+// }
 
 void DataInitializer::set_pote_cradle() {
     _pote_func = [this](int ix, int iy, int iz) -> double {
@@ -315,22 +317,13 @@ void DataInitializer::set_pote_cradle() {
         double y = p_sctx->get_y(iy);
         double z = p_sctx->get_z(iz);
 
-        int n              = params->bec_droplets_x;
-        double x0          = - params->dd;
-        double step        = 2 * params->dd / n;
-        double V0          = params->b * std::pow(x0, 2);
-        bool is_left       = x < x0 + step;
-        double k           = is_left ? M_PI * n / (2 * x0) : M_PI * n / x0;
-        double step_offset = is_left ? step : 0;
+        double x0       = -params->dd;
+        double step     = 2 * params->dd / params->bec_droplets_x;
+        double V0       = params->aa * std::pow(params->dd, 4);
+        double sigma    = step / 3;
+        double movement = V0 * std::exp(-std::pow((x - x0), 2) / std::pow(sigma, 2));
 
-        double periodic = 0;
-        if (n % 2 == 0) {
-            periodic = V0 * std::cos(k * (x - step_offset));
-        } else {
-            periodic = V0 * std::cos(k * (x - x0 - step_offset));
-        }
-
-        double vx = params->aa * std::pow(x, 4) + periodic;
+        double vx = params->aa * std::pow(x, 4) - movement;
         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
@@ -338,8 +331,19 @@ void DataInitializer::set_pote_cradle() {
     };
 }
 
-void DataInitializer::change_potential(){
-    set_pote_regular();
+void DataInitializer::change_potential(PotentialType::Type type) {
+    switch(type){
+        case PotentialType::Type::REGULAR:
+            set_pote_regular();
+            break;
+        case PotentialType::Type::MEXICAN:
+            set_pote_mexican();
+            break;
+        case PotentialType::Type::CRADLE:
+            set_pote_cradle();
+            break;
+    }
+
     init_pote();
     p_mediator->on_pote_initialized(_pote);
 }

@@ -23,6 +23,7 @@ public:
     void request_load_from_binary(wavefunction_t&) override;
     void request_load_from_text(wavefunction_t&) override;
     void request_free_potential() override;
+    void request_cradle_potential() override;
 
     void save_data(const wavefunction_t&) override;
     void save_checkpoint(const wavefunction_t&) override;

@@ -14,6 +14,7 @@ public:
     virtual void request_load_from_binary(wavefunction_t&) = 0;
     virtual void request_load_from_text(wavefunction_t&) = 0;
     virtual void request_free_potential() = 0;
+    virtual void request_cradle_potential() = 0;
 
     virtual void save_data(const wavefunction_t&) = 0;
     virtual void save_checkpoint(const wavefunction_t&) = 0;

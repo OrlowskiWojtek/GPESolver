@@ -73,7 +73,11 @@ void SimulationManager::on_pote_changed(const potential_t &pote) {
 }
 
 void SimulationManager::request_free_potential() {
-    m_initializer->change_potential();
+    m_initializer->change_potential(PotentialType::Type::REGULAR);
+}
+
+void SimulationManager::request_cradle_potential() {
+    m_initializer->change_potential(PotentialType::Type::CRADLE);
 }
 
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {
