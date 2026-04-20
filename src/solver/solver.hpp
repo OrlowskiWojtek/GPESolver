@@ -60,7 +60,8 @@ private:
     void free_potential_well();
     void imag_time_iter();
     void real_time_iter();
-    void summarize_iter();
+    void summarize_imag_iter();
+    void summarize_real_iter();
 
     void calc_fi3d();
     void calc_norm();

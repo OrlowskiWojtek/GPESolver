@@ -63,7 +63,7 @@ void GrossPitaevskiSolver::calc_initial_state() {
 
         if(iter % 100 == 0){
             p_mediator->save_checkpoint(cpsi);
-            summarize_iter();
+            summarize_imag_iter();
         }
     }
 
@@ -86,6 +86,7 @@ void GrossPitaevskiSolver::calc_evolution() {
 
         if (iter % 1000 == 0) {
             p_mediator->save_checkpoint(cpsi);
+            summarize_real_iter();
         }
     }
 
@@ -231,7 +232,7 @@ void GrossPitaevskiSolver::calc_cradle() {
     }
     p_mediator->request_free_potential();
 
-    OutputFormatter::printInfo("Imaginary time evolution completed");
+    OutputFormatter::printInfo("Cradle has been moved");
 }
 
 void GrossPitaevskiSolver::init_containers() {
@@ -436,11 +437,20 @@ void GrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {
     pote = pote_initialized;
 }
 
-void GrossPitaevskiSolver::summarize_iter(){
+void GrossPitaevskiSolver::summarize_imag_iter(){
     auto now = std::chrono::steady_clock::now();
     
     int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
     OutputFormatter::printInfo("Time per 100 iterations: " + std::to_string(time_elapsed_ms) + " ms");
+
+    iter_time_ms = now;
+}
+
+void GrossPitaevskiSolver::summarize_real_iter(){
+    auto now = std::chrono::steady_clock::now();
+    
+    int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
+    OutputFormatter::printInfo("Time per 1000 iterations: " + std::to_string(time_elapsed_ms) + " ms");
 
     iter_time_ms = now;
 }
