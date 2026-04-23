@@ -8,6 +8,7 @@ add_library(SolverManager
     context/context.cpp
     solver/fft_solvers/fft_context.cpp
     solver/solver.cpp
+    solver/cpu_solver.cpp
 )
 
 target_link_libraries(SolverManager PUBLIC

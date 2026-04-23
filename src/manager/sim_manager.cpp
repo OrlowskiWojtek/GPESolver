@@ -2,11 +2,13 @@
 #include "context/context.hpp"
 #include "output.hpp"
 
+#include "solver/cpu_solver.hpp"
+
 SimulationManager::SimulationManager()
     : params(PhysicalParameters::getInstance())
     , p_sctx(SimulationContext::getInstance())
     , m_file_manager(std::make_unique<FileManager>(this))
-    , m_gpe_solver(std::make_unique<GrossPitaevskiSolver>(this))
+    , m_gpe_solver(std::make_unique<CpuGrossPitaevskiSolver>(this))
     , m_initializer(std::make_unique<DataInitializer>(this)) {
 }
 

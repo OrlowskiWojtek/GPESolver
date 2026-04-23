@@ -5,10 +5,10 @@
 #include "units.hpp"
 #include <chrono>
 
-double GrossPitaevskiSolver::real_time_dt = 1.00e10;
-double GrossPitaevskiSolver::imag_time_dt = 1.25e11;
+double AbstractGrossPitaevskiSolver::real_time_dt = 1.00e10;
+double AbstractGrossPitaevskiSolver::imag_time_dt = 1.25e11;
 
-GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator *mediator)
+AbstractGrossPitaevskiSolver::AbstractGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
     , p_mediator(mediator)
     , p_sctx(SimulationContext::getInstance()) {
@@ -16,13 +16,10 @@ GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator *mediator)
 #ifdef USE_CUDA
     poisson_solver = std::make_unique<CUFFTPoissonSolver>();
     rt_split_solver = std::make_unique<CUFFTRealTimeSplitSolver>();
-#else
-    poisson_solver = std::make_unique<FFTWPoissonSolver>();
-    rt_split_solver = std::make_unique<FFTWRealTimeSplitSolver>();
 #endif
 }
 
-void GrossPitaevskiSolver::initialize() {
+void AbstractGrossPitaevskiSolver::initialize() {
     init_containers();
 
     poisson_solver->prepare(&cpsi, &fi3d, &pote);
@@ -32,7 +29,7 @@ void GrossPitaevskiSolver::initialize() {
     normalize();
 }
 
-void GrossPitaevskiSolver::solve() {
+void AbstractGrossPitaevskiSolver::solve() {
     iter_time_ms = std::chrono::steady_clock::now();
     
     switch (params->calc_strategy.type) {
@@ -59,7 +56,7 @@ void GrossPitaevskiSolver::solve() {
     }
 }
 
-void GrossPitaevskiSolver::calc_initial_state() {
+void AbstractGrossPitaevskiSolver::calc_initial_state() {
     OutputFormatter::printInfo("Starting imaginary time evolution");
 
     for (size_t iter = 0; iter <= params->iter_imag; iter++) {
@@ -82,7 +79,7 @@ void GrossPitaevskiSolver::calc_initial_state() {
     p_mediator->save_energies(enes);
 }
 
-void GrossPitaevskiSolver::calc_evolution() {
+void AbstractGrossPitaevskiSolver::calc_evolution() {
     OutputFormatter::printInfo("Starting real time evolution");
 
     for (size_t iter = 1; iter <= params->iter_real; iter++) {
@@ -105,7 +102,7 @@ void GrossPitaevskiSolver::calc_evolution() {
     p_mediator->save_energies(enes);
 }
 
-void GrossPitaevskiSolver::imag_time_iter() {
+void AbstractGrossPitaevskiSolver::imag_time_iter() {
     calc_fi3d();
     imag_iter_linear_step();
     imag_iter_nonlinear_step();
@@ -146,7 +143,7 @@ void GrossPitaevskiSolver::imag_time_iter() {
     //}
 }
 
-void GrossPitaevskiSolver::imag_iter_linear_step() {
+void AbstractGrossPitaevskiSolver::imag_iter_linear_step() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
@@ -169,7 +166,7 @@ void GrossPitaevskiSolver::imag_iter_linear_step() {
     }
 }
 
-void GrossPitaevskiSolver::imag_iter_nonlinear_step() {
+void AbstractGrossPitaevskiSolver::imag_iter_nonlinear_step() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
@@ -191,44 +188,15 @@ void GrossPitaevskiSolver::imag_iter_nonlinear_step() {
     cpsi = cpsii;
 }
 
-void GrossPitaevskiSolver::real_time_iter() {
+void AbstractGrossPitaevskiSolver::real_time_iter() {
 
     real_fft_potential_half_step();
     calc_fi3d();
     real_fft_kinetic_step();
     real_fft_potential_half_step();
-
-    //    // Timing for real_fft_potential_half_step()
-    //    auto start1 = std::chrono::high_resolution_clock::now();
-    //    real_fft_potential_half_step();
-    //    auto end1 = std::chrono::high_resolution_clock::now();
-    //    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-    //    std::cout << "real_fft_potential_half_step: " << elapsed1.count() << " ms\n";
-    //
-    //    // Timing for calc_fi3d()
-    //    auto start2 = std::chrono::high_resolution_clock::now();
-    //    calc_fi3d();
-    //    auto end2 = std::chrono::high_resolution_clock::now();
-    //    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-    //    std::cout << "calc_fi3d: " << elapsed2.count() << " ms\n";
-    //
-    //    // Timing for real_fft_kinetic_step()
-    //    auto start3 = std::chrono::high_resolution_clock::now();
-    //    real_fft_kinetic_step();
-    //    auto end3 = std::chrono::high_resolution_clock::now();
-    //    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-    //    std::cout << "real_fft_kinetic_step: " << elapsed3.count() << " ms\n";
-    //
-    //    // Timing for real_fft_potential_half_step()
-    //    auto start4 = std::chrono::high_resolution_clock::now();
-    //    real_fft_potential_half_step();
-    //    auto end4 = std::chrono::high_resolution_clock::now();
-    //    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
-    //    std::cout << "real_fft_potential_half_step: " << elapsed4.count() << " ms\n";
 }
 
-// moves cradle just a little bit
-void GrossPitaevskiSolver::calc_cradle() {
+void AbstractGrossPitaevskiSolver::calc_cradle() {
     OutputFormatter::printInfo("Changing potential to move one droplet");
 
     p_mediator->request_cradle_potential();
@@ -240,149 +208,11 @@ void GrossPitaevskiSolver::calc_cradle() {
     OutputFormatter::printInfo("Cradle has been moved");
 }
 
-void GrossPitaevskiSolver::init_containers() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    fi3d.resize(nx, ny, nz);
-}
-
-void GrossPitaevskiSolver::calc_fi3d() {
-    poisson_solver->execute();
-}
-
-void GrossPitaevskiSolver::calc_norm() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    xnorma = 0.0;
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
-                xnorma += std::norm(cpsi(i, j, k));
-            }
-        }
-    }
-
-    xnorma *= params->get_dxdydz();
-}
-
-void GrossPitaevskiSolver::normalize() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
-                cpsi(i, j, k) /= std::sqrt(xnorma);
-            }
-        }
-    }
-}
-
-void GrossPitaevskiSolver::free_potential_well() {
+void AbstractGrossPitaevskiSolver::free_potential_well() {
     p_mediator->request_free_potential();
 }
 
-void GrossPitaevskiSolver::calc_energy() {
-    ene.e_kin = 0.;
-    ene.e_pot = 0.;
-    ene.e_int = 0.;
-    ene.e_ext = 0.;
-    ene.e_bmf = 0.;
-
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    std::complex<double> grad_psi_x;
-    std::complex<double> grad_psi_y;
-    std::complex<double> grad_psi_z;
-
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                // Kinetic energy
-                grad_psi_x = -(cpsi(i + 1, j, k) + cpsi(i - 1, j, k) - 2. * cpsi(i, j, k)) /
-                             (std::pow(params->dx, 2));
-                grad_psi_y = -(cpsi(i, j + 1, k) + cpsi(i, j - 1, k) - 2. * cpsi(i, j, k)) /
-                             (std::pow(params->dy, 2));
-                grad_psi_z = -(cpsi(i, j, k + 1) + cpsi(i, j, k - 1) - 2. * cpsi(i, j, k)) /
-                             (std::pow(params->dz, 2));
-                ene.e_kin +=
-                    ((grad_psi_x + grad_psi_y + grad_psi_z) * std::conj(cpsi(i, j, k))).real();
-
-                // Potential energy
-                ene.e_pot += pote(i, j, k) * std::norm(cpsi(i, j, k));
-
-                // Interaction energy
-                ene.e_int +=
-                    0.5 * params->ggp11 * std::norm(cpsi(i, j, k)) * std::norm(cpsi(i, j, k));
-
-                // Dipole-dipole interaction energy
-                ene.e_ext +=
-                    0.5 * params->cdd * fi3d(i, j, k) * std::norm(cpsi(i, j, k)) * params->n_atoms;
-                ene.e_ext -= params->cdd / 3. * std::pow(std::norm(cpsi(i, j, k)), 2) / 2. *
-                             std::pow(params->n_atoms, 2);
-
-                // beyond mean-field energy
-                ene.e_bmf += 2. / 5. * params->gamma * std::pow(std::abs(cpsi(i, j, k)), 5);
-            }
-        }
-    }
-
-    ene.e_kin *= params->get_dxdydz() / (2 * params->m) * params->n_atoms;
-    ene.e_pot *= params->get_dxdydz() * params->n_atoms;
-    ene.e_int *= params->get_dxdydz() * std::pow(params->n_atoms, 2);
-    ene.e_ext *= params->get_dxdydz();
-    ene.e_bmf *= params->get_dxdydz() * std::pow(params->n_atoms, 2.5);
-
-    ene.sum();
-
-    enes.emplace_back(ene);
-}
-
-void GrossPitaevskiSolver::real_fft_potential_half_step() {
-    int nx           = params->nx;
-    int ny           = params->ny;
-    int nz           = params->nz;
-    double w         = params->n_atoms;
-    double dt_factor = real_time_dt / 2.;
-
-    double psi_re;
-    double psi_im;
-    double s;
-    double c;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                double v_ext   = pote(i, j, k);
-                double density = std::norm(cpsi(i, j, k));
-
-                double v_int = (params->ggp11 - params->cdd / 3) * density * w +
-                               params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * params->w_15;
-
-                double total_potential = v_ext + params->cdd * fi3d(i, j, k) + v_int;
-
-                psi_re = cpsi(i, j, k).real();
-                psi_im = cpsi(i, j, k).imag();
-                sincos(-dt_factor * total_potential, &s, &c);
-
-                cpsi(i, j, k).imag(psi_re * s + psi_im * c);
-                cpsi(i, j, k).real(psi_re * c - psi_im * s);
-            }
-        }
-    }
-}
-
-void GrossPitaevskiSolver::real_fft_kinetic_step() {
-    rt_split_solver->execute();
-}
-
-void GrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
+void AbstractGrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
     cpsii = wvf;
     cpsi  = wvf;
 
@@ -390,11 +220,11 @@ void GrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
     normalize();
 }
 
-void GrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {
+void AbstractGrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {
     pote = pote_initialized;
 }
 
-void GrossPitaevskiSolver::summarize_imag_iter(){
+void AbstractGrossPitaevskiSolver::summarize_imag_iter(){
     auto now = std::chrono::steady_clock::now();
     
     int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
@@ -403,7 +233,7 @@ void GrossPitaevskiSolver::summarize_imag_iter(){
     iter_time_ms = now;
 }
 
-void GrossPitaevskiSolver::summarize_real_iter(){
+void AbstractGrossPitaevskiSolver::summarize_real_iter(){
     auto now = std::chrono::steady_clock::now();
     
     int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();

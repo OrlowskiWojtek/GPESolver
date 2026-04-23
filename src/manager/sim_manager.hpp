@@ -34,7 +34,7 @@ private:
     PhysicalParameters* params;
     SimulationContext* p_sctx;
     std::unique_ptr<FileManager> m_file_manager;
-    std::unique_ptr<GrossPitaevskiSolver> m_gpe_solver;
+    std::unique_ptr<AbstractGrossPitaevskiSolver> m_gpe_solver;
     std::unique_ptr<DataInitializer> m_initializer;
 
     int checkpoint_counter = 0;
