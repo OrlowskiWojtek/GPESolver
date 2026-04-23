@@ -62,6 +62,9 @@ struct PhysicalParameters {
     //! Number of iterations for real time evolution.
     size_t iter_real;
 
+    const double real_time_dt = 1.00e10;
+    const double imag_time_dt = 1.25e11;
+
     //! Distance per node - x direction
     double dx;
     //! Distance per node - y direction.

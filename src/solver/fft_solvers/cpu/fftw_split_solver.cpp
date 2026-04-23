@@ -1,15 +1,10 @@
-#include "solver/fft_rt_split_solver.hpp"
+#include "solver/fft_solvers/cpu/fftw_split_solver.hpp"
 #include "output.hpp"
-#include "solver/numerical_params.hpp"
 
-#ifdef USE_CUDA
-#include "solver/cuda_kernels.hpp"
-#endif
-
-RealTimeSplitSolver::RealTimeSplitSolver() {
+FFTWRealTimeSplitSolver::FFTWRealTimeSplitSolver() {
 }
 
-void RealTimeSplitSolver::prepare_containers() {
+void FFTWRealTimeSplitSolver::prepare_containers() {
     int nx = p->nx;
     int ny = p->ny;
     int nz = p->nz;
@@ -19,7 +14,7 @@ void RealTimeSplitSolver::prepare_containers() {
     double dz = p->dz;
 
     int N            = nx * ny * nz;
-    double dt        = NumericalParameters::real_time_dt;
+    double dt        = p->real_time_dt;
     h_kinetic_factor = new double[N];
 
     for (int i = 0; i < nx; i++) {
@@ -40,19 +35,9 @@ void RealTimeSplitSolver::prepare_containers() {
             }
         }
     }
-
-#ifdef USE_CUDA
-    auto err = cudaMalloc(&d_kinetic_factor, sizeof(real_type) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_kinetic_factor memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    cudaMemcpy(d_kinetic_factor, h_kinetic_factor, N * sizeof(real_type), cudaMemcpyHostToDevice);
-#endif
 }
 
-void RealTimeSplitSolver::execute() {
+void FFTWRealTimeSplitSolver::execute() {
     int nx = p->nx;
     int ny = p->ny;
     int nz = p->nz;
@@ -70,15 +55,6 @@ void RealTimeSplitSolver::execute() {
         }
     }
 
-#ifdef USE_CUDA
-    cudaMemcpy(d_rho_r, h_rho_r, N * sizeof(complex_type), cudaMemcpyHostToDevice);
-    cufftExecZ2Z(plan_fwd, d_rho_r, d_rho_k, CUFFT_FORWARD);
-
-    launch_kernel_kinetic(d_rho_k, d_kinetic_factor, N);
-    
-    cufftExecZ2Z(plan_bwd, d_rho_k, d_rho_r, CUFFT_INVERSE);
-    cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(complex_type), cudaMemcpyDeviceToHost);
-#else
     fftw_execute(plan_fwd);
 
     for (int i = 0; i < N; i++) {
@@ -92,7 +68,6 @@ void RealTimeSplitSolver::execute() {
     }
 
     fftw_execute(plan_bwd);
-#endif
 
     double norm_factor = 1.0 / static_cast<double>(N);
     for (int i = 0; i < nx; i++) {
@@ -106,61 +81,19 @@ void RealTimeSplitSolver::execute() {
     }
 }
 
-void RealTimeSplitSolver::execute_half_potential_step() {
-    //int nx = p->nx;
-    //int ny = p->ny;
-    //int nz = p->nz;
-
-    //launch_kernel_half_potential_step(d_rho_r, );
-}
-
-RealTimeSplitSolver::~RealTimeSplitSolver() {
-#ifdef USE_CUDA
-    cudaFree(d_rho_r);
-    cudaFree(d_rho_k);
-    cudaFree(d_kinetic_factor);
-
-    cudaFreeHost(h_rho_r);
-#else
+FFTWRealTimeSplitSolver::~FFTWRealTimeSplitSolver() {
     fftw_free(h_rho_r);
     fftw_free(h_rho_k);
-#endif
 
     delete[] h_kinetic_factor;
 }
 
-void RealTimeSplitSolver::prepare_transforms() {
+void FFTWRealTimeSplitSolver::prepare_transforms() {
     int nx = p->nx;
     int ny = p->ny;
     int nz = p->nz;
     int N  = nx * ny * nz;
 
-#ifdef USE_CUDA
-    auto err = cudaMalloc(&d_rho_r, sizeof(cufftDoubleComplex) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_rho_r memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    err = cudaMalloc(&d_rho_k, sizeof(cufftDoubleComplex) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_rho_k memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    err = cudaMalloc(&d_rho_k, sizeof(cufftDoubleComplex) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_rho_k memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    cudaMallocHost(&h_rho_r, sizeof(complex_type) * N);
-
-    cufftPlan3d(&plan_fwd, nx, ny, nz, CUFFT_Z2Z);
-    cufftPlan3d(&plan_bwd, nx, ny, nz, CUFFT_Z2Z);
-
-    OutputFormatter::printInfo("Planned FFT with cuFFT (RTSplitSolver)");
-#else
     h_rho_r = (complex_type *)fftw_malloc(sizeof(complex_type) * N);
     h_rho_k = (complex_type *)fftw_malloc(sizeof(complex_type) * N);
 
@@ -170,5 +103,4 @@ void RealTimeSplitSolver::prepare_transforms() {
     plan_bwd = fftw_plan_dft_3d(nx, ny, nz, h_rho_k, h_rho_r, FFTW_BACKWARD, FFTW_MEASURE);
     OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) +
                                " threads (RTSplitSolver).");
-#endif
 }

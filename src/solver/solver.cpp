@@ -1,20 +1,25 @@
 #include "solver/solver.hpp"
 #include "output.hpp"
 #include "parameters/parameters.hpp"
-#include "solver/fft_rt_split_solver.hpp"
-#include "solver/numerical_params.hpp"
+#include "fft_solvers/fft_export.hpp"
 #include "units.hpp"
 #include <chrono>
 
-double NumericalParameters::real_time_dt = 1.00e10;
-double NumericalParameters::imag_time_dt = 1.25e11;
+double GrossPitaevskiSolver::real_time_dt = 1.00e10;
+double GrossPitaevskiSolver::imag_time_dt = 1.25e11;
 
 GrossPitaevskiSolver::GrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
-    , poisson_solver(std::make_unique<PoissonSolver>())
-    , rt_split_solver(std::make_unique<RealTimeSplitSolver>())
     , p_mediator(mediator)
     , p_sctx(SimulationContext::getInstance()) {
+
+#ifdef USE_CUDA
+    poisson_solver = std::make_unique<CUFFTPoissonSolver>();
+    rt_split_solver = std::make_unique<CUFFTRealTimeSplitSolver>();
+#else
+    poisson_solver = std::make_unique<FFTWPoissonSolver>();
+    rt_split_solver = std::make_unique<FFTWRealTimeSplitSolver>();
+#endif
 }
 
 void GrossPitaevskiSolver::initialize() {
@@ -49,7 +54,7 @@ void GrossPitaevskiSolver::solve() {
         calc_evolution();
         break;
     case CalcStrategy::Type::SPEED_TEST:
-        run_speed_test();
+        // TODO remove run_speed_test();
         break;
     }
 }
@@ -158,7 +163,7 @@ void GrossPitaevskiSolver::imag_iter_linear_step() {
                     0.5 / (params->m * std::pow(params->dz, 2)) *
                         (cpsi(i, j, k - 1) + cpsi(i, j, k + 1) - 2. * cpsi(i, j, k)) +
                     cpsi(i, j, k) * (v + params->cdd * fi3d(i, j, k));
-                cpsii(i, j, k) = cpsi(i, j, k) - NumericalParameters::imag_time_dt * c1;
+                cpsii(i, j, k) = cpsi(i, j, k) - imag_time_dt * c1;
             }
         }
     }
@@ -174,7 +179,7 @@ void GrossPitaevskiSolver::imag_iter_nonlinear_step() {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
                 cpsii(i, j, k) =
-                    cpsii(i, j, k) - NumericalParameters::imag_time_dt *
+                    cpsii(i, j, k) - imag_time_dt *
                                          ((params->ggp11 - params->cdd / 3) *
                                               std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
                                           params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
@@ -340,60 +345,12 @@ void GrossPitaevskiSolver::calc_energy() {
     enes.emplace_back(ene);
 }
 
-void GrossPitaevskiSolver::run_speed_test() {
-    OutputFormatter::printInfo("Starting speed test...");
-
-    params->set_default_values();
-    params->init_parameters();
-    params->print();
-    init_containers();
-
-    poisson_solver->prepare(&cpsi, &fi3d, &pote);
-    rt_split_solver->prepare(&cpsi, &fi3d, &pote);
-
-    auto start = std::chrono::high_resolution_clock::now();
-    for (size_t iter = 0; iter < NumericalParameters::iter_imag_speed_test; iter++) {
-        imag_time_iter();
-    }
-
-    auto end                              = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-
-    OutputFormatter::printInfo("Imaginary time speed test completed.");
-    OutputFormatter::printInfo("Total time for " +
-                               std::to_string(NumericalParameters::iter_imag_speed_test) +
-                               " iterations: " + std::to_string(elapsed.count()) + " seconds.");
-    OutputFormatter::printInfo(
-        "Average time per iteration: " +
-        std::to_string(elapsed.count() /
-                       static_cast<double>(NumericalParameters::iter_imag_speed_test)) +
-        " seconds.");
-
-    start = std::chrono::high_resolution_clock::now();
-
-    for (size_t iter = 0; iter < NumericalParameters::iter_real_speed_test; iter++) {
-        real_time_iter();
-    }
-
-    end     = std::chrono::high_resolution_clock::now();
-    elapsed = end - start;
-    OutputFormatter::printInfo("Real time speed test completed.");
-    OutputFormatter::printInfo("Total time for " +
-                               std::to_string(NumericalParameters::iter_real_speed_test) +
-                               " iterations: " + std::to_string(elapsed.count()) + " seconds.");
-    OutputFormatter::printInfo(
-        "Average time per iteration: " +
-        std::to_string(elapsed.count() /
-                       static_cast<double>(NumericalParameters::iter_real_speed_test)) +
-        " seconds.");
-}
-
 void GrossPitaevskiSolver::real_fft_potential_half_step() {
     int nx           = params->nx;
     int ny           = params->ny;
     int nz           = params->nz;
     double w         = params->n_atoms;
-    double dt_factor = NumericalParameters::real_time_dt / 2.;
+    double dt_factor = real_time_dt / 2.;
 
     double psi_re;
     double psi_im;

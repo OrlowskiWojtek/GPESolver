@@ -2,11 +2,11 @@
 #define GPE_SOLVER_HPP
 
 #include "parameters/parameters.hpp"
-#include "solver/fft_rt_split_solver.hpp"
-#include "solver/fft_poisson_solver.hpp"
-#include "manager/sim_mediator.hpp"
 
+#include "solver/fft_solvers/fft_export.hpp"
+#include "manager/sim_mediator.hpp"
 #include "context/context.hpp"
+
 #include <chrono>
 #include <memory>
 
@@ -45,8 +45,11 @@ private:
     // current norm of wavefunction
     double xnorma;
 
-    std::unique_ptr<PoissonSolver> poisson_solver;
-    std::unique_ptr<RealTimeSplitSolver> rt_split_solver;
+    static double imag_time_dt;
+    static double real_time_dt;
+
+    std::unique_ptr<AbstractPoissonSolver> poisson_solver;
+    std::unique_ptr<AbstractRealTimeSplitSolver> rt_split_solver;
     AbstractSimulationMediator* p_mediator;
     SimulationContext* p_sctx;
 

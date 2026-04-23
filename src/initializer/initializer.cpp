@@ -289,16 +289,7 @@ void DataInitializer::set_pote_regular() {
         double y = p_sctx->get_y(iy);
         double z = p_sctx->get_z(iz);
 
-        double vx = 0;
-        //vx = params->aa * std::pow(x, 4);
-
-        if(x < -params->dd){
-            vx = params->aa * std::pow(x + params->dd, 4);
-        }
-        if(x > params->dd){
-            vx = params->aa * std::pow(x - params->dd, 4);
-        }
-
+        double vx = 0.5 * params->m * std::pow(x, 2) * std::pow(params->omega_x, 2);
         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 

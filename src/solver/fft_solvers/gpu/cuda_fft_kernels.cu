@@ -1,4 +1,4 @@
-#include "cuda_kernels.hpp"
+#include "solver/fft_solvers/gpu/cuda_fft_kernels.hpp"
 #include "cuComplex.h"
 
 // ========Kernel multiply dipole======= //

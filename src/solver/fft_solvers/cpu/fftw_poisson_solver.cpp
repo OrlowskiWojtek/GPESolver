@@ -1,16 +1,13 @@
-#include "solver/fft_poisson_solver.hpp"
+#include "solver/fft_solvers/cpu/fftw_poisson_solver.hpp"
+
 #include "output.hpp"
 #include "parameters/parameters.hpp"
 #include <cmath>
 
-#ifdef USE_CUDA
-#include "cuda_kernels.hpp"
-#endif
-
-PoissonSolver::PoissonSolver() {
+FFTWPoissonSolver::FFTWPoissonSolver() {
 }
 
-void PoissonSolver::prepare_containers() {
+void FFTWPoissonSolver::prepare_containers() {
     int nx = 2 * p->nx;
     int ny = 2 * p->ny;
     int nz = 2 * p->nz;
@@ -47,42 +44,15 @@ void PoissonSolver::prepare_containers() {
             }
         }
     }
-
-#ifdef USE_CUDA
-    auto err = cudaMalloc(&d_Vdip_k, sizeof(complex_type) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc Vdip memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    cudaMemcpy(d_Vdip_k, h_Vdip_k, N * sizeof(complex_type), cudaMemcpyHostToDevice);
-#endif
 }
 
-void PoissonSolver::execute() {
+void FFTWPoissonSolver::execute() {
     int nx    = 2 * p->nx;
     int ny    = 2 * p->ny;
     int nz    = 2 * p->nz;
     int N     = nx * ny * nz;
     int N_out = nx * ny * (nz / 2 + 1);
 
-#ifdef USE_CUDA
-    // Copy psi_data onto device
-    cudaMemcpy(d_psi, psi->get_data(), psi->size() * sizeof(complex_type), cudaMemcpyHostToDevice);
-
-    // get BEC density from psi
-    launch_kernel_fill_from_psi(d_rho_r, d_psi, p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
-
-    //  Forward FFT
-    cufftExecD2Z(plan_fwd, d_rho_r, d_rho_k);
-
-    // multiply by dipole kernel
-    launch_kernel_multiply_dipole(d_rho_k, d_Vdip_k, N_out);
-
-    // Backward FFT
-    cufftExecZ2D(plan_bwd, d_rho_k, d_rho_r);
-    cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(real_type), cudaMemcpyDeviceToHost);
-#else
     auto &rpsi = *psi;
     for (int i = 0; i < nx; ++i) {
         for (int j = 0; j < ny; ++j) {
@@ -109,7 +79,6 @@ void PoissonSolver::execute() {
     }
 
     fftw_execute(plan_bwd);
-#endif
 
     double norm_factor = 1.0 / static_cast<double>(N);
     auto &rfi3d        = *fi3d;
@@ -124,55 +93,20 @@ void PoissonSolver::execute() {
     }
 }
 
-PoissonSolver::~PoissonSolver() {
-#ifdef USE_CUDA
-    cudaFree(d_rho_r);
-    cudaFree(d_rho_k);
-    cudaFree(d_Vdip_k);
-    cudaFree(d_psi);
-
-    cudaFreeHost(h_rho_r);
-#else
+FFTWPoissonSolver::~FFTWPoissonSolver() {
     fftw_free(h_rho_r);
     fftw_free(h_rho_k);
-#endif
 
     delete[] h_Vdip_k;
 }
 
-void PoissonSolver::prepare_transforms() {
+void FFTWPoissonSolver::prepare_transforms() {
     int nx    = 2 * p->nx;
     int ny    = 2 * p->ny;
     int nz    = 2 * p->nz;
     int N     = nx * ny * nz;
     int N_out = nx * ny * (nz / 2 + 1);
 
-#ifdef USE_CUDA
-    auto err = cudaMalloc(&d_rho_r, sizeof(real_type) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_rho_r memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    err = cudaMalloc(&d_rho_k, sizeof(complex_type) * N_out);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_rho_k memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    err = cudaMalloc(&d_psi, sizeof(complex_type) * psi->size());
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_psi memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    cudaMallocHost(&h_rho_r, sizeof(real_type) * N);
-
-    cufftPlan3d(&plan_fwd, nx, ny, nz, CUFFT_D2Z);
-    cufftPlan3d(&plan_bwd, nx, ny, nz, CUFFT_Z2D);
-
-    OutputFormatter::printInfo("Planned FFT with cuFFT");
-#else
     h_rho_r = (real_type *)fftw_malloc(sizeof(real_type) * N);
     h_rho_k = (complex_type *)fftw_malloc(sizeof(complex_type) * N_out);
 
@@ -183,5 +117,4 @@ void PoissonSolver::prepare_transforms() {
 
     OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) +
                                " threads (Poisson).");
-#endif
 }

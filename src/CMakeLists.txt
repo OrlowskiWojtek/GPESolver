@@ -6,9 +6,7 @@ add_library(SolverManager
     parameters/parameters.cpp
     manager/sim_manager.cpp
     context/context.cpp
-    solver/fft_context.cpp
-    solver/fft_poisson_solver.cpp
-    solver/fft_rt_split_solver.cpp
+    solver/fft_solvers/fft_context.cpp
     solver/solver.cpp
 )
 
@@ -36,7 +34,9 @@ if(USE_CUDA)
     enable_language(CUDA)
 
     target_sources(SolverManager PRIVATE
-        solver/cuda_kernels.cu
+        solver/fft_solvers/gpu/cuda_fft_kernels.cu
+        solver/fft_solvers/gpu/cufft_poisson_solver.cpp
+        solver/fft_solvers/gpu/cufft_split_solver.cpp
     )
     
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
@@ -45,6 +45,17 @@ if(USE_CUDA)
         CUDA::cudart
         CUDA::cufft
     )
+else()
+	find_package(FFTW3 REQUIRED COMPONENTS double threads)
+	message("Found libraries: " ${FFTW3_LIBRARIES})
 
-    #target_link_libraries(SolverManager PUBLIC SolverKernels)
+	message("Linking fftw3 libraries")
+
+    target_sources(SolverManager PRIVATE
+        solver/fft_solvers/cpu/fftw_poisson_solver.cpp
+        solver/fft_solvers/cpu/fftw_split_solver.cpp
+    )
+
+    target_link_libraries(SolverManager PUBLIC
+		${FFTW3_LIBRARIES})
 endif()
