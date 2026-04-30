@@ -11,13 +11,7 @@ double AbstractGrossPitaevskiSolver::imag_time_dt = 1.25e11;
 AbstractGrossPitaevskiSolver::AbstractGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
     , p_mediator(mediator)
-    , p_sctx(SimulationContext::getInstance()) {
-
-#ifdef USE_CUDA
-    poisson_solver = std::make_unique<CUFFTPoissonSolver>();
-    rt_split_solver = std::make_unique<CUFFTRealTimeSplitSolver>();
-#endif
-}
+    , p_sctx(SimulationContext::getInstance()) {}
 
 void AbstractGrossPitaevskiSolver::initialize() {
     init_containers();

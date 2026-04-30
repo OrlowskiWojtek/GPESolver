@@ -2,14 +2,23 @@
 #include "context/context.hpp"
 #include "output.hpp"
 
+#ifdef USE_CUDA
+#include "solver/gpu_solver.hpp"
+#else
 #include "solver/cpu_solver.hpp"
+#endif
 
 SimulationManager::SimulationManager()
     : params(PhysicalParameters::getInstance())
     , p_sctx(SimulationContext::getInstance())
     , m_file_manager(std::make_unique<FileManager>(this))
-    , m_gpe_solver(std::make_unique<CpuGrossPitaevskiSolver>(this))
     , m_initializer(std::make_unique<DataInitializer>(this)) {
+
+#ifdef USE_CUDA
+    m_gpe_solver = std::make_unique<GpuGrossPitaevskiSolver>(this);
+#else 
+    m_gpe_solver = std::make_unique<CpuGrossPitaevskiSolver>(this);
+#endif
 }
 
 void SimulationManager::initialize() {

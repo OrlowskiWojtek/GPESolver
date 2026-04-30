@@ -8,7 +8,6 @@ add_library(SolverManager
     context/context.cpp
     solver/fft_solvers/fft_context.cpp
     solver/solver.cpp
-    solver/cpu_solver.cpp
 )
 
 target_link_libraries(SolverManager PUBLIC
@@ -38,6 +37,7 @@ if(USE_CUDA)
         solver/fft_solvers/gpu/cuda_fft_kernels.cu
         solver/fft_solvers/gpu/cufft_poisson_solver.cpp
         solver/fft_solvers/gpu/cufft_split_solver.cpp
+        solver/gpu_solver.cpp
     )
     
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
@@ -55,6 +55,7 @@ else()
     target_sources(SolverManager PRIVATE
         solver/fft_solvers/cpu/fftw_poisson_solver.cpp
         solver/fft_solvers/cpu/fftw_split_solver.cpp
+        solver/cpu_solver.cpp
     )
 
     target_link_libraries(SolverManager PUBLIC
