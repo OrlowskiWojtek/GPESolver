@@ -198,6 +198,41 @@ function load_slice_from_text(file_path::String)
     return IsoBECSlice(slice_2d, x, y, nx, ny, dx, dy)
 end
 
+function load_slice_from_binary(file_path::String)
+    file = open(file_path, "r")
+    file    = open(file_path, "r")
+    nx      = read(file, Int32)
+    ny      = read(file, Int32)
+    nz      = read(file, Int32)
+
+    dx      = read(file, Float64)
+    dy      = read(file, Float64)
+    dz      = read(file, Float64)
+
+    # z=0 is at k0:
+    k0 = div(nz, 2) + 1
+
+    slice_2d = zeros(ComplexF64, nx, ny)
+
+    for i in 1:nx
+        for j in 1:ny
+            for k in 1:nz
+                real_part = read(file, Float64)
+                imag_part = read(file, Float64)
+                if k == k0
+                    slice_2d[i, j] = ComplexF64(real_part, imag_part)
+                end
+            end
+        end
+    end
+
+    x = ((1:nx) .- (div(nx, 2) + 1)) .* dx
+    y = ((1:ny) .- (div(ny, 2) + 1)) .* dy
+
+    close(file)
+    return IsoBECSlice(slice_2d, x, y, nx, ny, dx, dy)
+end
+
 function load_directory_slice_from_text(data_dir::String)
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
@@ -208,6 +243,23 @@ function load_directory_slice_from_text(data_dir::String)
     for (frame_idx, file) in enumerate(files)
         println("loading frame", joinpath(data_dir, file))
         context = load_slice_from_text(joinpath(data_dir, file))
+    
+        slice_data_vec[frame_idx] = context 
+    end
+
+    return slice_data_vec
+end
+
+function load_directory_slice_from_binary(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    slice_data_vec = Vector{IsoBECSlice}(undef, n_frames)
+
+    for (frame_idx, file) in enumerate(files)
+        println("loading frame", joinpath(data_dir, file))
+        context = load_slice_from_binary(joinpath(data_dir, file))
     
         slice_data_vec[frame_idx] = context 
     end

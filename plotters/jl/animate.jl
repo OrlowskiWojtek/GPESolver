@@ -114,7 +114,7 @@ function animate_iso_bce_interactive_prefetch(data_dir::String)
 end
 
 function animate_iso_bce(data_dir::String, output_file::String)
-    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
 
@@ -126,7 +126,7 @@ function animate_iso_bce(data_dir::String, output_file::String)
                aspect=:data,
             )
 
-    BCEContext = load_from_text(joinpath(data_dir, files[1]))
+    BCEContext = load_from_binary(joinpath(data_dir, files[1]))
     rho = Observable(Array{Float64,3}(abs.(BCEContext.psi)))
     x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
 
@@ -150,7 +150,7 @@ function animate_iso_bce(data_dir::String, output_file::String)
 
     record(fig, output_file, 1:n_frames; framerate=10) do frame
         println("loading frame", joinpath(data_dir, files[frame]))
-        rho[] = abs.(load_from_text(joinpath(data_dir, files[frame])).psi)
+        rho[] = abs.(load_from_binary(joinpath(data_dir, files[frame])).psi)
     end
 end
 
@@ -327,8 +327,8 @@ function plot_local_maxima_coordinates_one_ax(slice_vec::Vector{IsoBECSlice}; le
 
     for (idx, _slice) in enumerate(slice_vec)
         println("Processing slice: ", idx)
-        #slice = interpolate_slice(_slice)
-        maxima = find_local_maxima(_slice)
+        slice = interpolate_slice(_slice)
+        maxima = find_local_maxima(slice)
         coords = get_coordinates(slice, maxima)
 
         sorted_cords = sort(coords, by = c -> (c.x, c.y))
@@ -343,6 +343,8 @@ function plot_local_maxima_coordinates_one_ax(slice_vec::Vector{IsoBECSlice}; le
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
 
+        println(xs, length(xs))
+        println(times, length(times))
         scatter!(ax, times, xs, markersize = 5, color = :red, label = "x")
         scatter!(ax, times, ys, markersize = 5, color = :blue, label = "y")
 
