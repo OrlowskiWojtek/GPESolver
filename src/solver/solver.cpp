@@ -32,16 +32,14 @@ void AbstractGrossPitaevskiSolver::solve() {
         p_mediator->save_initial_state(cpsi);
         break;
     case CalcStrategy::Type::REAL_TIME:
-        //free_potential_well();
+       //free_potential_well();
         p_mediator->save_checkpoint(cpsi);
-        calc_cradle();
         calc_evolution();
         break;
     case CalcStrategy::Type::FULL:
         calc_initial_state();
         p_mediator->save_initial_state(cpsi);
-        calc_cradle();
-        // free_potential_well();
+        free_potential_well();
         calc_evolution();
         break;
     case CalcStrategy::Type::SPEED_TEST:
@@ -76,7 +74,7 @@ void AbstractGrossPitaevskiSolver::calc_initial_state() {
 void AbstractGrossPitaevskiSolver::calc_evolution() {
     OutputFormatter::printInfo("Starting real time evolution");
 
-    for (size_t iter = 1; iter <= params->iter_real; iter++) {
+    for (size_t iter = 0; iter <= params->iter_real; iter++) {
         real_time_iter();
         calc_energy();
 

@@ -84,7 +84,7 @@ void SimulationManager::on_pote_changed(const potential_t &pote) {
 }
 
 void SimulationManager::request_free_potential() {
-    m_initializer->change_potential(PotentialType::Type::REGULAR);
+    m_initializer->change_potential(PotentialType::Type::FREE);
 }
 
 void SimulationManager::request_cradle_potential() {
