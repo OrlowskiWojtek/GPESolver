@@ -7,7 +7,7 @@
 
 class DataInitializer {
 public:
-    DataInitializer(AbstractSimulationMediator*);
+    DataInitializer(AbstractSimulationMediator *);
     void initialize_wavefunction();
     void initialize_potential();
     void change_potential(PotentialType::Type);
@@ -26,7 +26,10 @@ private:
     //! Init with cosinus
     void init_with_cos();
 
-    //! Potential initializers 
+    //! rotate centers 45 degrees around z axis
+    void rotate_centers(std::vector<double> &centers_x, std::vector<double> &centers_y);
+
+    //! Potential initializers
     //! Init with potential in x direction in form of V(x) = \alpha * x^4
     void set_pote_regular();
     //! Init with potential in x direction in form of V(x) = \alpha * x^4 - \beta * x^2
@@ -42,11 +45,11 @@ private:
 
     wavefunction_t _data;
     potential_t _pote;
-    std::function<double(int,int,int)> _pote_func;
+    std::function<double(int, int, int)> _pote_func;
 
-    PhysicalParameters* params;
-    AbstractSimulationMediator* p_mediator;
-    SimulationContext* p_sctx;
+    PhysicalParameters *params;
+    AbstractSimulationMediator *p_mediator;
+    SimulationContext *p_sctx;
 };
 
 #endif

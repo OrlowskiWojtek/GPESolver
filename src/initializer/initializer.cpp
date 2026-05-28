@@ -206,6 +206,10 @@ void DataInitializer::init_with_multiple_gaussian() {
         }
     }
 
+    if(params->n_gauss_max == 4){
+        rotate_centers(centers_x, centers_y);
+    }
+
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
@@ -424,4 +428,24 @@ void DataInitializer::change_potential(PotentialType::Type type) {
 
     init_pote();
     p_mediator->on_pote_initialized(_pote);
+}
+
+void DataInitializer::rotate_centers(std::vector<double>& centers_x,
+                                     std::vector<double>& centers_y){
+    const double theta = M_PI / 4.0;  // 45 degrees
+    const double cos_theta = std::cos(theta);
+    const double sin_theta = std::sin(theta);
+
+    assert(centers_x.size() == centers_y.size());
+
+    for (size_t i = 0; i < centers_x.size(); i++) {
+        double x = centers_x[i];
+        double y = centers_y[i];
+
+        double x_new = x * cos_theta - y * sin_theta;
+        double y_new = x * sin_theta + y * cos_theta;
+
+        centers_x[i] = x_new;
+        centers_y[i] = y_new;
+    }
 }
