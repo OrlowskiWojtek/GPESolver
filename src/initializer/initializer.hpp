@@ -34,8 +34,6 @@ private:
     void set_pote_regular();
     //! Init with potential in x direction in form of V(x) = \alpha * x^4 - \beta * x^2
     void set_pote_mexican();
-    //! Init with potential in x direction in form of V(x) = TODO
-    void set_pote_cradle();
     //! Init with potential in r direction in form of V(r) = ...
     void set_pote_cylindrical();
     //! Init with potential equal to 0 (no trap)

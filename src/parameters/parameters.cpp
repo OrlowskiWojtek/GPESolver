@@ -86,7 +86,7 @@ void PhysicalParameters::print() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Potential");
-    OutputFormatter::printBoxedMessage(pote_strategy.to_string());
+    OutputFormatter::printBoxedMessage(pote_key);
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Number of iterations");
     OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));

@@ -16,7 +16,6 @@ public:
         IMAGINARY_TIME, //!< Run imaginary time evolution
         REAL_TIME,      //!< Run real time evolution
         FULL,           //!< Run both: imaginary time and real time evolution
-        SPEED_TEST      //!< Run speed test
     };
 
     std::string to_string() override {
@@ -30,9 +29,6 @@ public:
         case Type::FULL:
             return "FS";
             break;
-        case Type::SPEED_TEST:
-            return "ST";
-            break;
         }
 
         return "";
@@ -45,8 +41,6 @@ public:
             type = CalcStrategy::Type::REAL_TIME;
         if (str == "FS")
             type = CalcStrategy::Type::FULL;
-        if (str == "ST")
-            type = CalcStrategy::Type::SPEED_TEST;
     }
 
     Type type = CalcStrategy::Type::FULL;
@@ -99,33 +93,29 @@ public:
     Type type = Type::MULTIPLE_GAUSS;
 };
 
-class PotentialType : public AbstractParam {
+class PotentialType : public AbstractParam{
 public:
     enum class Type {
         REGULAR,     //!< Simple potential without barier
         MEXICAN,     //!< Mexican hat potential
-        CRADLE,      //!< Number of minimas equal to number of cradles
         CYLINDRICAL, //!< potential with r^2 = x^2 + y^2 and V(r)
         FREE,        //!< potential with V(r) = 0
     };
 
     std::string to_string() override {
         switch (type) {
-        case Type::REGULAR:
-            return "REGULAR";
-            break;
-        case Type::CYLINDRICAL:
-            return "CYLINDRICAL";
-            break;
-        case Type::MEXICAN:
-            return "MEXICAN";
-            break;
-        case Type::CRADLE:
-            return "CRADLE";
-            break;
-        case Type::FREE:
-            return "FREE";
-            break;
+            case Type::REGULAR:
+                return "REGULAR";
+                break;
+            case Type::CYLINDRICAL:
+                return "CYLINDRICAL";
+                break;
+            case Type::MEXICAN:
+                return "MEXICAN";
+                break;
+            case Type::FREE:
+                return "FREE";
+                break;
         }
 
         return "";
@@ -136,8 +126,6 @@ public:
             type = PotentialType::Type::REGULAR;
         if (str == "MEXICAN")
             type = PotentialType::Type::MEXICAN;
-        if (str == "CRADLE")
-            type = PotentialType::Type::CRADLE;
         if (str == "CYLINDRICAL")
             type = PotentialType::Type::CYLINDRICAL;
         if (str == "FREE")

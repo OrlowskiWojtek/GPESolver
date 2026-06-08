@@ -42,9 +42,6 @@ void AbstractGrossPitaevskiSolver::solve() {
         free_potential_well();
         calc_evolution();
         break;
-    case CalcStrategy::Type::SPEED_TEST:
-        // TODO remove run_speed_test();
-        break;
     }
 }
 
@@ -186,18 +183,6 @@ void AbstractGrossPitaevskiSolver::real_time_iter() {
     calc_fi3d();
     real_fft_kinetic_step();
     real_fft_potential_half_step();
-}
-
-void AbstractGrossPitaevskiSolver::calc_cradle() {
-    OutputFormatter::printInfo("Changing potential to move one droplet");
-
-    p_mediator->request_cradle_potential();
-    for(int iter = 0; iter < 2000; iter++){
-        real_time_iter();
-    }
-    p_mediator->request_free_potential();
-
-    OutputFormatter::printInfo("Cradle has been moved");
 }
 
 void AbstractGrossPitaevskiSolver::free_potential_well() {

@@ -36,7 +36,7 @@ void FileManager::save_params() {
     j["fftw_n_threads"]  = params->fftw_n_threads;
     j["calc_strategy"]   = params->calc_strategy.to_string();
     j["init_strategy"]   = params->init_strategy.to_string();
-    j["pote_strategy"]   = params->pote_strategy.to_string();
+    j["pote_strategy"]   = params->pote_key;
     j["load_filename"]   = params->load_filename;
     j["initial_maximas"] = params->n_gauss_max;
     j["iter_imag"]       = params->iter_imag;
@@ -90,7 +90,7 @@ void FileManager::load_params() {
 
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->init_strategy.from_string(j["init_strategy"]);
-    params->pote_strategy.from_string(j["pote_strategy"]);
+    params->pote_key = j["pote_strategy"];
 
     params->n_gauss_max    = j["initial_maximas"];
     params->bec_droplets_x = j["bec_droplets_x"];

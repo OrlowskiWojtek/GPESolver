@@ -98,7 +98,7 @@ struct PhysicalParameters {
     InitializationOption init_strategy;
     
     //! Type of potential used for initial state finding
-    PotentialType pote_strategy;
+    std::string pote_key;
 
     double get_dxdydz();
 

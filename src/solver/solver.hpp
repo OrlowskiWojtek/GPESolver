@@ -53,7 +53,6 @@ protected:
 
     void calc_initial_state();
     void calc_evolution();
-    void calc_cradle();
 
     void free_potential_well();
     void imag_time_iter();

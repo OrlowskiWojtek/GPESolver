@@ -1,4 +1,5 @@
 #include "initializer/initializer.hpp"
+#include "parameters/potentials.hpp"
 #include "output.hpp"
 #include <tuple>
 
@@ -37,24 +38,6 @@ void DataInitializer::initialize_wavefunction() {
 
 void DataInitializer::initialize_potential() {
     OutputFormatter::printInfo("Initializing potential");
-
-    switch (params->pote_strategy.type) {
-    case PotentialType::Type::REGULAR:
-        set_pote_regular();
-        break;
-    case PotentialType::Type::MEXICAN:
-        set_pote_mexican();
-        break;
-    case PotentialType::Type::CRADLE:
-        set_pote_cradle();
-        break;
-    case PotentialType::Type::CYLINDRICAL:
-        set_pote_cylindrical();
-        break;
-    case PotentialType::Type::FREE:
-        set_pote_free();
-        break;
-    }
 
     init_pote();
     p_mediator->on_pote_initialized(_pote);
@@ -206,7 +189,7 @@ void DataInitializer::init_with_multiple_gaussian() {
         }
     }
 
-    if(params->n_gauss_max == 4){
+    if (params->n_gauss_max == 4) {
         rotate_centers(centers_x, centers_y);
     }
 
@@ -252,83 +235,29 @@ void DataInitializer::init_pote() {
     int ny = params->ny;
     int nz = params->nz;
 
+    _pote_func = PotentialRegistry::instance().get_function(params->pote_key);
     _pote.resize(nx, ny, nz);
 
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                _pote(i, j, k) = _pote_func(i, j, k);
+                int x = p_sctx->get_x(i);
+                int y = p_sctx->get_y(j);
+                int z = p_sctx->get_z(k);
+
+                _pote(i, j, k) = _pote_func(x, y, z);
             }
         }
     }
 }
 
-void DataInitializer::set_pote_mexican() {
-    _pote_func = [this](int ix, int iy, int iz) -> double {
-        double x = p_sctx->get_x(ix);
-        double y = p_sctx->get_y(iy);
-        double z = p_sctx->get_z(iz);
-
-        double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4);
-
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-
-        return vx + vy + vz;
-    };
-}
-
-//void DataInitializer::set_pote_regular() {
-//    _pote_func = [this](int ix, int iy, int iz) -> double {
-//        double x = p_sctx->get_x(ix);
-//        double y = p_sctx->get_y(iy);
-//        double z = p_sctx->get_z(iz);
-//
-//        double vx = params->aa * std::pow(x, 4);
-//        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-//        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-//
-//        return vx + vy + vz;
-//    };
-//}
-
-void DataInitializer::set_pote_regular() {
-    _pote_func = [this](int ix, int iy, int iz) -> double {
-        double x = p_sctx->get_x(ix);
-        double y = p_sctx->get_y(iy);
-        double z = p_sctx->get_z(iz);
-
-        double vx = 0.5 * params->m * std::pow(x, 2) * std::pow(params->omega_x, 2);
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-
-        return vx + vy + vz;
-    };
-}
-
-// This is some old idea with sinus with changable cos
-// void DataInitializer::set_pote_cradle() {
+// void DataInitializer::set_pote_regular() {
 //     _pote_func = [this](int ix, int iy, int iz) -> double {
 //         double x = p_sctx->get_x(ix);
 //         double y = p_sctx->get_y(iy);
 //         double z = p_sctx->get_z(iz);
 //
-//         int n              = params->bec_droplets_x;
-//         double x0          = - params->dd;
-//         double step        = 2 * params->dd / n;
-//         double V0          = params->b * std::pow(x0, 2);
-//         bool is_left       = x < x0 + step;
-//         double k           = is_left ? M_PI * n / (2 * x0) : M_PI * n / x0;
-//         double step_offset = is_left ? step : 0;
-//
-//         double periodic = 0;
-//         if (n % 2 == 0) {
-//             periodic = V0 * std::cos(k * (x - step_offset));
-//         } else {
-//             periodic = V0 * std::cos(k * (x - x0 - step_offset));
-//         }
-//
-//         double vx = params->aa * std::pow(x, 4) + periodic;
+//         double vx = params->aa * std::pow(x, 4);
 //         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
 //         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 //
@@ -336,62 +265,15 @@ void DataInitializer::set_pote_regular() {
 //     };
 // }
 
-// This is some old idea with gauss, that is supposed to move one bec
-//void DataInitializer::set_pote_cradle() {
-//    _pote_func = [this](int ix, int iy, int iz) -> double {
-//        double x = p_sctx->get_x(ix);
-//        double y = p_sctx->get_y(iy);
-//        double z = p_sctx->get_z(iz);
-//
-//        double x0       = -params->dd;
-//        double step     = 2 * params->dd / params->bec_droplets_x;
-//        double V0       = params->aa * std::pow(params->dd, 4);
-//        double sigma    = step / 3;
-//        double movement = V0 * std::exp(-std::pow((x - x0), 2) / std::pow(sigma, 2));
-//
-//        double vx = params->aa * std::pow(x, 4) - movement;
-//        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-//        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-//
-//        return vx + vy + vz;
-//    };
-//}
-
-// other idea was in Julia to HARD move one BEC fixed number of nodes
-
-// This is never idea -> move whole potential slightly to te left, but make also some zeroes inside (wider potential)
-void DataInitializer::set_pote_cradle() {
-    _pote_func = [this](int ix, int iy, int iz) -> double {
-        double x = p_sctx->get_x(ix);
-        double y = p_sctx->get_y(iy);
-        double z = p_sctx->get_z(iz);
-        double offset = params->dd / 2;
-
-        double vx = 0;
-        //vx = params->aa * std::pow(x, 4);
-
-        if(x < -params->dd){
-            vx = params->aa * std::pow((x - offset) + params->dd, 4);
-        }
-        if(x > params->dd){
-            vx = params->aa * std::pow(x - params->dd, 4);
-        }
-
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-
-        return vx + vy + vz;
-    };
-}
-
 void DataInitializer::set_pote_cylindrical() {
     _pote_func = [this](int ix, int iy, int iz) -> double {
         double x = p_sctx->get_x(ix);
         double y = p_sctx->get_y(iy);
         double z = p_sctx->get_z(iz);
-        double r = std::sqrt(x*x + y*y);
+        double r = std::sqrt(x * x + y * y);
 
-        double vr = 0.5 * params->m * std::pow(r, 2) * std::pow((params->omega_y + params->omega_x) / 2., 2);
+        double vr = 0.5 * params->m * std::pow(r, 2) *
+                    std::pow((params->omega_y + params->omega_x) / 2., 2);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
         return vr + vz;
@@ -400,7 +282,7 @@ void DataInitializer::set_pote_cylindrical() {
 
 void DataInitializer::set_pote_free() {
     _pote_func = [this](int ix, int iy, int iz) -> double {
-        double z = p_sctx->get_z(iz);
+        double z  = p_sctx->get_z(iz);
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
         return vz;
@@ -408,31 +290,13 @@ void DataInitializer::set_pote_free() {
 }
 
 void DataInitializer::change_potential(PotentialType::Type type) {
-    switch(type){
-        case PotentialType::Type::REGULAR:
-            set_pote_regular();
-            break;
-        case PotentialType::Type::MEXICAN:
-            set_pote_mexican();
-            break;
-        case PotentialType::Type::CRADLE:
-            set_pote_cradle();
-            break;
-        case PotentialType::Type::CYLINDRICAL:
-            set_pote_cylindrical();
-            break;
-        case PotentialType::Type::FREE:
-            set_pote_free();
-            break;
-        }
-
     init_pote();
     p_mediator->on_pote_initialized(_pote);
 }
 
-void DataInitializer::rotate_centers(std::vector<double>& centers_x,
-                                     std::vector<double>& centers_y){
-    const double theta = M_PI / 4.0;  // 45 degrees
+void DataInitializer::rotate_centers(std::vector<double> &centers_x,
+                                     std::vector<double> &centers_y) {
+    const double theta     = M_PI / 4.0; // 45 degrees
     const double cos_theta = std::cos(theta);
     const double sin_theta = std::sin(theta);
 

@@ -87,10 +87,6 @@ void SimulationManager::request_free_potential() {
     m_initializer->change_potential(PotentialType::Type::FREE);
 }
 
-void SimulationManager::request_cradle_potential() {
-    m_initializer->change_potential(PotentialType::Type::CRADLE);
-}
-
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {
     m_file_manager->load_from_text_file(params->load_filename,
                                         [&wvf](wavefunction_t &loaded_buffer) {
