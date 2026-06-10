@@ -83,9 +83,9 @@ void DataInitializer::init_with_gaussian() {
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
 
-                double sigma_x = (params->nx * params->dx) / 20.;
-                double sigma_y = (params->ny * params->dy) / 20.;
-                double sigma_z = (params->nz * params->dz) / 20.;
+                double sigma_x = (params->nx * params->dx) / 10.;
+                double sigma_y = (params->ny * params->dy) / 10.;
+                double sigma_z = (params->nz * params->dz) / 10.;
 
                 double val = std::exp(-0.5 * (x * x) / (sigma_x * sigma_x)) *
                              std::exp(-0.5 * (y * y) / (sigma_y * sigma_y)) *
@@ -175,7 +175,7 @@ void DataInitializer::init_with_multiple_gaussian() {
         if (n_maximas % 2 == 1) {
 
             int center_y_idx = n_maximas / 2;
-            double y_offset  = (idx - center_y_idx) * (params->ny * params->dy) / (n_maximas + 1.);
+            double y_offset  = (idx - center_y_idx) * (params->ny * params->dy) / 2. / (n_maximas + 1.);
 
             centers_y[idx] = y_offset;
         }
@@ -189,9 +189,7 @@ void DataInitializer::init_with_multiple_gaussian() {
         }
     }
 
-    if (params->n_gauss_max == 4) {
-        rotate_centers(centers_x, centers_y);
-    }
+    rotate_centers(centers_x, centers_y, 180.);
 
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
@@ -295,8 +293,9 @@ void DataInitializer::change_potential(PotentialType::Type type) {
 }
 
 void DataInitializer::rotate_centers(std::vector<double> &centers_x,
-                                     std::vector<double> &centers_y) {
-    const double theta     = M_PI / 4.0; // 45 degrees
+                                     std::vector<double> &centers_y,
+                                        double degrees) {
+    const double theta     = degrees * M_PI / 180.0; // 45 degrees
     const double cos_theta = std::cos(theta);
     const double sin_theta = std::sin(theta);
 

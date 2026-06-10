@@ -1,6 +1,9 @@
 #ifndef POTENTIALS_HPP
 #define POTENTIALS_HPP
 
+#include <algorithm>
+#include <cassert>
+#include <iostream>
 #include <string>
 #include <functional>
 #include <unordered_map>
@@ -33,6 +36,14 @@ public:
     // Getters
     pote_func_t get_function(const RegisterKey& key) const {
         auto it = potentials_.find(key);
+
+        if(it == potentials_.end()){
+            std::for_each(potentials_.begin(), potentials_.end(), [](const auto& info){
+                std::cout << " " << info.second.key << " ";
+            });
+            std::cout << std::endl;
+            assert(!"Wrong potential, options are listed above");
+        }
 
         return (it != potentials_.end()) ? it->second.func : potentials_.find("FREE")->second.func;
     }
@@ -95,6 +106,22 @@ REGISTER_POTENTIAL(FREE, [](double x, double y, double z){
         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
         return vz;
+});
+
+//! Bound droplets only in z plane;
+REGISTER_POTENTIAL(MEXICAN_ASYMETRIC, [](double x, double y, double z){
+        auto params = PhysicalParameters::getInstance();
+
+        // Fixed assymetry on level 0.5 nK between wells
+        double conv = 27211.4 * 11.6 * 10e9;
+        double nK25 = 0.25 / conv;
+        double slope = nK25 / params->dd;
+
+        double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4) - slope * x;;
+        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+        return vx + vy + vz;
 });
 
 

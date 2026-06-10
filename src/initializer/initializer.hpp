@@ -26,8 +26,8 @@ private:
     //! Init with cosinus
     void init_with_cos();
 
-    //! rotate centers 45 degrees around z axis
-    void rotate_centers(std::vector<double> &centers_x, std::vector<double> &centers_y);
+    //! rotate centers around z axis
+    void rotate_centers(std::vector<double> &centers_x, std::vector<double> &centers_y, double degrees);
 
     //! Potential initializers
     //! Init with potential in x direction in form of V(x) = \alpha * x^4
