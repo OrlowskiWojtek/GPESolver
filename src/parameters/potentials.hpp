@@ -88,6 +88,17 @@ REGISTER_POTENTIAL(MEXICAN, [](double x, double y, double z){
         return vx + vy + vz;
 });
 
+//! Mexican hat after quenching to single-well potential
+REGISTER_POTENTIAL(MEXICAN_FREE, [](double x, double y, double z){
+        auto params = PhysicalParameters::getInstance();
+
+        double vx = params->aa * std::pow(x, 4);
+        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+        return vx + vy + vz;
+});
+
 //! Cylindrical potential with form V(r, z), where r = sqrt(x,y)
 REGISTER_POTENTIAL(CYLINDRICAL, [](double x, double y, double z){
         auto params = PhysicalParameters::getInstance();
