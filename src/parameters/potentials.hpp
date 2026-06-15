@@ -113,7 +113,7 @@ REGISTER_POTENTIAL(MEXICAN_ASYMETRIC, [](double x, double y, double z){
         auto params = PhysicalParameters::getInstance();
 
         // Fixed assymetry on level 0.5 nK between wells
-        double conv = 27211.4 * 11.6 * 10e9;
+        double conv = 27210.4 * 11.6 * 1e9;
         double nK25 = 0.25 / conv;
         double slope = nK25 / params->dd;
 
