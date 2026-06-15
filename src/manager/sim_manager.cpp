@@ -84,7 +84,7 @@ void SimulationManager::on_pote_changed(const potential_t &pote) {
 }
 
 void SimulationManager::request_free_potential() {
-    m_initializer->change_potential(PotentialType::Type::FREE);
+    m_initializer->change_potential("MEXICAN_FREE");
 }
 
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {

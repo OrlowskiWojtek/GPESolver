@@ -287,7 +287,9 @@ void DataInitializer::set_pote_free() {
     };
 }
 
-void DataInitializer::change_potential(PotentialType::Type type) {
+void DataInitializer::change_potential(std::string pote_key) {
+    params->pote_key = pote_key;
+
     init_pote();
     p_mediator->on_pote_initialized(_pote);
 }

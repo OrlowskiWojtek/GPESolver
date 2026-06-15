@@ -93,46 +93,4 @@ public:
     Type type = Type::MULTIPLE_GAUSS;
 };
 
-class PotentialType : public AbstractParam{
-public:
-    enum class Type {
-        REGULAR,     //!< Simple potential without barier
-        MEXICAN,     //!< Mexican hat potential
-        CYLINDRICAL, //!< potential with r^2 = x^2 + y^2 and V(r)
-        FREE,        //!< potential with V(r) = 0
-    };
-
-    std::string to_string() override {
-        switch (type) {
-            case Type::REGULAR:
-                return "REGULAR";
-                break;
-            case Type::CYLINDRICAL:
-                return "CYLINDRICAL";
-                break;
-            case Type::MEXICAN:
-                return "MEXICAN";
-                break;
-            case Type::FREE:
-                return "FREE";
-                break;
-        }
-
-        return "";
-    }
-
-    void from_string(std::string str) override {
-        if (str == "REGULAR")
-            type = PotentialType::Type::REGULAR;
-        if (str == "MEXICAN")
-            type = PotentialType::Type::MEXICAN;
-        if (str == "CYLINDRICAL")
-            type = PotentialType::Type::CYLINDRICAL;
-        if (str == "FREE")
-            type = PotentialType::Type::FREE;
-    }
-
-    Type type = PotentialType::Type::REGULAR;
-};
-
 #endif

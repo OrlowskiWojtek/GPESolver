@@ -10,7 +10,7 @@ public:
     DataInitializer(AbstractSimulationMediator *);
     void initialize_wavefunction();
     void initialize_potential();
-    void change_potential(PotentialType::Type);
+    void change_potential(std::string pote_key);
 
 private:
     //! Init for psi text file
