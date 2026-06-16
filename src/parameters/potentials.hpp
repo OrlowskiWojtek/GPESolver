@@ -135,5 +135,20 @@ REGISTER_POTENTIAL(MEXICAN_ASYMETRIC, [](double x, double y, double z){
         return vx + vy + vz;
 });
 
+REGISTER_POTENTIAL(MEXICAN_ASYMETRIC_FREE, [](double x, double y, double z){
+        auto params = PhysicalParameters::getInstance();
+
+        // Fixed assymetry on level 0.5 nK between wells
+        double conv = 27210.4 * 11.6 * 1e9;
+        double nK25 = 0.25 / conv;
+        double slope = nK25 / params->dd;
+
+        double vx = params->aa * std::pow(x, 4)  - slope * x;
+        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+
+        return vx + vy + vz;
+});
+
 
 #endif
