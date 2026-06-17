@@ -12,6 +12,7 @@ public:
     SimulationManager();
     void initialize();
     void run_simulation();
+    void check_load_filename();
 
     //! From AbstractSimualtionMediator
     void on_params_loaded() override;

@@ -1,6 +1,7 @@
 #include "manager/sim_manager.hpp"
 #include "context/context.hpp"
 #include "output.hpp"
+#include <regex>
 
 #ifdef USE_CUDA
 #include "solver/gpu_solver.hpp"
@@ -88,6 +89,7 @@ void SimulationManager::request_free_potential() {
 }
 
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {
+    check_load_filename();
     m_file_manager->load_from_text_file(params->load_filename,
                                         [&wvf](wavefunction_t &loaded_buffer) {
                                             if (loaded_buffer.size() != 0) {
@@ -97,10 +99,27 @@ void SimulationManager::request_load_from_text(wavefunction_t &wvf) {
 }
 
 void SimulationManager::request_load_from_binary(wavefunction_t &wvf) {
+    check_load_filename();
     m_file_manager->load_from_binary_file(params->load_filename,
                                           [&wvf](wavefunction_t &loaded_buffer) {
                                               if (loaded_buffer.size() != 0) {
                                                   wvf = loaded_buffer;
                                               }
                                           });
+}
+
+void SimulationManager::check_load_filename(){
+    if(params->load_filename.find("wavefunction_") == std::string::npos){
+        return;
+    }
+
+    std::regex pattern("wavefunction_(\\d+)");
+    std::smatch match;
+    
+    if (std::regex_search(params->load_filename, match, pattern)) {
+        std::string number_str = match[1].str();  // grabujemy cyfrę
+        int number = std::stoi(number_str);       // konwertujemy na int
+        
+        checkpoint_counter = number + 1;
+    }
 }
