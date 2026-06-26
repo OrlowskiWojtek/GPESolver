@@ -5,9 +5,6 @@
 #include "units.hpp"
 #include <chrono>
 
-double AbstractGrossPitaevskiSolver::real_time_dt = 1.00e10;
-double AbstractGrossPitaevskiSolver::imag_time_dt = 1.25e11;
-
 AbstractGrossPitaevskiSolver::AbstractGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
     , p_mediator(mediator)
@@ -49,9 +46,9 @@ void AbstractGrossPitaevskiSolver::calc_initial_state() {
 
     for (size_t iter = 0; iter <= params->iter_imag; iter++) {
         imag_time_iter();
-        calc_energy();
 
         if(iter % 100 == 0){
+            calc_energy();
             p_mediator->save_checkpoint(cpsi);
             summarize_imag_iter();
         }

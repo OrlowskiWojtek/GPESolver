@@ -67,7 +67,7 @@ void CpuGrossPitaevskiSolver::imag_iter_linear_step() {
                     0.5 / (params->m * std::pow(params->dz, 2)) *
                         (cpsi(i, j, k - 1) + cpsi(i, j, k + 1) - 2. * cpsi(i, j, k)) +
                     cpsi(i, j, k) * (v + params->cdd * fi3d(i, j, k));
-                cpsii(i, j, k) = cpsi(i, j, k) - imag_time_dt * c1;
+                cpsii(i, j, k) = cpsi(i, j, k) - params->imag_time_dt * c1;
             }
         }
     }
@@ -83,7 +83,7 @@ void CpuGrossPitaevskiSolver::imag_iter_nonlinear_step() {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {
                 cpsii(i, j, k) =
-                    cpsii(i, j, k) - imag_time_dt *
+                    cpsii(i, j, k) - params->imag_time_dt *
                                          ((params->ggp11 - params->cdd / 3) *
                                               std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
                                           params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
@@ -100,7 +100,7 @@ void CpuGrossPitaevskiSolver::real_fft_potential_half_step() {
     int ny           = params->ny;
     int nz           = params->nz;
     double w         = params->n_atoms;
-    double dt_factor = real_time_dt / 2.;
+    double dt_factor = params->real_time_dt / 2.;
 
     double psi_re;
     double psi_im;

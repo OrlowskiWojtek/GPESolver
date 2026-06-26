@@ -167,3 +167,39 @@ void launch_kernel_half_potential_step(
         nx, ny, nz
     );
 }
+
+__global__ void kernel_copy_to_fi3d_gpu(
+    const real_type* __restrict__ d_rho_r,
+    double* __restrict__ fi3d_gpu,
+    int nx, int ny, int nz,
+    int full_ny, int full_nz,
+    double norm_factor
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+
+    if (i < nx / 2 && j < ny / 2 && k < nz / 2) {
+        size_t idx = (static_cast<size_t>(i) * full_ny + j) * full_nz + k;
+        fi3d_gpu[idx] = d_rho_r[idx] * norm_factor;
+    }
+}
+
+void launch_kernel_copy_to_fi3d_gpu(
+    real_type* d_rho_r,
+    double* fi3d_gpu,
+    int nx, int ny, int nz,
+    double norm_factor
+) {
+    dim3 block(8, 8, 8);
+    dim3 grid((nx / 2 + block.x - 1) / block.x,
+              (ny / 2 + block.y - 1) / block.y,
+              (nz / 2 + block.z - 1) / block.z);
+
+    kernel_copy_to_fi3d_gpu<<<grid, block>>>(
+        d_rho_r, fi3d_gpu, nx, ny, nz, ny, nz, norm_factor
+    );
+    
+    cudaDeviceSynchronize();
+}
+

@@ -63,6 +63,23 @@ void launch_kernel_half_potential_step(
     real_type* pote
 );
 
+// =============================== //
+// TODO new -> to refactor
+__global__ void kernel_copy_to_fi3d_gpu(
+    const real_type* __restrict__ d_rho_r,
+    double* __restrict__ fi3d_gpu,
+    int nx, int ny, int nz,
+    int full_ny, int full_nz,
+    double norm_factor
+);
+
+void launch_kernel_copy_to_fi3d_gpu(
+    real_type* d_rho_r,
+    double* fi3d_gpu,
+    int nx, int ny, int nz,
+    double norm_factor
+);
+
 #ifdef __cplusplus
 }
 #endif

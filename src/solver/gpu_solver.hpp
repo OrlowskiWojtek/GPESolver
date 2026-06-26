@@ -2,12 +2,30 @@
 #define GPU_GPE_SOLVER
 
 #include "solver/solver.hpp"
+#include "mat3d/gpu_3d_array.hpp"
+#include "cuComplex.h"
 
 class GpuGrossPitaevskiSolver: public AbstractGrossPitaevskiSolver {
 public:
     GpuGrossPitaevskiSolver(AbstractSimulationMediator* mediator);
 
 private:
+    //! Containers
+    //! Wavefunction of bec + copy for calculations.
+    GpuArray<cuDoubleComplex> cpsii;
+    GpuArray<cuDoubleComplex> cpsi;
+
+    //! Map of dipole-dipole potential
+    GpuArray<double> fi3d;
+
+    //! Map of external potential
+    GpuArray<double> pote;
+
+    // TODO: for now need to override those
+    void load_buffer(const wavefunction_t&) override;
+    void load_pote(const potential_t&) override;
+    void initialize() override;
+
     void calc_energy() override;
     void init_containers() override;
     void calc_fi3d() override;

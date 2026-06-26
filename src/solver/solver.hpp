@@ -18,9 +18,11 @@ public:
     AbstractGrossPitaevskiSolver(AbstractSimulationMediator* mediator);
     void solve();
 
-    void initialize();
-    void load_buffer(const wavefunction_t&);
-    void load_pote(const potential_t&);
+    virtual void initialize();
+
+    // TODO: change from virtual 
+    virtual void load_buffer(const wavefunction_t&);
+    virtual void load_pote(const potential_t&);
 protected:
     // time of last checkpoint
     std::chrono::time_point<std::chrono::steady_clock> iter_time_ms;
@@ -42,9 +44,6 @@ protected:
 
     // current norm of wavefunction
     double xnorma;
-
-    static double imag_time_dt;
-    static double real_time_dt;
 
     std::unique_ptr<AbstractPoissonSolver> poisson_solver;
     std::unique_ptr<AbstractRealTimeSplitSolver> rt_split_solver;

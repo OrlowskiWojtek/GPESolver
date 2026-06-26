@@ -40,3 +40,12 @@ void FFTContext::prepare(wavefunction_t *cpsi, potential_t *_fi3d, potential_t *
     prepare_transforms();
     prepare_containers();
 }
+
+void FFTContext::prepare_gpu(wavefun_gpu_t *psi, pote_gpu_t *fi3d, pote_gpu_t *pote){
+    psi_gpu  = psi;
+    fi3d_gpu = fi3d;
+    pote_gpu = pote;
+
+    prepare_transforms();
+    prepare_containers();
+}

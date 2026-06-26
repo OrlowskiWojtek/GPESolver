@@ -37,6 +37,7 @@ if(USE_CUDA)
         solver/fft_solvers/gpu/cuda_fft_kernels.cu
         solver/fft_solvers/gpu/cufft_poisson_solver.cpp
         solver/fft_solvers/gpu/cufft_split_solver.cpp
+        solver/cuda_kernels.cu
         solver/gpu_solver.cpp
     )
     
