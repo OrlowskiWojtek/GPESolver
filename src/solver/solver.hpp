@@ -73,4 +73,13 @@ protected:
     virtual void real_fft_kinetic_step() = 0;
 };
 
+#define MEASURE_TIME(func, ...) \
+    [&]() { \
+        const auto MEASURE_TIME_START = std::chrono::high_resolution_clock::now(); \
+        func(__VA_ARGS__); \
+        const auto MEASURE_TIME_END = std::chrono::high_resolution_clock::now(); \
+        const std::chrono::duration<double, std::milli> MEASURE_TIME_DURATION = MEASURE_TIME_END - MEASURE_TIME_START; \
+        std::cout << "[MEASURE_TIME] " << #func << " took " << MEASURE_TIME_DURATION.count() << " ms" << std::endl; \
+    }()
+
 #endif

@@ -33,7 +33,6 @@ void AbstractGrossPitaevskiSolver::solve() {
         break;
     case CalcStrategy::Type::REAL_TIME:
        //free_potential_well();
-        p_mediator->save_checkpoint(cpsi);
         calc_evolution();
         break;
     case CalcStrategy::Type::FULL:
@@ -97,84 +96,6 @@ void AbstractGrossPitaevskiSolver::imag_time_iter() {
     imag_iter_nonlinear_step();
     calc_norm();
     normalize();
-
-    //{
-    //    auto start = std::chrono::high_resolution_clock::now();
-    //    calc_fi3d();
-    //    auto end = std::chrono::high_resolution_clock::now();
-    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    //    std::cout << "calc_fi3d: " << duration.count() << " ms\n";
-    //}
-
-    //{
-    //    auto start = std::chrono::high_resolution_clock::now();
-    //    imag_iter_linear_step();
-    //    auto end = std::chrono::high_resolution_clock::now();
-    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    //    std::cout << "imag_iter_linear_step: " << duration.count() << " ms\n";
-    //}
-
-    //{
-    //    auto start = std::chrono::high_resolution_clock::now();
-    //    imag_iter_nonlinear_step();
-    //    auto end = std::chrono::high_resolution_clock::now();
-    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    //    std::cout << "imag_iter_nonlinear_step: " << duration.count() << " ms\n";
-    //}
-
-    //{
-    //    auto start = std::chrono::high_resolution_clock::now();
-    //    calc_norm();
-    //    normalize();
-    //    auto end = std::chrono::high_resolution_clock::now();
-    //    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    //    std::cout << "calc_norm: " << duration.count() << " ms\n";
-    //}
-}
-
-void AbstractGrossPitaevskiSolver::imag_iter_linear_step() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                double v = pote(i, j, k);
-                std::complex<double> c1 =
-                    -0.5 / (params->m * std::pow(params->dx, 2)) *
-                        (cpsi(i - 1, j, k) + cpsi(i + 1, j, k) - 2. * cpsi(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dy, 2)) *
-                        (cpsi(i, j - 1, k) + cpsi(i, j + 1, k) - 2. * cpsi(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dz, 2)) *
-                        (cpsi(i, j, k - 1) + cpsi(i, j, k + 1) - 2. * cpsi(i, j, k)) +
-                    cpsi(i, j, k) * (v + params->cdd * fi3d(i, j, k));
-                cpsii(i, j, k) = cpsi(i, j, k) - imag_time_dt * c1;
-            }
-        }
-    }
-}
-
-void AbstractGrossPitaevskiSolver::imag_iter_nonlinear_step() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    double w = params->n_atoms;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                cpsii(i, j, k) =
-                    cpsii(i, j, k) - imag_time_dt *
-                                         ((params->ggp11 - params->cdd / 3) *
-                                              std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
-                                          params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
-                                              cpsi(i, j, k) * params->w_15);
-            }
-        }
-    }
-
-    cpsi = cpsii;
 }
 
 void AbstractGrossPitaevskiSolver::real_time_iter() {
