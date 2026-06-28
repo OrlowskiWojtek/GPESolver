@@ -63,9 +63,7 @@ void CUFFTPoissonSolver::execute() {
     int N_out = nx * ny * (nz / 2 + 1);
 
     // Copy psi_data onto device
-    // cudaMemcpy(
-    //    d_psi, psi_gpu->data(), psi_gpu->size() * sizeof(complex_type), cudaMemcpyHostToDevice);
-
+    
     // get BEC density from psi
     launch_kernel_fill_from_psi(d_rho_r, psi_gpu->data(), p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
 
@@ -82,7 +80,7 @@ void CUFFTPoissonSolver::execute() {
     // cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(real_type), cudaMemcpyDeviceToHost);
 
     double norm_factor = 1.0 / static_cast<double>(N);
-    //launch_kernel_copy_to_fi3d_gpu(d_rho_r, fi3d_gpu->data(), nx, ny, nz, norm_factor);
+    launch_kernel_copy_to_fi3d_gpu(d_rho_r, fi3d_gpu->data(), p->nx, p->ny, p->nz, nx, ny, nz, norm_factor);
 
     // TODO remove
     // auto &rfi3d        = *fi3d;
@@ -101,7 +99,6 @@ CUFFTPoissonSolver::~CUFFTPoissonSolver() {
     cudaFree(d_rho_r);
     cudaFree(d_rho_k);
     cudaFree(d_Vdip_k);
-    cudaFree(d_psi);
 
     cudaFreeHost(h_rho_r);
 
@@ -124,12 +121,6 @@ void CUFFTPoissonSolver::prepare_transforms() {
     err = cudaMalloc(&d_rho_k, sizeof(complex_type) * N_out);
     if (err != cudaSuccess) {
         OutputFormatter::printError("Can't aloc d_rho_k memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    err = cudaMalloc(&d_psi, sizeof(complex_type) * psi_gpu->size());
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_psi memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
 

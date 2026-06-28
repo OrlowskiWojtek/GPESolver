@@ -12,19 +12,21 @@ public:
 private:
     //! Containers
     //! Wavefunction of bec + copy for calculations.
-    GpuArray<cuDoubleComplex> cpsii;
-    GpuArray<cuDoubleComplex> cpsi;
+    GpuArray<cuDoubleComplex> cpsii_gpu;
+    GpuArray<cuDoubleComplex> cpsi_gpu;
 
     //! Map of dipole-dipole potential
-    GpuArray<double> fi3d;
+    GpuArray<double> fi3d_gpu;
 
     //! Map of external potential
-    GpuArray<double> pote;
+    GpuArray<double> pote_gpu;
 
     // TODO: for now need to override those
     void load_buffer(const wavefunction_t&) override;
     void load_pote(const potential_t&) override;
     void initialize() override;
+
+    void load_psi() override;
 
     void calc_energy() override;
     void init_containers() override;

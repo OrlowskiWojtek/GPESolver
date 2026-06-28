@@ -14,35 +14,46 @@ void GpuGrossPitaevskiSolver::init_containers() {
     int ny = params->ny;
     int nz = params->nz;
 
-    fi3d = GpuArray<double>(nx, ny, nz);
+    fi3d_gpu = GpuArray<double>(nx, ny, nz);
+    cudaMemset(fi3d_gpu.data(), 0, sizeof(double) * fi3d_gpu.size());
 }
 
 void GpuGrossPitaevskiSolver::initialize() {
     init_containers();
 
-    poisson_solver->prepare_gpu(&cpsi, &fi3d, &pote);
-    rt_split_solver->prepare_gpu(&cpsi, &fi3d, &pote);
+    //TODO: fix dependency on first allocating memory with copy-operator as this changes adress, look on load_buffer function
+    poisson_solver->prepare_gpu(&cpsi_gpu, &fi3d_gpu, &pote_gpu);
+    rt_split_solver->prepare_gpu(&cpsi_gpu, &fi3d_gpu, &pote_gpu);
 
     calc_norm();
     normalize();
 }
 
 void GpuGrossPitaevskiSolver::load_buffer(const wavefunction_t &wav) {
+    size_t nx = params->nx;
+    size_t ny = params->ny;
+    size_t nz = params->nz;
+
+    if(wav.size() != nx * ny * nz)
+        throw std::runtime_error("bad initialization");
+    
     std::cerr << "loading buffer with size: " << wav.size() << std::endl;
-    cpsi  = GpuArray<cuDoubleComplex>(wav.size());
-    cpsii = GpuArray<cuDoubleComplex>(wav.size());
+    cpsi_gpu  = GpuArray<cuDoubleComplex>(wav.size());
+    cpsii_gpu = GpuArray<cuDoubleComplex>(wav.size());
+
+    cpsi.resize(params->nx, params->ny, params->nz);
 
     auto wav_copy = wav;
-    cpsi.copy_from_host(reinterpret_cast<cuDoubleComplex *>(wav_copy.get_data()));
-    cpsii.copy_from_host(reinterpret_cast<cuDoubleComplex *>(wav_copy.get_data()));
+    cpsi_gpu.copy_from_host(reinterpret_cast<cuDoubleComplex *>(wav_copy.get_data()));
+    cpsii_gpu.copy_from_host(reinterpret_cast<cuDoubleComplex *>(wav_copy.get_data()));
 }
 
 void GpuGrossPitaevskiSolver::load_pote(const potential_t &pote) {
     std::cerr << "loading pote" << std::endl;
-    this->pote = GpuArray<double>(pote.size());
+    this->pote_gpu = GpuArray<double>(pote.size());
 
     auto pote_copy = pote;
-    this->pote.copy_from_host(pote_copy.get_data());
+    this->pote_gpu.copy_from_host(pote_copy.get_data());
 }
 
 void GpuGrossPitaevskiSolver::calc_fi3d() {
@@ -51,7 +62,8 @@ void GpuGrossPitaevskiSolver::calc_fi3d() {
 
 void GpuGrossPitaevskiSolver::calc_norm() {
     int N = params->nx * params->ny * params->nz;
-    xnorma = launch_kernel_calc_norm(cpsi.data(), N);
+    xnorma = launch_kernel_calc_norm(cpsi_gpu.data(), N) * params->get_dxdydz();
+
     // int nx = params->nx;
     // int ny = params->ny;
     // int nz = params->nz;
@@ -70,7 +82,7 @@ void GpuGrossPitaevskiSolver::calc_norm() {
 
 void GpuGrossPitaevskiSolver::normalize() {
     int N = params->nx * params->ny * params->nz;
-    launch_kernel_normalize(cpsi.data(), N, xnorma);
+    launch_kernel_normalize(cpsi_gpu.data(), N, xnorma);
 
     // int nx = params->nx;
     // int ny = params->ny;
@@ -86,10 +98,10 @@ void GpuGrossPitaevskiSolver::normalize() {
 }
 
 void GpuGrossPitaevskiSolver::imag_iter_linear_step() {
-    launch_kernel_imag_time_iteration(cpsi.data(),
-                                      pote.data(),
-                                      fi3d.data(),
-                                      cpsii.data(),
+    launch_kernel_imag_time_iteration(cpsi_gpu.data(),
+                                      pote_gpu.data(),
+                                      fi3d_gpu.data(),
+                                      cpsii_gpu.data(),
                                       params->nx,
                                       params->ny,
                                       params->nz,
@@ -146,11 +158,26 @@ void GpuGrossPitaevskiSolver::imag_iter_nonlinear_step() {
     //     }
     // }
 
-    cpsi.swap(cpsii);
+    cpsi_gpu.swap(cpsii_gpu);
     // cpsi = cpsii;
 }
 
 void GpuGrossPitaevskiSolver::real_fft_potential_half_step() {
+    launch_kernel_potential_half_step(
+        cpsi_gpu.data(),
+        pote_gpu.data(),
+        fi3d_gpu.data(),
+        params->real_time_dt,
+        params->cdd,
+        params->ggp11,
+        params->gamma,
+        params->n_atoms,
+        params->w_15,
+        params->nx,
+        params->ny,
+        params->nz
+    );
+
     // int nx           = params->nx;
     // int ny           = params->ny;
     // int nz           = params->nz;
@@ -245,9 +272,9 @@ void GpuGrossPitaevskiSolver::calc_energy() {
     // ene.sum();
 
     launch_kernel_calc_energies(
-        cpsi.data(),
-        pote.data(),
-        fi3d.data(),
+        cpsi_gpu.data(),
+        pote_gpu.data(),
+        fi3d_gpu.data(),
         ene,
         params->nx,
         params->ny,
@@ -262,6 +289,10 @@ void GpuGrossPitaevskiSolver::calc_energy() {
         params->n_atoms,
         params->w_15
     );
-    
+
     enes.emplace_back(ene);
+}
+
+void GpuGrossPitaevskiSolver::load_psi(){
+    cpsi_gpu.copy_to_host(reinterpret_cast<cuDoubleComplex *>(cpsi.get_data()));
 }

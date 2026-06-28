@@ -111,15 +111,11 @@ void launch_kernel_imag_time_iteration(
         dx, dy, dz, m, imag_dt, cdd, ggp11, gamma, w, w_15
     );
 
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+    }
     cudaDeviceSynchronize();
-    //cudaError_t err = cudaGetLastError();
-    //if (err != cudaSuccess) {
-    //    printf("Error: %s\n", cudaGetErrorString(err));
-    //}
-
-    //CUDA_CHECK(cudaGetLastError());
-    //CUDA_CHECK(cudaDeviceSynchronize());
-    //cudaDeviceSynchronize();
 }
 
 __global__ 
@@ -130,8 +126,8 @@ void kernel_normalize(
 ) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < N) {
-        data[idx].x *= norm_factor;
-        data[idx].y *= norm_factor;
+        data[idx].x /= sqrt(norm_factor);
+        data[idx].y /= sqrt(norm_factor);
     }
 }
 
@@ -171,10 +167,15 @@ double launch_kernel_calc_norm(
     double h_result = 0.0;
     double* d_result;
     cudaMalloc(&d_result, sizeof(double));
+    cudaMemset(d_result, 0, sizeof(double));
     
     int block = 256;
     int grid  = (N + block - 1) / block;
     kernel_calc_norm<<<grid, block>>>(data, d_result, N);
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+    }
     cudaDeviceSynchronize();
     
     cudaMemcpy(&h_result, d_result, sizeof(double), cudaMemcpyDeviceToHost);
@@ -191,6 +192,10 @@ void launch_kernel_normalize(
     int block = 256;
     int grid  = (N + block - 1) / block;
     kernel_normalize<<<grid, block>>>(data, N, norm_factor);
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+    }
     cudaDeviceSynchronize();
 }
 
@@ -307,6 +312,10 @@ void launch_kernel_calc_energies(
         psi, pote, fi3d, d_kin_dev, d_pot_dev, d_int_dev, d_ext_dev, d_bmf_dev,
         nx, ny, nz, dx, dy, dz, m, ggp11, cdd, gamma, n_atoms, w_15
     );
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+    }
     cudaDeviceSynchronize();
     
     cudaMemcpy(&ene.e_kin, d_kin_dev, sizeof(double), cudaMemcpyDeviceToHost);
@@ -319,3 +328,74 @@ void launch_kernel_calc_energies(
 
     ene.sum();
 }
+
+__global__ 
+void kernel_potential_half_step_inplace(
+    cuDoubleComplex* __restrict__ psi,
+    const double* __restrict__ V,
+    const double* __restrict__ fi3d,
+    double dt_factor,
+    double cdd,
+    double ggp11,
+    double gamma,
+    double n_atoms,
+    double w_15,
+    int nx, int ny, int nz
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+    
+    if (i >= nx || j >= ny || k >= nz) return;
+    
+    int idx = (i * ny + j) * nz + k;
+    
+    double v_ext = __ldg(&V[idx]);
+    double fi = __ldg(&fi3d[idx]);
+    
+    double psi_re = psi[idx].x;
+    double psi_im = psi[idx].y;
+    double norm_psi = psi_re * psi_re + psi_im * psi_im;
+    double abs_psi = sqrt(norm_psi);
+    
+    double v_int = (ggp11 - cdd / 3.0) * norm_psi * n_atoms 
+                   + gamma * pow(abs_psi, 3.0) * w_15;
+    
+    double total_potential = v_ext + cdd * fi + v_int;
+    
+    double ph = -dt_factor * total_potential;
+    double c = cos(ph);
+    double s = sin(ph);
+    
+    psi[idx].x = psi_re * c - psi_im * s;
+    psi[idx].y = psi_re * s + psi_im * c;
+}
+
+void launch_kernel_potential_half_step(
+    cuDoubleComplex* psi,
+    const double* V,
+    const double* fi3d,
+    double dt,
+    double cdd,
+    double ggp11,
+    double gamma,
+    double n_atoms,
+    double w_15,
+    int nx, int ny, int nz
+) {
+    dim3 block(8, 8, 8);
+    dim3 grid((nx + 7) / 8, (ny + 7) / 8, (nz + 7) / 8);
+    
+    double dt_factor = dt / 2.0;
+    
+    kernel_potential_half_step_inplace<<<grid, block>>>(
+        psi, V, fi3d, dt_factor, cdd, ggp11, gamma, n_atoms, w_15, nx, ny, nz
+    );
+    
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+    }
+    cudaDeviceSynchronize();
+}
+

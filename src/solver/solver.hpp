@@ -61,6 +61,8 @@ protected:
 
     // virtual methods
     
+    // TODO: loads psi from calculation to save
+    virtual void load_psi(){};
     virtual void calc_energy() = 0;
     virtual void init_containers() = 0;
     virtual void calc_fi3d() = 0;

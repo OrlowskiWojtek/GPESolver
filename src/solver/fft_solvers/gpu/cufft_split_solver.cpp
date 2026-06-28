@@ -53,36 +53,40 @@ void CUFFTRealTimeSplitSolver::execute() {
     int nz = p->nz;
     int N  = nx * ny * nz;
 
-    auto &rpsi = *psi;
-    for (int i = 0; i < nx; ++i) {
-        for (int j = 0; j < ny; ++j) {
-            for (int k = 0; k < nz; ++k) {
-                size_t idx = (i * ny + j) * nz + k;
+    //auto &rpsi = *psi;
+    //for (int i = 0; i < nx; ++i) {
+    //    for (int j = 0; j < ny; ++j) {
+    //        for (int k = 0; k < nz; ++k) {
+    //            size_t idx = (i * ny + j) * nz + k;
 
-                real(h_rho_r[idx]) = rpsi(i, j, k).real();
-                imag(h_rho_r[idx]) = rpsi(i, j, k).imag();
-            }
-        }
-    }
+    //            real(h_rho_r[idx]) = rpsi(i, j, k).real();
+    //            imag(h_rho_r[idx]) = rpsi(i, j, k).imag();
+    //        }
+    //    }
+    //}
 
-    cudaMemcpy(d_rho_r, h_rho_r, N * sizeof(complex_type), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_rho_r, psi_gpu->data(), N * sizeof(complex_type), cudaMemcpyDeviceToDevice);
+
+    // cudaMemcpy(d_rho_r, h_rho_r, N * sizeof(complex_type), cudaMemcpyHostToDevice);
     cufftExecZ2Z(plan_fwd, d_rho_r, d_rho_k, CUFFT_FORWARD);
 
     launch_kernel_kinetic(d_rho_k, d_kinetic_factor, N);
     
     cufftExecZ2Z(plan_bwd, d_rho_k, d_rho_r, CUFFT_INVERSE);
-    cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(complex_type), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(complex_type), cudaMemcpyDeviceToHost);
 
-    double norm_factor = 1.0 / static_cast<double>(N);
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
-                size_t idx = (i * ny + j) * nz + k;
-                rpsi(i, j, k) =
-                    std::complex<double>(real(h_rho_r[idx]), imag(h_rho_r[idx])) * norm_factor;
-            }
-        }
-    }
+    launch_kernel_copy_with_norm(d_rho_r, psi_gpu->data(), N);
+
+    //double norm_factor = 1.0 / static_cast<double>(N);
+    //for (int i = 0; i < nx; i++) {
+    //    for (int j = 0; j < ny; j++) {
+    //        for (int k = 0; k < nz; k++) {
+    //            size_t idx = (i * ny + j) * nz + k;
+    //            rpsi(i, j, k) =
+    //                std::complex<double>(real(h_rho_r[idx]), imag(h_rho_r[idx])) * norm_factor;
+    //        }
+    //    }
+    //}
 }
 
 CUFFTRealTimeSplitSolver::~CUFFTRealTimeSplitSolver() {
@@ -103,12 +107,6 @@ void CUFFTRealTimeSplitSolver::prepare_transforms() {
     auto err = cudaMalloc(&d_rho_r, sizeof(cufftDoubleComplex) * N);
     if (err != cudaSuccess) {
         OutputFormatter::printError("Can't aloc d_rho_r memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    err = cudaMalloc(&d_rho_k, sizeof(cufftDoubleComplex) * N);
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_rho_k memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
 

@@ -94,4 +94,32 @@ void launch_kernel_calc_energies(
     double n_atoms, double w_15
 );
 
+// ================================= //
+__global__ 
+void kernel_potential_half_step_inplace(
+    cuDoubleComplex* __restrict__ psi,
+    const double* __restrict__ V,
+    const double* __restrict__ fi3d,
+    double dt_factor,
+    double cdd,
+    double ggp11,
+    double gamma,
+    double n_atoms,
+    double w_15,
+    int nx, int ny, int nz
+);
+
+void launch_kernel_potential_half_step(
+    cuDoubleComplex* psi,
+    const double* V,
+    const double* fi3d,
+    double dt,
+    double cdd,
+    double ggp11,
+    double gamma,
+    double n_atoms,
+    double w_15,
+    int nx, int ny, int nz
+);
+
 #endif

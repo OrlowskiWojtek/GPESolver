@@ -49,6 +49,7 @@ void AbstractGrossPitaevskiSolver::calc_initial_state() {
 
         if(iter % 100 == 0){
             calc_energy();
+            load_psi();
             p_mediator->save_checkpoint(cpsi);
             summarize_imag_iter();
         }
@@ -69,9 +70,10 @@ void AbstractGrossPitaevskiSolver::calc_evolution() {
 
     for (size_t iter = 0; iter <= params->iter_real; iter++) {
         real_time_iter();
-        calc_energy();
 
         if (iter % 1000 == 0) {
+            calc_energy();
+            load_psi();
             p_mediator->save_checkpoint(cpsi);
             summarize_real_iter();
         }
