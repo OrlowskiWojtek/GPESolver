@@ -113,6 +113,72 @@ function animate_iso_bce_interactive_prefetch(data_dir::String)
     display(fig)
 end
 
+function animate_iso_bce_slices_interactive_prefetch(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure(figure_padding = 0, backgroundcolor = :gray97)
+    ax = Axis(fig[1, 1],
+               xlabel = "x [nm]",
+               ylabel = "y [nm]")
+
+    # Prefetch all frames into memory
+    println("Prefetching $n_frames frames...")
+    contexts = [load_slice_from_binary(joinpath(data_dir, file)) for file in files]
+    println("Done prefetching!")
+
+    BCEslice = contexts[1]
+    x, y = BCEslice.x, BCEslice.y
+
+    # Precompute all normalized rho and heatmap data
+    println("Precomputing normalized data...")
+    all_hm_rho = Vector{Array{Float64,2}}(undef, n_frames)
+
+    hm_x = BCEslice.x
+    hm_y = BCEslice.y
+
+    for (idx, context) in enumerate(contexts)
+        all_hm_rho[idx] = abs.(context.psi) .^ 2
+    end
+    println("Done precomputing!")
+
+    hm_rho = Observable(all_hm_rho[1])
+
+    max_val = maximum(hm_rho[])
+    # Custom colormap
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
+
+    # Add heatmap at z[begin + 2]
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  transparency = true,
+                  colormap = colormap)
+
+    # Add slider for frame control
+    slider = Slider(fig[2, 1], range = 1:n_frames, startvalue = 1)
+    
+    on(slider.value) do frame
+        println("Showing frame $frame")  
+        hm_rho[] = all_hm_rho[frame]
+        notify(hm_rho)
+    end
+
+    display(fig)
+end
+
 function animate_iso_bce(data_dir::String, output_file::String)
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
@@ -256,6 +322,7 @@ function plot_local_maxima_coordinates(psi_vec::Vector{IsoBECContext})
     end
 
     times = collect(1:length(psi_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+
     for (idx, lmax) in enumerate(all_maxima)
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
@@ -339,16 +406,22 @@ function plot_local_maxima_coordinates_one_ax(slice_vec::Vector{IsoBECSlice}; le
     end
 
     times = collect(1:length(slice_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+
+    file = open("position_gpe_4_max.txt", "w")
     for (idx, lmax) in enumerate(all_maxima)
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
 
-        println(xs, length(xs))
-        println(times, length(times))
+        if(idx == 1)
+            for (t, x, y) in zip(times, xs, ys)
+                write(file, "$t $x $y\n")
+            end
+        end
+
         scatter!(ax, times, xs, markersize = 5, color = :red, label = "x")
         scatter!(ax, times, ys, markersize = 5, color = :blue, label = "y")
-
     end
+    close(file)
     
     axislegend(position = leg_pos, unique = true)
 
