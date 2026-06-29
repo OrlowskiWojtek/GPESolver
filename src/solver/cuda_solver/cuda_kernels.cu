@@ -1,4 +1,4 @@
-#include "solver/cuda_kernels.hpp"
+#include "solver/cuda_solver/cuda_kernels.hpp"
 
 __global__
 void imag_time_iteration_kernel(
@@ -304,6 +304,12 @@ void launch_kernel_calc_energies(
     cudaMalloc(&d_ext_dev, sizeof(double));
     cudaMalloc(&d_bmf_dev, sizeof(double));
      
+    cudaMemset(d_kin_dev, 0, sizeof(double));
+    cudaMemset(d_pot_dev, 0, sizeof(double));
+    cudaMemset(d_int_dev, 0, sizeof(double));
+    cudaMemset(d_ext_dev, 0, sizeof(double));
+    cudaMemset(d_bmf_dev, 0, sizeof(double));
+
     int N = nx * ny * nz;
     int block = 256;
     int grid = (N + block - 1) / block;

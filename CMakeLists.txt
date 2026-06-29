@@ -21,7 +21,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
     )
 else()
     # GCC / Clang
-    # TODO: add Wall
     target_compile_options(compiler_flags INTERFACE
         -Wall
         -O3 

@@ -4,9 +4,9 @@
 #include <regex>
 
 #ifdef USE_CUDA
-#include "solver/gpu_solver.hpp"
+#include "solver/cuda_solver/gpu_solver.hpp"
 #else
-#include "solver/cpu_solver.hpp"
+#include "solver/cpu_solver/cpu_solver.hpp"
 #endif
 
 SimulationManager::SimulationManager()
@@ -61,9 +61,9 @@ void SimulationManager::on_params_loaded() {
     params->print();
 
     p_sctx->initialize();
+    m_gpe_solver->initialize();
     m_initializer->initialize_wavefunction();
     m_initializer->initialize_potential();
-    m_gpe_solver->initialize();
 }
 
 void SimulationManager::on_data_loaded(const wavefunction_t &wvf) {
