@@ -38,9 +38,9 @@ void kernel_fill_from_psi(
     int nx, int ny, int nz, 
     int full_nx, int full_ny, int full_nz,
     double n_atoms){
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int k = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
-    int k = blockIdx.z * blockDim.z + threadIdx.z;
+    int i = blockIdx.z * blockDim.z + threadIdx.z;
 
     int rho_idx = (i * full_ny + j) * full_nz + k;
     int psi_idx = (i * ny + j) * nz + k;
@@ -66,9 +66,10 @@ void launch_kernel_fill_from_psi(
     double n_atoms){
 
     int blockSize = 8;
-    dim3 blocks((full_nx+blockSize-1)/blockSize, 
+    dim3 blocks((full_nz+blockSize-1)/blockSize, 
                 (full_ny+blockSize-1)/blockSize, 
-                (full_nz+blockSize-1)/blockSize);
+                (full_nx+blockSize-1)/blockSize);
+
     dim3 threads(blockSize, blockSize, blockSize);
     kernel_fill_from_psi<<<blocks, threads>>>(rho, psi, nx, ny, nz, 
                                               full_nx, full_ny, full_nz,
@@ -78,7 +79,7 @@ void launch_kernel_fill_from_psi(
     if (err != cudaSuccess) {
         printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
     }
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 }
 
 // ========Kernel kinetic======= //
@@ -120,10 +121,9 @@ __global__ void kernel_copy_to_fi3d_gpu(
     int full_nx, int full_ny, int full_nz,
     double norm_factor
 ) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int k = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
-    int k = blockIdx.z * blockDim.z + threadIdx.z;
-
+    int i = blockIdx.z * blockDim.z + threadIdx.z;
 
     if (i < nx && j < ny && k < nz) {
         size_t idx = (static_cast<size_t>(i) * ny + j) * nz + k;
@@ -140,9 +140,9 @@ void launch_kernel_copy_to_fi3d_gpu(
     double norm_factor
 ) {
     dim3 block(8, 8, 8);
-    dim3 grid((nx + block.x - 1) / block.x,
+    dim3 grid((nz + block.x - 1) / block.x,
               (ny + block.y - 1) / block.y,
-              (nz + block.z - 1) / block.z);
+              (nx + block.z - 1) / block.z);
 
     kernel_copy_to_fi3d_gpu<<<grid, block>>>(
         d_rho_r, fi3d_gpu, nx, ny, nz,
@@ -153,7 +153,7 @@ void launch_kernel_copy_to_fi3d_gpu(
     if (err != cudaSuccess) {
         printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
     }
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 }
 
 __global__ 
@@ -187,5 +187,5 @@ void launch_kernel_copy_with_norm(
     if (err != cudaSuccess) {
         printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
     }
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 }

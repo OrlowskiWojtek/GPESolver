@@ -65,10 +65,10 @@ void CUFFTRealTimeSplitSolver::execute() {
     //    }
     //}
 
-    cudaMemcpy(d_rho_r, psi_gpu->data(), N * sizeof(complex_type), cudaMemcpyDeviceToDevice);
+    // cudaMemcpy(d_rho_r, psi_gpu->data(), N * sizeof(complex_type), cudaMemcpyDeviceToDevice);
 
     // cudaMemcpy(d_rho_r, h_rho_r, N * sizeof(complex_type), cudaMemcpyHostToDevice);
-    cufftExecZ2Z(plan_fwd, d_rho_r, d_rho_k, CUFFT_FORWARD);
+    cufftExecZ2Z(plan_fwd, psi_gpu->data(), d_rho_k, CUFFT_FORWARD);
 
     launch_kernel_kinetic(d_rho_k, d_kinetic_factor, N);
     
@@ -93,7 +93,6 @@ CUFFTRealTimeSplitSolver::~CUFFTRealTimeSplitSolver() {
     cudaFree(d_rho_r);
     cudaFree(d_rho_k);
     cudaFree(d_kinetic_factor);
-    cudaFreeHost(h_rho_r);
 
     delete[] h_kinetic_factor;
 }
@@ -115,8 +114,6 @@ void CUFFTRealTimeSplitSolver::prepare_transforms() {
         OutputFormatter::printError("Can't aloc d_rho_k memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
-
-    cudaMallocHost(&h_rho_r, sizeof(complex_type) * N);
 
     cufftPlan3d(&plan_fwd, nx, ny, nz, CUFFT_Z2Z);
     cufftPlan3d(&plan_bwd, nx, ny, nz, CUFFT_Z2Z);

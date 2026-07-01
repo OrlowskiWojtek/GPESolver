@@ -100,8 +100,6 @@ CUFFTPoissonSolver::~CUFFTPoissonSolver() {
     cudaFree(d_rho_k);
     cudaFree(d_Vdip_k);
 
-    cudaFreeHost(h_rho_r);
-
     delete[] h_Vdip_k;
 }
 
@@ -123,8 +121,6 @@ void CUFFTPoissonSolver::prepare_transforms() {
         OutputFormatter::printError("Can't aloc d_rho_k memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
-
-    cudaMallocHost(&h_rho_r, sizeof(real_type) * N);
 
     cufftPlan3d(&plan_fwd, nx, ny, nz, CUFFT_D2Z);
     cufftPlan3d(&plan_bwd, nx, ny, nz, CUFFT_Z2D);

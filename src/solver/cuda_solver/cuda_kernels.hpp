@@ -62,6 +62,7 @@ __global__ void kernel_calc_norm_sq(
 
 double launch_kernel_calc_norm(
     const cuDoubleComplex* data,
+    double* __restrict__ d_norm,
     int N
 );
 

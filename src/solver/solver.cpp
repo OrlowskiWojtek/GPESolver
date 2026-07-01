@@ -118,6 +118,8 @@ void AbstractGrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
     buf_data->cpsii = wvf;
 
     import_data();
+    calc_norm();
+    normalize();
 }
 
 void AbstractGrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {

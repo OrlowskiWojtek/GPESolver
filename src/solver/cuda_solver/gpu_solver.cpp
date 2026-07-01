@@ -13,6 +13,8 @@ void GpuGrossPitaevskiSolver::init_containers() {
     size_t nz = params->nz;
 
     m_data.allocate(nx, ny, nz);
+
+    cudaMalloc(&d_norm, sizeof(double));
 }
 
 void GpuGrossPitaevskiSolver::prepare_fft() {
@@ -53,7 +55,7 @@ void GpuGrossPitaevskiSolver::calc_fi3d() {
 
 void GpuGrossPitaevskiSolver::calc_norm() {
     int N  = params->nx * params->ny * params->nz;
-    xnorma = launch_kernel_calc_norm(m_data.cpsi_gpu.data(), N) * params->get_dxdydz();
+    xnorma = launch_kernel_calc_norm(m_data.cpsi_gpu.data(), d_norm, N) * params->get_dxdydz();
 }
 
 void GpuGrossPitaevskiSolver::normalize() {
@@ -128,16 +130,18 @@ void GpuGrossPitaevskiSolver::calc_energy() {
                                 params->n_atoms,
                                 params->w_15);
 
-    ene.e_kin *= params->get_dxdydz() / (2 * params->m) * params->n_atoms;
+    ene.e_kin *= params->get_dxdydz() * params->n_atoms;
     ene.e_pot *= params->get_dxdydz() * params->n_atoms;
     ene.e_int *= params->get_dxdydz() * std::pow(params->n_atoms, 2);
     ene.e_ext *= params->get_dxdydz();
     ene.e_bmf *= params->get_dxdydz() * std::pow(params->n_atoms, 2.5);
+    ene.sum();
 
     enes.emplace_back(ene);
 }
 
 void GpuGrossPitaevskiSolver::export_data() {
+    cudaDeviceSynchronize();
     m_data.cpsi_gpu.copy_to_host(reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
 }
 

@@ -142,7 +142,6 @@ public:
 
 private:
     void allocate(std::size_t size) {
-        std::cout << "Alocating memory" << std::endl;
         if (size > 0) {
             CUDA_CHECK(cudaMalloc(&data_, size * sizeof(T)));
         } else {

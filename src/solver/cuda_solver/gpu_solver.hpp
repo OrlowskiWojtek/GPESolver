@@ -11,6 +11,7 @@ public:
 private:
     //! Data used in solver
     GPUSolverData m_data;
+    double* d_norm;
 
     void prepare_fft() override;
     void import_pote() override;
