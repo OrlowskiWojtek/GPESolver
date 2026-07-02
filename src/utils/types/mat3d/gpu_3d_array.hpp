@@ -2,10 +2,10 @@
 #define GPU_3D_ARRAY_HPP
 
 #include <cstddef>
+#include <iostream>
 #include <stdexcept>
 #include <utility> // std::exchange
 #include <vector>
-#include <iostream>
 
 #include "cuda_runtime.h"
 
@@ -144,6 +144,7 @@ private:
     void allocate(std::size_t size) {
         if (size > 0) {
             CUDA_CHECK(cudaMalloc(&data_, size * sizeof(T)));
+            CUDA_CHECK(cudaMemset(data_, 0, size * sizeof(T)));
         } else {
             throw std::runtime_error("Wrong size of alloc");
         }
