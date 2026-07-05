@@ -53,11 +53,16 @@ public:
     //! \param psi Wavefunction to save.
     //! \param filename Name of the text file.
     void save_to_text_file(const wavefunction_t &psi, std::string filename);
-    
+
     //! \brief Saves wavefunction to a binary file.
     //! \param psi Wavefunction to save.
     //! \param filename Name of the binary file.
     void save_to_binary_file(const wavefunction_t &psi, std::string filename);
+
+    //! \brief Saves potential map to a text file.
+    //! \param pote Potential map to save.
+    //! \param filename Name of the text file.
+    void save_pote_to_text_file(const potential_t &pote, std::string filename);
 
 private:
     //! \brief Name of the parameters file.

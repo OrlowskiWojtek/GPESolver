@@ -2,7 +2,7 @@
 #define CUDA_KERNELS_HPP
 
 #include "cufft.h"
-#include "solver/fft_context.hpp"
+#include "solver/fft_solvers/fft_context.hpp"
 
 #ifdef __cplusplus
 extern "C" {

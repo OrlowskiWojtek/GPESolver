@@ -10,26 +10,65 @@ include("units.jl")
 
 set_theme!(theme_latexfonts(), rowgap = 0, colgap = 0)
 
-function animate_iso_bce(data_dir::String, output_file::String)
-    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
-    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+function animate_pote_interactive_prefetch(data_dir::String)
+    files = filter(f -> occursin("changed_potential", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "potential")[2], ".")[1]))
     n_frames = length(files)
 
-    fig = Figure(size = (1024*2, 768), backgroundcolor = :gray97)
+    fig = Figure(figure_padding = 0, backgroundcolor = :gray97)
     ax = Axis3(fig[1, 1],
-               xlabel="X [nm]",
-               ylabel="Y [nm]",
-               zlabel="Z [nm]",
                aspect=:data,
-            )
+               xautolimitmargin = (0., 0.),
+               yautolimitmargin = (0., 0.),
+               zautolimitmargin = (0., 0.),
+               xlabel = "x [nm]",
+               )
 
-    BCEContext = load_from_text(joinpath(data_dir, files[1]))
-    rho = Observable(Array{Float64,3}(abs.(BCEContext.psi)))
-    x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
+    # Prefetch all frames into memory
+    println("Prefetching $n_frames frames...")
+    contexts = [load_pote_from_text(joinpath(data_dir, file)) for file in files]
+    println("Done prefetching!")
 
+    PoteContext = contexts[1]
+    x, y, z = PoteContext.x, PoteContext.y, PoteContext.z
+
+    # Precompute all normalized rho and heatmap data
+    println("Precomputing normalized data...")
+    rho_data = Vector{Float64}(undef, n_frames)
+    all_rho = Vector{Array{Float64,3}}(undef, n_frames)
+    all_hm_rho = Vector{Array{Float64,2}}(undef, n_frames)
+
+    for (idx, context) in enumerate(contexts)
+        raw_rho = abs.(context.pote)
+        all_rho[idx] = (raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho)))
+    end
+    println("Done precomputing!")
+
+    # Create observables with first frame
+    rho = Observable(all_rho[1])
     max_val = maximum(rho[])
-    isovals = [0.2 * max_val, 0.5 * max_val, 0.8 * max_val]
-    alphas = [0.4, 0.7, 0.9]
+
+    alphas = [0.1, 0.3, 0.8]
+    isovals = [0.01 * max_val, 0.2 * max_val, 0.8 * max_val]
+
+    # Custom colormap
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
+
+    # Set lighting
+    set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
 
     for (i, isovalue) in enumerate(isovals)
         volume!(ax,
@@ -40,14 +79,263 @@ function animate_iso_bce(data_dir::String, output_file::String)
                 algorithm = :iso,
                 isovalue = isovalue,
                 alpha = alphas[i],
-                colormap = :YlGn,
+                colormap = colormap,
+                transparency = true,
+                isorange = 0.1 * max_val)
+    end
+
+    # Add slider for frame control
+    slider = Slider(fig[2, 1], range = 1:n_frames, startvalue = 1)
+
+    on(slider.value) do frame
+        println("Showing frame $frame")
+        rho[] = all_rho[frame]
+        notify(rho)
+    end
+
+    display(fig)
+end
+
+function animate_iso_bce_interactive_prefetch(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure(figure_padding = 0, backgroundcolor = :gray97)
+    ax = Axis3(fig[1, 1],
+               aspect=:data,
+               xautolimitmargin = (0., 0.),
+               yautolimitmargin = (0., 0.),
+               zautolimitmargin = (0., 0.),
+               xlabel = "x [nm]",
+               )
+
+    # Prefetch all frames into memory
+    println("Prefetching $n_frames frames...")
+    contexts = [load_from_binary(joinpath(data_dir, file)) for file in files]
+    println("Done prefetching!")
+
+    BCEContext = contexts[1]
+    BCEslice = get_BEC_slice(BCEContext)
+    x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
+
+    # Precompute all normalized rho and heatmap data
+    println("Precomputing normalized data...")
+    rho_data = Vector{Float64}(undef, n_frames)
+    all_rho = Vector{Array{Float64,3}}(undef, n_frames)
+    all_hm_rho = Vector{Array{Float64,2}}(undef, n_frames)
+
+    hm_x = BCEslice.x
+    hm_y = BCEslice.y
+
+    for (idx, context) in enumerate(contexts)
+        raw_rho = abs.(context.psi)
+        all_rho[idx] = (raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho)))
+        
+        slice = get_BEC_slice(context)
+        all_hm_rho[idx] = abs.(slice.psi) .^ 2
+    end
+    println("Done precomputing!")
+
+    # Create observables with first frame
+    rho = Observable(all_rho[1])
+    hm_rho = Observable(all_hm_rho[1])
+
+    max_val = maximum(rho[])
+    alphas = [0.3, 0.8]
+    isovals = [0.2 * max_val, 0.8 * max_val]
+
+    # Custom colormap
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
+
+    # Set lighting
+    set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
+
+    for (i, isovalue) in enumerate(isovals)
+        volume!(ax,
+                (x[begin], x[end]),
+                (y[begin], y[end]),
+                (z[begin], z[end]),
+                rho,
+                algorithm = :iso,
+                isovalue = isovalue,
+                alpha = alphas[i],
+                colormap = colormap,
+                transparency = true,
+                isorange = 0.1 * max_val)
+    end
+
+    # Add heatmap at z[begin + 2]
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  transparency = true,
+                  colormap = colormap,
+                  transformation=(:xy, z[begin + 2]))
+
+    # Add slider for frame control
+    slider = Slider(fig[2, 1], range = 1:n_frames, startvalue = 1)
+    
+    on(slider.value) do frame
+        println("Showing frame $frame")
+        rho[] = all_rho[frame]
+        notify(rho)
+        
+        hm_rho[] = all_hm_rho[frame]
+        notify(hm_rho)
+    end
+
+    display(fig)
+end
+
+function animate_iso_bce_slices_interactive_prefetch(data_dir::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure(figure_padding = 0, backgroundcolor = :gray97)
+    ax = Axis(fig[1, 1],
+               xlabel = "x [nm]",
+               ylabel = "y [nm]")
+
+    # Prefetch all frames into memory
+    println("Prefetching $n_frames frames...")
+    contexts = [load_slice_from_binary(joinpath(data_dir, file)) for file in files]
+    println("Done prefetching!")
+
+    BCEslice = contexts[1]
+    x, y = BCEslice.x, BCEslice.y
+
+    # Precompute all normalized rho and heatmap data
+    println("Precomputing normalized data...")
+    all_hm_rho = Vector{Array{Float64,2}}(undef, n_frames)
+
+    hm_x = BCEslice.x
+    hm_y = BCEslice.y
+
+    for (idx, context) in enumerate(contexts)
+        all_hm_rho[idx] = abs.(context.psi) .^ 2
+    end
+    println("Done precomputing!")
+
+    hm_rho = Observable(all_hm_rho[1])
+
+    max_val = maximum(hm_rho[])
+    # Custom colormap
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
+
+    # Add heatmap at z[begin + 2]
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  transparency = true,
+                  colormap = colormap)
+
+    # Add slider for frame control
+    slider = Slider(fig[2, 1], range = 1:n_frames, startvalue = 1)
+    
+    on(slider.value) do frame
+        println("Showing frame $frame")  
+        hm_rho[] = all_hm_rho[frame]
+        notify(hm_rho)
+    end
+
+    display(fig)
+end
+
+function animate_iso_bce(data_dir::String, output_file::String)
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure(figure_padding = 0)
+    ax = Axis3(fig[1, 1],
+               protrusions = 0,
+               aspect=:data,
+               xautolimitmargin = (0., 0.),
+               yautolimitmargin = (0., 0.),
+               zautolimitmargin = (0., 0.),
+               xlabeloffset = 25.,
+               ylabeloffset = 25.,
+               zlabeloffset = 35.,
+               zlabelrotation = 0.,
+               zlabelsize = 25.,
+               zticklabelsize = 25.,
+               xlabel = "x [nm]",
+               ylabel = "y [nm]",
+               zlabel = "z [nm]",
+               viewmode = :fitzoom)
+
+    BCEContext = load_from_binary(joinpath(data_dir, files[1]))
+    rho = Observable(Array{Float64,3}(abs.(BCEContext.psi)))
+    x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
+
+    # Normalize rho similar to plot_single_state
+    raw_rho = rho[]
+    rho_normalized = Observable((raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho))))
+
+    max_val = maximum(rho_normalized[])
+    alphas = [0.3, 0.8]
+    isovals = [0.2 * max_val, 0.8 * max_val]
+
+    # Custom colormap (same as plot_single_state)
+    colors = [
+        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
+        (3/24, RGB(1.0, 1.0, 1.0)),   # white
+        (3/12, RGB(0.0, 1.0, 0.0)),   # green
+        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
+        (10/12, RGB(1.0, 0.0, 0.0)),  # red
+        (1.0, RGB(0.0, 0.0, 0.0))     # black
+    ]
+    my_cmap = cgrad(
+        [colors[i][2] for i in eachindex(colors)],
+        [colors[i][1] for i in eachindex(colors)];
+        scale=Linear()
+    )
+    colormap = my_cmap
+
+    set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
+
+    for (i, isovalue) in enumerate(isovals)
+        volume!(ax,
+                (x[begin], x[end]),
+                (y[begin], y[end]),
+                (z[begin], z[end]),
+                rho_normalized,
+                algorithm = :iso,
+                isovalue = isovalue,
+                alpha = alphas[i],
+                colormap = colormap,
                 transparency = true,
                 isorange = 0.1 * max_val)
     end
 
     record(fig, output_file, 1:n_frames; framerate=10) do frame
-        println("loading frame", joinpath(data_dir, files[frame]))
-        rho[] = abs.(load_from_text(joinpath(data_dir, files[frame])).psi)
+        println("Loading frame ", joinpath(data_dir, files[frame]))
+        raw_rho = abs.(load_from_binary(joinpath(data_dir, files[frame])).psi)
+        rho_normalized[] = (raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho)))
     end
 end
 
@@ -153,6 +441,7 @@ function plot_local_maxima_coordinates(psi_vec::Vector{IsoBECContext})
     end
 
     times = collect(1:length(psi_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+
     for (idx, lmax) in enumerate(all_maxima)
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
@@ -224,8 +513,8 @@ function plot_local_maxima_coordinates_one_ax(slice_vec::Vector{IsoBECSlice}; le
 
     for (idx, _slice) in enumerate(slice_vec)
         println("Processing slice: ", idx)
-        #slice = interpolate_slice(_slice)
-        maxima = find_local_maxima(_slice)
+        slice = interpolate_slice(_slice)
+        maxima = find_local_maxima(slice)
         coords = get_coordinates(slice, maxima)
 
         sorted_cords = sort(coords, by = c -> (c.x, c.y))
@@ -236,14 +525,22 @@ function plot_local_maxima_coordinates_one_ax(slice_vec::Vector{IsoBECSlice}; le
     end
 
     times = collect(1:length(slice_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+
+    file = open("position_gpe_4_max.txt", "w")
     for (idx, lmax) in enumerate(all_maxima)
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
 
+        if(idx == 1)
+            for (t, x, y) in zip(times, xs, ys)
+                write(file, "$t $x $y\n")
+            end
+        end
+
         scatter!(ax, times, xs, markersize = 5, color = :red, label = "x")
         scatter!(ax, times, ys, markersize = 5, color = :blue, label = "y")
-
     end
+    close(file)
     
     axislegend(position = leg_pos, unique = true)
 

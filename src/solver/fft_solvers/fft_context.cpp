@@ -1,4 +1,4 @@
-#include "solver/fft_context.hpp"
+#include "solver/fft_solvers/fft_context.hpp"
 #include "parameters/parameters.hpp"
 #ifdef USE_CUDA
 #include <cufft.h>

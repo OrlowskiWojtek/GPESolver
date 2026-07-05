@@ -62,6 +62,9 @@ struct PhysicalParameters {
     //! Number of iterations for real time evolution.
     size_t iter_real;
 
+    const double real_time_dt = 1.00e10;
+    const double imag_time_dt = 1.25e11;
+
     //! Distance per node - x direction
     double dx;
     //! Distance per node - y direction.
@@ -76,6 +79,14 @@ struct PhysicalParameters {
     //! Used only if initializing from multiple gaussians.
     int n_gauss_max;
 
+    //! Used only if initializion from setup gauss
+    //! Initial number of droplets in x dimension
+    int bec_droplets_x;
+    //! Initial number of droplets in y dimension
+    int bec_droplets_y;
+    //! Initial number of droplets in z dimension
+    int bec_droplets_z;
+
     //! Filename to load data from.
     //! Used only when initializing from file.
     std::string load_filename;
@@ -85,6 +96,9 @@ struct PhysicalParameters {
 
     //! Initialization option
     InitializationOption init_strategy;
+    
+    //! Type of potential used for initial state finding
+    std::string pote_key;
 
     double get_dxdydz();
 
