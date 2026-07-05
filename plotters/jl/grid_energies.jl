@@ -3,10 +3,11 @@ using GLMakie, CairoMakie, LaTeXStrings
 include("files.jl")
 include("plots.jl")
 include("animate.jl")
+include("units.jl")
 
 ##
 
-const BASE_DIR = "../../build/run_check_size"
+const BASE_DIR = "../../build/run_check_size_bigger_grid"
 
 """
     find_grid_sizes(results::Dict)
@@ -130,13 +131,13 @@ function visualize_grid_convergence(base_dir::String; output_path::Union{Nothing
     fig = Figure()
 
     ax = Axis(fig[1, 1],
-              xlabel="n",
+              #xlabel="n",
+              xlabel=L"\mathrm{L}\;\mathrm{ [nm]}",
               ylabel=" E/N [nK]",
               xticklabelsize=18,
               yticklabelsize=18,
               xlabelsize=20,
               ylabelsize=20,
-              xticks=xy_sizes,
               xtickalign=0,
               ytickalign=0,
               )
@@ -153,13 +154,17 @@ function visualize_grid_convergence(base_dir::String; output_path::Union{Nothing
         if !isempty(energies_for_z)
             lines!(ax, sizes_for_z, energies_for_z * ENERGY_CONV,
                 label="$(z)",
-                linestyle = j % 2 == 1 ? :dash : :solid,
-                linewidth = 3
+                #linewidth = j % 2 == 1 ? 2 : 4
             )
+            scatter!(ax, sizes_for_z, energies_for_z * ENERGY_CONV,
+                label="$(z)",
+                #markersize = j % 2 == 1 ? 10 : 13,
+                )
         end
     end
     
-    axislegend(ax, L"\mathrm{n}_z", position=(:right, :center), titlesize=18, labelsize=16)
+    #axislegend(ax, L"\mathrm{n}_z", position=(:right, :center), titlesize=18, labelsize=16, merge = true)
+    axislegend(ax, L"\mathrm{L}_z\;\mathrm{ [nm]}", position=(:right, :center), titlesize=18, labelsize=16, merge = true)
     
     if output_path !== nothing
         save(output_path, fig, pt_per_unit=1)
@@ -236,7 +241,113 @@ visualize_grid_bmf(args...; kwargs...) = visualize_grid_convergence(args...; ene
 
 ## Run visualization
 
-fig = visualize_grid_total(BASE_DIR);
-save("grid.pdf", fig)
+fig = visualize_grid_total(BASE_DIR)
+#save("size.pdf", fig)
+
+## Plotting profiles for 1x1 configuration (2 droplets)
+
+# z = 0 y = 0 profile
+function visualize_profile_x!(ax, filename::String, n_atoms)
+    z_dir = dirname(filename)
+    xy_dir = dirname(z_dir)
+
+    xy_pattern = r"^(\d+)xy$"
+    z_pattern = r"^(\d+)z$"
+
+    xy_match = match(xy_pattern, basename(xy_dir))
+    z_match = match(z_pattern, basename(z_dir))
+
+    if (xy_match === nothing || z_match === nothing)
+        error("Can't find xy and z from filename")
+    end
+
+    xy_size = parse(Int, xy_match.captures[1])
+    z_size = parse(Int, z_match.captures[1])
+    # Load the BEC context from file
+    context = load_from_text(filename)
+
+    # Find indices for y=0 and z=0
+    y_idx = argmin(abs.(context.y .- 0))
+    z_idx = argmin(abs.(context.z .- 0))
+
+    # Extract 1D profile along x
+    rho = abs.(context.psi[:, y_idx, z_idx]) .^ 2 ./ length_au3_to_μm3(1.) * n_atoms
+
+    label = "L = $(xy_size) nm"
+
+   #lines!(ax, context.x, rho; label, linestyle = (:dash, :loose))
+    scatter!(ax, context.x, rho; markersize = 5, label)
+
+    return nothing
+end
+
+# x, y - > rho_max
+function visualize_profile_z!(ax, filename::String, n_atoms)
+    z_dir = dirname(filename)
+    xy_dir = dirname(z_dir)
+
+    xy_pattern = r"^(\d+)xy$"
+    z_pattern = r"^(\d+)z$"
+
+    xy_match = match(xy_pattern, basename(xy_dir))
+    z_match = match(z_pattern, basename(z_dir))
+
+    if (xy_match === nothing || z_match === nothing)
+        error("Can't find xy and z from filename")
+    end
+
+    xy_size = parse(Int, xy_match.captures[1])
+    z_size = parse(Int, z_match.captures[1])
+
+    # Load the BEC context from file
+    context = load_from_text(filename)
+
+    rho = abs.(context.psi) .^ 2
+    max = argmax(rho)
+    i_max = max[1]
+    j_max = max[2]
+
+    rho_profile = rho[i_max, j_max, :] ./ length_au3_to_μm3(1.) * n_atoms
+    label = "Lz = "*"$(z_size)"*" nm"
+
+    #lines!(ax, context.z, rho_profile; label, linestyle = (:dash, :loose))
+    scatter!(ax, context.z, rho_profile; markersize = 5, label)
+
+    return nothing
+end
 
 ##
+
+with_theme(
+    Theme(
+        palette=(color = cgrad(:gnuplot, 3, categorical = true),),
+        Lines = (cycle = [:color],)
+    )
+) do
+        fig = Figure();
+        ax = Axis(fig[1,1],
+                  xlabel = "z [nm]",
+                  ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
+                  xticklabelsize=18,
+                  yticklabelsize=18,
+                  xlabelsize=20,
+                  ylabelsize=20,
+                  xtickalign=0,
+                  ytickalign=0,
+                  )
+
+        files = [
+            # 16800 18000 19200 20400
+            # 7440 10800 11520 13440 14400 15360 16800
+            "../../build/run_check_size_bigger_grid/7440xy/16800z/initial_state.gpe.dat",
+            "../../build/run_check_size_bigger_grid/16800xy/20400z/initial_state.gpe.dat",
+        ]
+
+        for (i, file) in enumerate(files)
+            visualize_profile_x!(ax, file, 20000)
+        end
+
+        axislegend(ax, merge = true)
+        save("plots/profiles/size_x_profile_biggest_lowest.pdf", fig)
+        fig
+    end
