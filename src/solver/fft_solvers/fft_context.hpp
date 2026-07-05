@@ -46,6 +46,12 @@ public:
     virtual ~FFTContext();
 
     void prepare(wavefunction_t *psi, potential_t *fi3d, potential_t *pote);
+
+#ifdef USE_CUDA
+    // TODO: fix naming and structure
+    void prepare_gpu(wavefun_gpu_t *psi, pote_gpu_t *fi3d, pote_gpu_t *pote);
+#endif
+
     virtual void execute() = 0;
 
 private:
@@ -56,6 +62,13 @@ protected:
     wavefunction_t *psi;
     potential_t *fi3d;
     potential_t *pote;
+
+#ifdef USE_CUDA
+    wavefun_gpu_t *psi_gpu;
+    pote_gpu_t *fi3d_gpu;
+    pote_gpu_t *pote_gpu;
+#endif
+
     PhysicalParameters *p;
 
     static int FFTW_N_THREADS;

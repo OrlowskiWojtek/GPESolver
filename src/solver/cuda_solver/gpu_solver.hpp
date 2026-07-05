@@ -1,6 +1,7 @@
 #ifndef GPU_GPE_SOLVER
 #define GPU_GPE_SOLVER
 
+#include "solver/solver_data/gpu_solver_data.hpp"
 #include "solver/solver.hpp"
 
 class GpuGrossPitaevskiSolver: public AbstractGrossPitaevskiSolver {
@@ -8,6 +9,15 @@ public:
     GpuGrossPitaevskiSolver(AbstractSimulationMediator* mediator);
 
 private:
+    //! Data used in solver
+    GPUSolverData m_data;
+    double* d_norm;
+
+    void prepare_fft() override;
+    void import_pote() override;
+    void import_data() override;
+    void export_data() override;
+
     void calc_energy() override;
     void init_containers() override;
     void calc_fi3d() override;

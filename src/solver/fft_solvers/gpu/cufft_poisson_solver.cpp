@@ -63,10 +63,9 @@ void CUFFTPoissonSolver::execute() {
     int N_out = nx * ny * (nz / 2 + 1);
 
     // Copy psi_data onto device
-    cudaMemcpy(d_psi, psi->get_data(), psi->size() * sizeof(complex_type), cudaMemcpyHostToDevice);
-
+    
     // get BEC density from psi
-    launch_kernel_fill_from_psi(d_rho_r, d_psi, p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
+    launch_kernel_fill_from_psi(d_rho_r, psi_gpu->data(), p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
 
     //  Forward FFT
     cufftExecD2Z(plan_fwd, d_rho_r, d_rho_k);
@@ -76,28 +75,30 @@ void CUFFTPoissonSolver::execute() {
 
     // Backward FFT
     cufftExecZ2D(plan_bwd, d_rho_k, d_rho_r);
-    cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(real_type), cudaMemcpyDeviceToHost);
+
+    // TODO: removed copy
+    // cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(real_type), cudaMemcpyDeviceToHost);
 
     double norm_factor = 1.0 / static_cast<double>(N);
-    auto &rfi3d        = *fi3d;
+    launch_kernel_copy_to_fi3d_gpu(d_rho_r, fi3d_gpu->data(), p->nx, p->ny, p->nz, nx, ny, nz, norm_factor);
 
-    for (int i = 0; i < nx / 2; i++) {
-        for (int j = 0; j < ny / 2; j++) {
-            for (int k = 0; k < nz / 2; k++) {
-                size_t idx     = (i * ny + j) * nz + k;
-                rfi3d(i, j, k) = h_rho_r[idx] * norm_factor;
-            }
-        }
-    }
+    // TODO remove
+    // auto &rfi3d        = *fi3d;
+
+    // for (int i = 0; i < nx / 2; i++) {
+    //     for (int j = 0; j < ny / 2; j++) {
+    //         for (int k = 0; k < nz / 2; k++) {
+    //             size_t idx     = (i * ny + j) * nz + k;
+    //             rfi3d(i, j, k) = h_rho_r[idx] * norm_factor;
+    //         }
+    //     }
+    // }
 }
 
 CUFFTPoissonSolver::~CUFFTPoissonSolver() {
     cudaFree(d_rho_r);
     cudaFree(d_rho_k);
     cudaFree(d_Vdip_k);
-    cudaFree(d_psi);
-
-    cudaFreeHost(h_rho_r);
 
     delete[] h_Vdip_k;
 }
@@ -120,14 +121,6 @@ void CUFFTPoissonSolver::prepare_transforms() {
         OutputFormatter::printError("Can't aloc d_rho_k memory");
         OutputFormatter::printError(cudaGetErrorString(err));
     }
-
-    err = cudaMalloc(&d_psi, sizeof(complex_type) * psi->size());
-    if (err != cudaSuccess) {
-        OutputFormatter::printError("Can't aloc d_psi memory");
-        OutputFormatter::printError(cudaGetErrorString(err));
-    }
-
-    cudaMallocHost(&h_rho_r, sizeof(real_type) * N);
 
     cufftPlan3d(&plan_fwd, nx, ny, nz, CUFFT_D2Z);
     cufftPlan3d(&plan_bwd, nx, ny, nz, CUFFT_Z2D);

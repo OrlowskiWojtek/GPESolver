@@ -21,7 +21,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
     )
 else()
     # GCC / Clang
-    # TODO: add Wall
     target_compile_options(compiler_flags INTERFACE
         -Wall
         -O3 
@@ -53,7 +52,12 @@ add_subdirectory(lib)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-
 target_link_libraries(${PROJECT_NAME}
                         SolverManager 
                         compiler_flags)
+
+option(BUILD_TESTS "Build unit tests" ON)
+
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

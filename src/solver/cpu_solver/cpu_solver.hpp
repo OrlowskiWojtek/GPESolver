@@ -8,6 +8,13 @@ public:
     CpuGrossPitaevskiSolver(AbstractSimulationMediator* mediator);
 
 private:
+    CPUSolverData m_data;
+    
+    void prepare_fft() override;
+    void import_pote() override;
+    void import_data() override;
+    void export_data() override;
+
     void calc_energy() override;
     void init_containers() override;
     void calc_fi3d() override;

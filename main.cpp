@@ -7,6 +7,10 @@ int main(int argc, char** argv) {
     OutputFormatter::printBorderLine();
 
     std::unique_ptr<SimulationManager> manager = std::make_unique<SimulationManager>();
-    manager->initialize();
-    manager->run_simulation();
+    try{
+        manager->initialize();
+        manager->run_simulation();
+    } catch (const std::exception& e){
+        std::cerr << e.what() << std::endl;
+    }
 }

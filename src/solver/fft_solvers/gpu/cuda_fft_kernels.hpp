@@ -50,17 +50,37 @@ void launch_kernel_kinetic(
     const real_type* kernel, 
     int N);
 
-// ============================== //
-
-__global__
-void kernel_half_potential_step(
-    complex_type* psi,
-    real_type* pote
+// =============================== //
+// TODO new -> to refactor
+__global__ void kernel_copy_to_fi3d_gpu(
+    const real_type* __restrict__ d_rho_r,
+    double* __restrict__ fi3d_gpu,
+    int nx, int ny, int nz,
+    int full_nx, int full_ny, int full_nz,
+    double norm_factor
 );
 
-void launch_kernel_half_potential_step(
-    complex_type* psi,
-    real_type* pote
+void launch_kernel_copy_to_fi3d_gpu(
+    real_type* d_rho_r,
+    double* fi3d_gpu,
+    int nx, int ny, int nz,
+    int full_nx, int full_ny, int full_nz,
+    double norm_factor
+);
+
+// ============================= //
+__global__ 
+void kernel_copy_with_norm(
+    const complex_type* __restrict__ src,
+    cuDoubleComplex* __restrict__ dst,
+    double norm_factor,
+    int N
+);
+
+void launch_kernel_copy_with_norm(
+    const complex_type* src,
+    cuDoubleComplex* dst,
+    int N
 );
 
 #ifdef __cplusplus
@@ -68,4 +88,3 @@ void launch_kernel_half_potential_step(
 #endif
 
 #endif
-

@@ -2,6 +2,10 @@
 #define SIMULATION_CONTEXT_HPP
 
 #include "mat3d/stdmat3d.hpp"
+#ifdef USE_CUDA
+#include "mat3d/gpu_3d_array.hpp"
+#include <cuComplex.h>
+#endif
 #include <complex>
 #include <parameters/parameters.hpp>
 #include <vector>
@@ -22,8 +26,15 @@ struct BECEnergies {
     }
 };
 
+
 using wavefunction_t       = StdMat3D<std::complex<double>>;
 using potential_t          = StdMat3D<double>;
+
+#ifdef USE_CUDA
+using wavefun_gpu_t       = GpuArray<cuDoubleComplex>;
+using pote_gpu_t          = GpuArray<double>;
+#endif
+
 using energies_container_t = std::vector<BECEnergies>;
 using energies_t           = BECEnergies;
 

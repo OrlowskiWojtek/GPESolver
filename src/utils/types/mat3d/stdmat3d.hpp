@@ -30,6 +30,7 @@ public:
     inline T &operator()(int idx) noexcept;
     inline const  T &operator()(int idx) const noexcept;
     inline T *get_data();
+    const  T *get_data() const;
 
 private:
     int _nx, _ny, _nz;
@@ -49,6 +50,11 @@ inline T &StdMat3D<T>::operator()(int idx) noexcept {
 
 template <class T>
 T *StdMat3D<T>::get_data() {
+    return data.data();
+}
+
+template <class T>
+const T *StdMat3D<T>::get_data() const {
     return data.data();
 }
 

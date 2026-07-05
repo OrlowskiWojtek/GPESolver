@@ -13,13 +13,12 @@ public:
     //virtual ~AbstractPoissonSolver();
 
 protected:
+    // TODO: cleanup unused data
     complex_type *h_Vdip_k;
     complex_type *d_Vdip_k;
 
     complex_type *h_rho_k;
     complex_type *d_rho_k;
-
-    complex_type *d_psi;
 
     real_type *d_rho_r;
     real_type *h_rho_r;

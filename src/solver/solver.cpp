@@ -1,23 +1,22 @@
 #include "solver/solver.hpp"
+#include "fft_solvers/fft_export.hpp"
 #include "output.hpp"
 #include "parameters/parameters.hpp"
-#include "fft_solvers/fft_export.hpp"
 #include "units.hpp"
 #include <chrono>
-
-double AbstractGrossPitaevskiSolver::real_time_dt = 1.00e10;
-double AbstractGrossPitaevskiSolver::imag_time_dt = 1.25e11;
 
 AbstractGrossPitaevskiSolver::AbstractGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
     , p_mediator(mediator)
-    , p_sctx(SimulationContext::getInstance()) {}
+    , p_sctx(SimulationContext::getInstance())
+    , buf_data(std::make_unique<CPUSolverData>()) {
+}
 
 void AbstractGrossPitaevskiSolver::initialize() {
+    buf_data->allocate(params->nx, params->ny, params->nz);
     init_containers();
 
-    poisson_solver->prepare(&cpsi, &fi3d, &pote);
-    rt_split_solver->prepare(&cpsi, &fi3d, &pote);
+    prepare_fft();
 
     calc_norm();
     normalize();
@@ -25,19 +24,21 @@ void AbstractGrossPitaevskiSolver::initialize() {
 
 void AbstractGrossPitaevskiSolver::solve() {
     iter_time_ms = std::chrono::steady_clock::now();
-    
+
     switch (params->calc_strategy.type) {
     case CalcStrategy::Type::IMAGINARY_TIME:
         calc_initial_state();
-        p_mediator->save_initial_state(cpsi);
+
+        p_mediator->save_initial_state(buf_data->cpsi);
         break;
     case CalcStrategy::Type::REAL_TIME:
-       //free_potential_well();
+        // free_potential_well();
         calc_evolution();
         break;
     case CalcStrategy::Type::FULL:
         calc_initial_state();
-        p_mediator->save_initial_state(cpsi);
+
+        p_mediator->save_initial_state(buf_data->cpsi);
         free_potential_well();
         calc_evolution();
         break;
@@ -49,11 +50,12 @@ void AbstractGrossPitaevskiSolver::calc_initial_state() {
 
     for (size_t iter = 0; iter <= params->iter_imag; iter++) {
         imag_time_iter();
-        calc_energy();
 
-        if(iter % 100 == 0){
-            p_mediator->save_checkpoint(cpsi);
+        if (iter % 100 == 0) {
+            export_data();
+            p_mediator->save_checkpoint(buf_data->cpsi);
             summarize_imag_iter();
+            calc_energy();
         }
     }
 
@@ -72,11 +74,12 @@ void AbstractGrossPitaevskiSolver::calc_evolution() {
 
     for (size_t iter = 0; iter <= params->iter_real; iter++) {
         real_time_iter();
-        calc_energy();
 
         if (iter % 1000 == 0) {
-            p_mediator->save_checkpoint(cpsi);
+            export_data();
+            p_mediator->save_checkpoint(buf_data->cpsi);
             summarize_real_iter();
+            calc_energy();
         }
     }
 
@@ -86,7 +89,7 @@ void AbstractGrossPitaevskiSolver::calc_evolution() {
                                        UnitConverter::ene_au_to_meV(ene.e_total));
     OutputFormatter::printBorderLine();
 
-    p_mediator->save_data(cpsi);
+    p_mediator->save_data(buf_data->cpsi);
     p_mediator->save_energies(enes);
 }
 
@@ -111,31 +114,38 @@ void AbstractGrossPitaevskiSolver::free_potential_well() {
 }
 
 void AbstractGrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
-    cpsii = wvf;
-    cpsi  = wvf;
+    buf_data->cpsi  = wvf;
+    buf_data->cpsii = wvf;
 
+    import_data();
     calc_norm();
     normalize();
 }
 
 void AbstractGrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {
-    pote = pote_initialized;
+    buf_data->pote = pote_initialized;
+
+    import_pote();
 }
 
-void AbstractGrossPitaevskiSolver::summarize_imag_iter(){
+void AbstractGrossPitaevskiSolver::summarize_imag_iter() {
     auto now = std::chrono::steady_clock::now();
-    
-    int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
-    OutputFormatter::printInfo("Time per 100 iterations: " + std::to_string(time_elapsed_ms) + " ms");
+
+    int time_elapsed_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
+    OutputFormatter::printInfo("Time per 100 iterations: " + std::to_string(time_elapsed_ms) +
+                               " ms");
 
     iter_time_ms = now;
 }
 
-void AbstractGrossPitaevskiSolver::summarize_real_iter(){
+void AbstractGrossPitaevskiSolver::summarize_real_iter() {
     auto now = std::chrono::steady_clock::now();
-    
-    int time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
-    OutputFormatter::printInfo("Time per 1000 iterations: " + std::to_string(time_elapsed_ms) + " ms");
+
+    int time_elapsed_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
+    OutputFormatter::printInfo("Time per 1000 iterations: " + std::to_string(time_elapsed_ms) +
+                               " ms");
 
     iter_time_ms = now;
 }
