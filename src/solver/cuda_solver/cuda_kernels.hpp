@@ -54,7 +54,7 @@ void launch_kernel_normalize(
     double norm_factor
 );
 
-__global__ void kernel_calc_norm_sq(
+__global__ void kernel_calc_norm(
     const cuDoubleComplex* __restrict__ data,
     double* __restrict__ result,
     int N

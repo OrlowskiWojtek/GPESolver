@@ -5,7 +5,7 @@
 
 /*! Struct PhysicalParameters.
  *  \brief contains parameters of simulation.
- *
+ *  \todo add default values
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;

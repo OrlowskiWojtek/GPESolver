@@ -45,18 +45,6 @@ class SimulationContext {
 public:
     static SimulationContext* getInstance();
 
-    // void calc_norm();
-    // void normalize();
-    // void init_potential();
-    // void free_potential_well();
-    // double pote_value(int ix, int iy, int iz);
-    // double pote_released_value(int ix, int iy, int iz);
-    // PhysicalParameters* params;
-    // StdMat3D<std::complex<double>> cpsi;
-    // StdMat3D<std::complex<double>> cpsii;
-    // StdMat3D<double> potential;
-    // StdMat3D<double> fi3d;
-
     //! Initialize vectors based on loaded parameters.
     void initialize();
 

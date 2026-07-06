@@ -245,24 +245,21 @@ void FileManager::check_params() {
     }
     if (params->n_atoms <= 0) {
         throw std::runtime_error("Number of atoms must be positive.");
-        if (params->n_atoms <= 0) {
-            throw std::runtime_error("Number of atoms must be positive.");
-        }
-        if (params->m <= 0) {
-            throw std::runtime_error("Mass must be positive.");
-        }
-        if (params->fftw_n_threads <= 0) {
-            throw std::runtime_error("FFTW number of threads must be positive.");
-        }
-        if (params->n_gauss_max <= 0) {
-            throw std::runtime_error("Number of Gaussian maxima must be positive.");
-        }
+    }
+    if (params->m <= 0) {
+        throw std::runtime_error("Mass must be positive.");
+    }
+    if (params->fftw_n_threads <= 0) {
+        throw std::runtime_error("FFTW number of threads must be positive.");
+    }
+    if (params->n_gauss_max <= 0) {
+        throw std::runtime_error("Number of Gaussian maxima must be positive.");
+    }
 
-        if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) ||
-            !is_fft_compatible(params->nz)) {
-            OutputFormatter::printWarning("Grid dimensions may be slow for FFTW. Consider using "
-                                          "dimensions that factor into small primes (2, 3, 5, 7).");
-        }
+    if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) ||
+        !is_fft_compatible(params->nz)) {
+        OutputFormatter::printWarning("Grid dimensions may be slow for FFTW. Consider using "
+                                      "dimensions that factor into small primes (2, 3, 5, 7).");
     }
 }
 

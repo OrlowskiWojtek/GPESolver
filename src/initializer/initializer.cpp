@@ -239,52 +239,14 @@ void DataInitializer::init_pote() {
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                int x = p_sctx->get_x(i);
-                int y = p_sctx->get_y(j);
-                int z = p_sctx->get_z(k);
+                double x = p_sctx->get_x(i);
+                double y = p_sctx->get_y(j);
+                double z = p_sctx->get_z(k);
 
                 _pote(i, j, k) = _pote_func(x, y, z);
             }
         }
     }
-}
-
-// void DataInitializer::set_pote_regular() {
-//     _pote_func = [this](int ix, int iy, int iz) -> double {
-//         double x = p_sctx->get_x(ix);
-//         double y = p_sctx->get_y(iy);
-//         double z = p_sctx->get_z(iz);
-//
-//         double vx = params->aa * std::pow(x, 4);
-//         double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-//         double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-//
-//         return vx + vy + vz;
-//     };
-// }
-
-void DataInitializer::set_pote_cylindrical() {
-    _pote_func = [this](int ix, int iy, int iz) -> double {
-        double x = p_sctx->get_x(ix);
-        double y = p_sctx->get_y(iy);
-        double z = p_sctx->get_z(iz);
-        double r = std::sqrt(x * x + y * y);
-
-        double vr = 0.5 * params->m * std::pow(r, 2) *
-                    std::pow((params->omega_y + params->omega_x) / 2., 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-
-        return vr + vz;
-    };
-}
-
-void DataInitializer::set_pote_free() {
-    _pote_func = [this](int ix, int iy, int iz) -> double {
-        double z  = p_sctx->get_z(iz);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
-
-        return vz;
-    };
 }
 
 void DataInitializer::change_potential(std::string pote_key) {
