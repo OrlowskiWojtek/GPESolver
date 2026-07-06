@@ -77,7 +77,7 @@ void launch_kernel_fill_from_psi(
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after fill from psi kernel: %s\n", cudaGetErrorString(err));
     }
     // cudaDeviceSynchronize();
 }
@@ -151,7 +151,7 @@ void launch_kernel_copy_to_fi3d_gpu(
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after copy to fi3d kernel: %s\n", cudaGetErrorString(err));
     }
     // cudaDeviceSynchronize();
 }
@@ -185,7 +185,7 @@ void launch_kernel_copy_with_norm(
     
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after copy with norm kernel: %s\n", cudaGetErrorString(err));
     }
     // cudaDeviceSynchronize();
 }

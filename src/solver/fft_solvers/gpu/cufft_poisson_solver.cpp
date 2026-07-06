@@ -5,7 +5,9 @@
 
 #include "solver/fft_solvers/gpu/cuda_fft_kernels.hpp"
 
-CUFFTPoissonSolver::CUFFTPoissonSolver() {
+CUFFTPoissonSolver::CUFFTPoissonSolver(wavefun_gpu_t *psi, pote_gpu_t *fi3d)
+    : CUFFTAbstractGPUSolver(psi, fi3d) {
+    prepare();
 }
 
 void CUFFTPoissonSolver::prepare_containers() {
@@ -62,10 +64,8 @@ void CUFFTPoissonSolver::execute() {
     int N     = nx * ny * nz;
     int N_out = nx * ny * (nz / 2 + 1);
 
-    // Copy psi_data onto device
-    
-    // get BEC density from psi
-    launch_kernel_fill_from_psi(d_rho_r, psi_gpu->data(), p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
+    launch_kernel_fill_from_psi(
+        d_rho_r, psi->data(), p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
 
     //  Forward FFT
     cufftExecD2Z(plan_fwd, d_rho_r, d_rho_k);
@@ -76,23 +76,9 @@ void CUFFTPoissonSolver::execute() {
     // Backward FFT
     cufftExecZ2D(plan_bwd, d_rho_k, d_rho_r);
 
-    // TODO: removed copy
-    // cudaMemcpy(h_rho_r, d_rho_r, N * sizeof(real_type), cudaMemcpyDeviceToHost);
-
     double norm_factor = 1.0 / static_cast<double>(N);
-    launch_kernel_copy_to_fi3d_gpu(d_rho_r, fi3d_gpu->data(), p->nx, p->ny, p->nz, nx, ny, nz, norm_factor);
-
-    // TODO remove
-    // auto &rfi3d        = *fi3d;
-
-    // for (int i = 0; i < nx / 2; i++) {
-    //     for (int j = 0; j < ny / 2; j++) {
-    //         for (int k = 0; k < nz / 2; k++) {
-    //             size_t idx     = (i * ny + j) * nz + k;
-    //             rfi3d(i, j, k) = h_rho_r[idx] * norm_factor;
-    //         }
-    //     }
-    // }
+    launch_kernel_copy_to_fi3d_gpu(
+        d_rho_r, fi3d->data(), p->nx, p->ny, p->nz, nx, ny, nz, norm_factor);
 }
 
 CUFFTPoissonSolver::~CUFFTPoissonSolver() {

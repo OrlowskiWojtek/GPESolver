@@ -111,7 +111,7 @@ void launch_kernel_imag_time_iteration(
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after imag time iteration kernel: %s\n", cudaGetErrorString(err));
     }
 
     // cudaDeviceSynchronize();
@@ -174,7 +174,7 @@ double launch_kernel_calc_norm(
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after calc norm kernel: %s\n", cudaGetErrorString(err));
     }
     //cudaDeviceSynchronize();
 
@@ -193,7 +193,7 @@ void launch_kernel_normalize(
     kernel_normalize<<<grid, block>>>(data, N, norm_factor);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after normalize kernel: %s\n", cudaGetErrorString(err));
     }
     //cudaDeviceSynchronize();
 }
@@ -314,19 +314,16 @@ void launch_kernel_calc_energies(
     const double* pote,
     const double* fi3d,
     energies_t& ene,
+    double* __restrict__ d_kin_dev,
+    double* __restrict__ d_pot_dev,
+    double* __restrict__ d_int_dev,
+    double* __restrict__ d_ext_dev,
+    double* __restrict__ d_bmf_dev,
     int nx, int ny, int nz,
     double dx, double dy, double dz,
     double m, double ggp11, double cdd, double gamma,
     double n_atoms, double w_15
 ) {
-    double *d_kin_dev, *d_pot_dev, *d_int_dev, *d_ext_dev, *d_bmf_dev;
-    
-    cudaMalloc(&d_kin_dev, sizeof(double));
-    cudaMalloc(&d_pot_dev, sizeof(double));
-    cudaMalloc(&d_int_dev, sizeof(double));
-    cudaMalloc(&d_ext_dev, sizeof(double));
-    cudaMalloc(&d_bmf_dev, sizeof(double));
-     
     cudaMemset(d_kin_dev, 0, sizeof(double));
     cudaMemset(d_pot_dev, 0, sizeof(double));
     cudaMemset(d_int_dev, 0, sizeof(double));
@@ -343,7 +340,7 @@ void launch_kernel_calc_energies(
     );
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after calc_energies kernel: %s\n", cudaGetErrorString(err));
     }
     // cudaDeviceSynchronize();
     
@@ -352,12 +349,6 @@ void launch_kernel_calc_energies(
     cudaMemcpy(&ene.e_int, d_int_dev, sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(&ene.e_ext, d_ext_dev, sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(&ene.e_bmf, d_bmf_dev, sizeof(double), cudaMemcpyDeviceToHost);
-
-    cudaFree(d_kin_dev);
-    cudaFree(d_pot_dev);
-    cudaFree(d_int_dev);
-    cudaFree(d_ext_dev);
-    cudaFree(d_bmf_dev);
 }
 
 __global__ 
@@ -428,7 +419,7 @@ void launch_kernel_potential_half_step(
     
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        printf("Error after imag_Time_Iteration kernel: %s\n", cudaGetErrorString(err));
+        printf("Error after potential half step kernel: %s\n", cudaGetErrorString(err));
     }
     // cudaDeviceSynchronize();
 }

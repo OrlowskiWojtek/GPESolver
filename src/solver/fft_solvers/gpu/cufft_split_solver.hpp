@@ -1,6 +1,7 @@
 #ifndef CUFFT_REAL_TIME_SPLIT_SOLVER_HPP
 #define CUFFT_REAL_TIME_SPLIT_SOLVER_HPP
 
+#include "solver/fft_solvers/gpu/cufft_abstract_gpu_solver.hpp"
 #include "solver/fft_solvers/abstract_split_solver.hpp"
 
 /*! class RealTimeSplitSolver.
@@ -8,9 +9,9 @@
 * \brief class implements split step method for real time evolution.
 * FFTW / cuFFT has been used in calculations.
 */
-class CUFFTRealTimeSplitSolver : public AbstractRealTimeSplitSolver {
+class CUFFTRealTimeSplitSolver : public AbstractRealTimeSplitSolver, CUFFTAbstractGPUSolver {
 public:
-    CUFFTRealTimeSplitSolver();
+    CUFFTRealTimeSplitSolver(wavefun_gpu_t *psi, pote_gpu_t *fi3d);
     ~CUFFTRealTimeSplitSolver();
 
     void execute() override;

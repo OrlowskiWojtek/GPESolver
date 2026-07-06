@@ -10,7 +10,7 @@
 class AbstractPoissonSolver : public FFTContext {
 public:
     //AbstractPoissonSolver();
-    //virtual ~AbstractPoissonSolver();
+    virtual ~AbstractPoissonSolver() = default;
 
 protected:
     // TODO: cleanup unused data

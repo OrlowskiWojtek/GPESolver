@@ -4,7 +4,9 @@
 #include "parameters/parameters.hpp"
 #include <cmath>
 
-FFTWPoissonSolver::FFTWPoissonSolver() {
+FFTWPoissonSolver::FFTWPoissonSolver(wavefunction_t *psi, potential_t *fi3d, potential_t *pote)
+    : FFTWAbstractCPUSolver(psi, fi3d, pote) {
+    prepare();
 }
 
 void FFTWPoissonSolver::prepare_containers() {

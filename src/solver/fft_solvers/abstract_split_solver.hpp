@@ -10,6 +10,7 @@
 */
 class AbstractRealTimeSplitSolver : public FFTContext {
 public:
+    virtual ~AbstractRealTimeSplitSolver() = default;
 
 protected:
     complex_type *h_rho_r;
