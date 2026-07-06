@@ -313,7 +313,7 @@ function get_BEC_heights(psi::IsoBECContext, n_atoms; FWXM = 0.1)
         heights[idx] = BECHeight(max.i, max.j, coord.x, coord.y, height, coord.value)
     end
 
-    return heights
+    return sort(heights, by = h -> h.height, rev = true)
 end
 
 function get_BEC_maxrho(context::IsoBECContext)
@@ -342,3 +342,5 @@ Base.show(io::IO, context::IsoBECContext) = print(io,
 Base.show(io::IO, context::PoteContext) = print(io,
                                                   "Potential data with size ($(context.nx), $(context.ny), $(context.nz)) and spacings ($(context.dx) x $(context.dy) x $(context.dz))")
 Base.show(io::IO, context::IsoBECSlice) = print(io, "BEC slice with size ($(context.nx), $(context.ny))")
+
+Base.isless(a::BECHeight, b::BECHeight) = isless(a.height, b.height)

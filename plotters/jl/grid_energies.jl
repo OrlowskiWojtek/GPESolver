@@ -273,12 +273,12 @@ function visualize_profile_x!(ax, filename::String, n_atoms)
     # Extract 1D profile along x
     rho = abs.(context.psi[:, y_idx, z_idx]) .^ 2 ./ length_au3_to_μm3(1.) * n_atoms
 
-    label = "L = $(xy_size) nm"
+    label = "L  = $(xy_size) nm\nLz = $(z_size) nm"
 
    #lines!(ax, context.x, rho; label, linestyle = (:dash, :loose))
-    scatter!(ax, context.x, rho; markersize = 5, label)
+    #scatter!(ax, context.x, rho; markersize = 7, label, marker = :xcross)
 
-    return nothing
+    return (context.x, rho, label)
 end
 
 # x, y - > rho_max
@@ -308,12 +308,12 @@ function visualize_profile_z!(ax, filename::String, n_atoms)
     j_max = max[2]
 
     rho_profile = rho[i_max, j_max, :] ./ length_au3_to_μm3(1.) * n_atoms
-    label = "Lz = "*"$(z_size)"*" nm"
+    label = "L  = $(xy_size) nm\nLz = $(z_size) nm"
 
     #lines!(ax, context.z, rho_profile; label, linestyle = (:dash, :loose))
-    scatter!(ax, context.z, rho_profile; markersize = 5, label)
+    #scatter!(ax, context.z, rho_profile; markersize = 7, label, marker = :xcross)
 
-    return nothing
+    return (context.z, rho_profile, label)
 end
 
 ##
@@ -324,7 +324,7 @@ with_theme(
         Lines = (cycle = [:color],)
     )
 ) do
-        fig = Figure();
+        fig = Figure(size = (600, 900));
         ax = Axis(fig[1,1],
                   xlabel = "z [nm]",
                   ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
@@ -334,6 +334,7 @@ with_theme(
                   ylabelsize=20,
                   xtickalign=0,
                   ytickalign=0,
+                  #yscale = log10,
                   )
 
         files = [
@@ -343,11 +344,42 @@ with_theme(
             "../../build/run_check_size_bigger_grid/16800xy/20400z/initial_state.gpe.dat",
         ]
 
-        for (i, file) in enumerate(files)
-            visualize_profile_x!(ax, file, 20000)
+        #for (i, file) in enumerate(files)
+        #    visualize_profile_x!(ax, file, 20000)
+        #end
+        smaller = visualize_profile_x!(ax, files[1], 20000)
+        larger = visualize_profile_x!(ax, files[2], 20000)
+
+        scatter!(ax, smaller[1], smaller[2]; markersize = 9, label = smaller[3], marker = :xcross)
+        scatter!(ax, larger[1], larger[2]; markersize = 9, label = larger[3], marker = :xcross)
+
+        diff = Vector{Float64}(undef, length(smaller[1]))
+        begin_idx = findfirst(==(smaller[1][begin]), larger[1])
+        for i in eachindex(diff)
+            diff[i] = larger[2][begin_idx + i - 1] - smaller[2][i]
         end
 
-        axislegend(ax, merge = true)
+        ax_diff = Axis(fig[2,1],
+                  xlabel = "x [nm]",
+                  ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
+                  xticklabelsize=18,
+                  yticklabelsize=18,
+                  xlabelsize=20,
+                  ylabelsize=20,
+                  xtickalign=0,
+                  ytickalign=0,
+                  )
+        
+        hidexdecorations!(ax, grid = false)
+        linkxaxes!(ax, ax_diff)
+
+        #scatter!(ax, smaller[1], smaller[2]; markersize = 7, marker = :xcross)
+        #scatter!(ax, larger[1], larger[2]; markersize = 7, marker = :xcross)
+        scatter!(ax_diff, smaller[1], diff; markersize = 9, marker = :xcross, color = 3)
+
+        #ylims!(ax, 1e-4, 1e4)
+
+        axislegend(ax,position = :lt, merge = true)
         save("plots/profiles/size_x_profile_biggest_lowest.pdf", fig)
         fig
     end

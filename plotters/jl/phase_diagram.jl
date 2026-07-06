@@ -205,7 +205,7 @@ function get_rhomax(segments, data_dist)
     return all_rho
 end
 
-function get_heights(segments, data_dist)
+function get_heights(segments)
     all_heights = Vector{Vector{Vector{BECHeight}}}()
 
     for seg in segments
@@ -214,7 +214,6 @@ function get_heights(segments, data_dist)
         for row in eachrow(seg)
             atom_number = row.atom_number
             max_number = row.max_number
-            max_folder = joinpath(data_dist, "$(atom_number)k_atoms", "$(max_number)_max")
             psi_file = row.filename
 
             if !isfile(psi_file)
@@ -391,7 +390,7 @@ end
 
 ##
 
-df = gather_energy("../../../data/run_find_initial_states")
+df = gather_energy("../../build/run_find_initial_states_assymetric")
 segments = segmentize_dataframe(df)
 
 ##
@@ -403,26 +402,26 @@ fig = plot_df(df)
 
 fig = plot_segments(segments)
 #save("eps_15_stable_phases.pdf", fig)
-save_segments(segments, "eps_140_segments.dat")
+save_segments(segments, "eps_15_segments_asymetric.dat")
 
 ##
 
-seg_heights = get_heights(segments, "../../../data/run_find_initial_states")
+seg_heights = get_heights(segments)
 
 ##
 
-seg_rhos = get_rhomax(segments, "../../../data/run_find_initial_states")
+seg_rhos = get_rhomax(segments, "../../build/run_find_initial_states_assymetric")
 
 ##
 
 fig = plot_heights(segments, seg_heights)
-save("eps_15_heights.pdf", fig)
-#save_heights(seg_heights, segments, "eps_140_height.dat")
+#save("eps_15_heights.pdf", fig)
+save_heights(seg_heights, segments, "eps_150_height_asymetric.dat")
 
 ##
 
 fig = plot_rhomax(segments, seg_rhos)
-#save_rhomax(seg_rhos, "eps_140_maxrho.dat")
+#save_rhomax(seg_rhos, "eps_150_maxrho_asymetric.dat")
 
 ##
 

@@ -56,7 +56,7 @@ target_link_libraries(${PROJECT_NAME}
                         SolverManager 
                         compiler_flags)
 
-option(BUILD_TESTS "Build unit tests" ON)
+option(BUILD_TESTS "Build unit tests" FALSE)
 
 if(BUILD_TESTS)
     add_subdirectory(tests)
