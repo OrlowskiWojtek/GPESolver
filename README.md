@@ -8,7 +8,19 @@ Solver is meant to be modular with the KISS principle taken as main design goal.
 **Time dependent Grass Pitaevski Eqaution**:
 
 $$
-i\hbar \frac{\partial \psi(\mathbf{r}, t)}{\partial t} = \left( -\frac{\hbar^2}{2m} \nabla^2 + V(\mathbf{r}) + g |\psi(\mathbf{r}, t)|^2 \right) \psi(\mathbf{r}, t)
+i\hbar \frac{\partial \psi(\mathbf{r}, t)}{\partial t} 
+    = H_{\mathrm{eGP}} \psi(\mathbf{r}, t)
+$$
+
+with hamiltonian in form:
+
+$$
+H_{\mathrm{eGP}} =
+    -\frac{\hbar^2}{2m}\nabla^2
+    + V_{\mathrm{ext}}({\bf r},t) 
+    + g |\Psi({\bf r},t)|^2 
+    + \gamma(\varepsilon_{dd}) |\Psi({\bf r},t)|^3 
+    + V_{dd}({\bf r},t), 
 $$
 
 ## Dependencies
