@@ -1,6 +1,6 @@
 #include "filemanager/file_manager.hpp"
+#include "parameters/potentials.hpp"
 #include "context/context.hpp"
-#include "nlohmann/json.hpp"
 #include "output.hpp"
 #include "units.hpp"
 #include <fstream>
@@ -66,39 +66,15 @@ void FileManager::load_params() {
     file >> j;
     file.close();
 
-    params->n_atoms = j["n_atoms"];
-    params->m       = UnitConverter::mass_Da_to_au(j["m"]);
+    try {
+        load_all_v1(j);
+    } catch (const std::exception &e) {
+        OutputFormatter::printWarning("Can't load using input using v1 format, reason:\n" +
+                                      std::string(e.what()));
+    }
 
-    params->dd = UnitConverter::len_nm_to_au(j["dd"]);
-    params->dx = UnitConverter::len_nm_to_au(j["dx"]);
-    params->dy = UnitConverter::len_nm_to_au(j["dy"]);
-    params->dz = UnitConverter::len_nm_to_au(j["dz"]);
-    params->nx = j["nx"];
-    params->ny = j["ny"];
-    params->nz = j["nz"];
-
-    params->omega_x = UnitConverter::freq_Hz_to_au(j["omega_x"]);
-    params->omega_y = UnitConverter::freq_Hz_to_au(j["omega_y"]);
-    params->omega_z = UnitConverter::freq_Hz_to_au(j["omega_z"]);
-
-    params->edd           = j["edd"];
-    params->load_filename = j["load_filename"];
-    params->iter_imag     = j["iter_imag"];
-    params->iter_real     = j["iter_real"];
-
-    params->fftw_n_threads = j["fftw_n_threads"];
-
-    params->calc_strategy.from_string(j["calc_strategy"]);
-    params->init_strategy.from_string(j["init_strategy"]);
-    params->pote_key = j["pote_strategy"];
-
-    params->n_gauss_max    = j["initial_maximas"];
-    params->bec_droplets_x = j["bec_droplets_x"];
-    params->bec_droplets_y = j["bec_droplets_y"];
-    params->bec_droplets_z = j["bec_droplets_z"];
-
-    mediator->on_params_loaded();
     check_params();
+    mediator->on_params_loaded();
 }
 
 void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filename) {
@@ -460,4 +436,130 @@ void FileManager::save_pote_to_text_file(const potential_t &pote, std::string fi
     }
 
     file.close();
+}
+
+void FileManager::load_initialization(nlohmann::json &j) {
+    CHECK_REQUIRED(j, "init_strategy");
+
+    params->init_strategy.from_string(j["init_strategy"]);
+
+    if (params->init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS) {
+        CHECK_REQUIRED(j, "initial_maximas");
+        params->n_gauss_max = j["initial_maximas"];
+    }
+
+    if (params->init_strategy.type == InitializationOption::Type::SETUP_GAUSS) {
+        CHECK_REQUIRED(j, "bec_droplets_x");
+        CHECK_REQUIRED(j, "bec_droplets_y");
+        CHECK_REQUIRED(j, "bec_droplets_z");
+
+        params->bec_droplets_x = j["bec_droplets_x"];
+        params->bec_droplets_y = j["bec_droplets_y"];
+        params->bec_droplets_z = j["bec_droplets_z"];
+    }
+
+    if (params->init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE ||
+        params->init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE) {
+        CHECK_REQUIRED(j, "load_filename");
+
+        params->load_filename = j["load_filename"];
+    }
+}
+
+void FileManager::load_potential(nlohmann::json &j) {
+    CHECK_REQUIRED(j, "pote_strategy");
+
+    params->pote_key = j["pote_strategy"];
+    if(!PotentialRegistry::instance().contains(params->pote_key)){
+        throw std::runtime_error("Not know potential option");
+    }
+
+    if (params->pote_key == "MEXICAN" || params->pote_key == "MEXICAN_FREE" ||
+        params->pote_key == "MEXICAN_ASYMETRIC" || params->pote_key == "MEXICAN_ASYMETRIC_FREE") {
+
+        CHECK_REQUIRED(j, "dd");
+        params->dd = UnitConverter::len_nm_to_au(j["dd"]);
+    }
+
+    CHECK_REQUIRED(j, "omega_x");
+    CHECK_REQUIRED(j, "omega_y");
+    CHECK_REQUIRED(j, "omega_z");
+    params->omega_x = UnitConverter::freq_Hz_to_au(j["omega_x"]);
+    params->omega_y = UnitConverter::freq_Hz_to_au(j["omega_y"]);
+    params->omega_z = UnitConverter::freq_Hz_to_au(j["omega_z"]);
+}
+
+void FileManager::load_box(nlohmann::json &j) {
+    CHECK_REQUIRED(j, "dx");
+    CHECK_REQUIRED(j, "dy");
+    CHECK_REQUIRED(j, "dz");
+    CHECK_REQUIRED(j, "nx");
+    CHECK_REQUIRED(j, "ny");
+    CHECK_REQUIRED(j, "nz");
+
+    params->dx = UnitConverter::len_nm_to_au(j["dx"]);
+    params->dy = UnitConverter::len_nm_to_au(j["dy"]);
+    params->dz = UnitConverter::len_nm_to_au(j["dz"]);
+    params->nx = j["nx"];
+    params->ny = j["ny"];
+    params->nz = j["nz"];
+}
+
+void FileManager::load_simulation(nlohmann::json &j) {
+    CHECK_REQUIRED(j, "calc_strategy");
+    CHECK_REQUIRED(j, "iter_imag");
+    CHECK_REQUIRED(j, "iter_real");
+    CHECK_REQUIRED(j, "edd");
+    CHECK_REQUIRED(j, "n_atoms");
+    CHECK_REQUIRED(j, "m");
+
+    params->calc_strategy.from_string(j["calc_strategy"]);
+    params->iter_imag = j["iter_imag"];
+    params->iter_real = j["iter_real"];
+    params->edd       = j["edd"];
+    params->n_atoms   = j["n_atoms"];
+    params->m         = UnitConverter::mass_Da_to_au(j["m"]);
+
+    // fftw_n_threads no required with default value equal to 4
+    params->fftw_n_threads = j.value("fftw_n_threads", 4);
+}
+
+void FileManager::load_all_v1(nlohmann::json &j) {
+    load_initialization(j);
+    load_simulation(j);
+    load_box(j);
+    load_potential(j);
+}
+
+void FileManager::load_all_v0(nlohmann::json &j) {
+    params->n_atoms = j["n_atoms"];
+    params->m       = UnitConverter::mass_Da_to_au(j["m"]);
+
+    params->omega_x = UnitConverter::freq_Hz_to_au(j["omega_x"]);
+    params->omega_y = UnitConverter::freq_Hz_to_au(j["omega_y"]);
+    params->omega_z = UnitConverter::freq_Hz_to_au(j["omega_z"]);
+
+    params->edd           = j["edd"];
+    params->load_filename = j["load_filename"];
+    params->iter_imag     = j["iter_imag"];
+    params->iter_real     = j["iter_real"];
+
+    params->fftw_n_threads = j["fftw_n_threads"];
+
+    params->calc_strategy.from_string(j["calc_strategy"]);
+    params->init_strategy.from_string(j["init_strategy"]);
+    params->pote_key = j["pote_strategy"];
+
+    params->n_gauss_max    = j["initial_maximas"];
+    params->bec_droplets_x = j["bec_droplets_x"];
+    params->bec_droplets_y = j["bec_droplets_y"];
+    params->bec_droplets_z = j["bec_droplets_z"];
+
+    params->dd = UnitConverter::len_nm_to_au(j["dd"]);
+    params->dx = UnitConverter::len_nm_to_au(j["dx"]);
+    params->dy = UnitConverter::len_nm_to_au(j["dy"]);
+    params->dz = UnitConverter::len_nm_to_au(j["dz"]);
+    params->nx = j["nx"];
+    params->ny = j["ny"];
+    params->nz = j["nz"];
 }

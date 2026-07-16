@@ -48,7 +48,11 @@ struct PhysicalParameters {
 
     double cdd;
     double add;
+
     double edd;
+    bool const_edd = true;
+    double edd_start;
+    double edd_stop;
 
     //! Number of nodes in calculations - x direction.
     int nx;

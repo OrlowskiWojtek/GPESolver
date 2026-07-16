@@ -117,13 +117,13 @@ Parameters can be described as:
 | `dd` | distance between double-well minimas. Used in MEXICAN hat potential | nm |
 
 Potential options:
-- REGULAR (harmonic in every direction)
+- HARMONIC (harmonic in every direction)
 - MEXICAN (mexican hat with two minimas separated by dd)
 - MEXICAN_FREE (mexican hat after removal of a barrier)
 - CYLINDRICAL (harmonic in form of V(r, z), where $\omega_r$ = $\frac{\omega_x + \omega_y}{2}$)
 - FREE (droplets bound only in z plane)
 - MEXICAN_ASYMETRIC (MEXICAN but added slight linear asymetry)
-- MEXICAN_ASYMETRIC_FEE (MEXICAN_FREE but added slight linear asymetry)
+- MEXICAN_ASYMETRIC_FREE (MEXICAN_FREE but added slight linear asymetry)
 
 Calculations options:
 - IT (imaginary time evolution)

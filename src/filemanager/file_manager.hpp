@@ -1,9 +1,15 @@
 #ifndef FILE_MANAGER_HPP
 #define FILE_MANAGER_HPP
 
+#ifdef BUILD_TESTS
+#include <gtest/gtest.h>
+#endif
+
+
 #include "context/context.hpp"
-#include "parameters/parameters.hpp"
 #include "manager/sim_mediator.hpp"
+#include "nlohmann/json.hpp"
+#include "parameters/parameters.hpp"
 #include <functional>
 
 //! \class FileManager
@@ -17,7 +23,7 @@ public:
     //! \brief Constructor.
     //! \param mediator Pointer to AbstractSimulationMediator.
     FileManager(AbstractSimulationMediator *mediator);
-    
+
     //! \brief Destructor.
     ~FileManager();
 
@@ -26,7 +32,7 @@ public:
 
     //! \brief Saves parameters to file.
     void save_params();
-    
+
     //! \brief Saves energies to file.
     //! \param energies Container of energies to save.
     void save_energies(const energies_container_t &energies);
@@ -34,20 +40,23 @@ public:
     //! \brief Loads wavefunction from a text file.
     //! \param filename Name of the text file.
     void load_from_text_file(std::string filename);
-    
+
     //! \brief Loads wavefunction from a binary file.
     //! \param filename Name of the binary file.
     void load_from_binary_file(std::string filename);
-    
+
     //! \brief Loads wavefunction from a text file and applies a callback.
     //! \param filename Name of the text file.
-    //! \param callback Function to apply to the loaded wavefunction - usually copy to another data buffer.
-    void load_from_text_file(std::string filename, std::function<void(wavefunction_t&)> callback);
-    
+    //! \param callback Function to apply to the loaded wavefunction - usually copy to another data
+    //! buffer.
+    void load_from_text_file(std::string filename, std::function<void(wavefunction_t &)> callback);
+
     //! \brief Loads wavefunction from a binary file and applies a callback.
     //! \param filename Name of the binary file.
-    //! \param callback Function to apply to the loaded wavefunction - usually copy to another data buffer.
-    void load_from_binary_file(std::string filename, std::function<void(wavefunction_t&)> callback);
+    //! \param callback Function to apply to the loaded wavefunction - usually copy to another data
+    //! buffer.
+    void load_from_binary_file(std::string filename,
+                               std::function<void(wavefunction_t &)> callback);
 
     //! \brief Saves wavefunction to a text file.
     //! \param psi Wavefunction to save.
@@ -80,12 +89,64 @@ private:
     //! \brief Checks for best number of n for FFTW
     bool is_fft_compatible(int n);
 
+    //! \brief Segmantizing loading into several parts;
+    void load_initialization(nlohmann::json &);
+    void load_potential(nlohmann::json &);
+    void load_box(nlohmann::json &);
+    void load_simulation(nlohmann::json &);
+
+    //! \brief Loading version v0, all parameters required even if not used
+    void load_all_v0(nlohmann::json &);
+    //! \brief Loading version v1, parameters not required if not used 
+    void load_all_v1(nlohmann::json &);
+
     //! \brief Buffer for loading wavefunctions.
     wavefunction_t psi_loading_buffer;
     //! \brief Pointer to the simulation mediator.
     AbstractSimulationMediator *mediator;
     //! \brief Pointer to the physical parameters.
     PhysicalParameters *params;
+
+#ifdef BUILD_TESTS
+    FRIEND_TEST(FileManagerTest, LoadBox_AllRequiredParams_Success);
+    FRIEND_TEST(FileManagerTest, LoadBox_MissingDx_Throws);
+    FRIEND_TEST(FileManagerTest, LoadBox_MissingNx_Throws);
+    FRIEND_TEST(FileManagerTest, LoadBox_MissingAllRequired_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_AllRequiredParams_Success);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_MissingCalcStrategy_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_MissingNIterImag_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_MissingNAtoms_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_MissingMass_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_OptionalFftwThreads_UsesDefault);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_SingleGauss_Success);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_MultipleGauss_MissingInitialMaximas_Throws);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_MultipleGauss_WithInitialMaximas_Success);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_SetupGauss_MissingBecDroplets_Throws);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_SetupGauss_WithAllBecDroplets_Success);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_FromBinaryFile_MissingLoadFilename_Throws);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_FromBinaryFile_WithLoadFilename_Success);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_FromTextFile_WithLoadFilename_Success);
+    FRIEND_TEST(FileManagerTest, LoadPotential_Harmonic_Success);
+    FRIEND_TEST(FileManagerTest, LoadPotential_Mexican_MissingDd_Throws);
+    FRIEND_TEST(FileManagerTest, LoadPotential_Mexican_WithDd_Success);
+    FRIEND_TEST(FileManagerTest, LoadPotential_MexicanFree_MissingDd_Throws);
+    FRIEND_TEST(FileManagerTest, LoadPotential_MexicanAsymetric_MissingDd_Throws);
+    FRIEND_TEST(FileManagerTest, LoadPotential_MissingOmega_Throws);
+    FRIEND_TEST(FileManagerTest, LoadPotential_MissingPoteStrategy_Throws);
+    FRIEND_TEST(FileManagerTest, LoadAllV1_CompleteConfig_Success);
+    FRIEND_TEST(FileManagerTest, LoadAllV1_MultipleGaussScenario_Success);
+    FRIEND_TEST(FileManagerTest, LoadAllV1_SetupGaussScenario_Success);
+    FRIEND_TEST(FileManagerTest, LoadAllV1_MexicanPotentialRequiresDd_Fails);
+    FRIEND_TEST(FileManagerTest, CheckRequired_ErrorMessageContainsKey);
+    FRIEND_TEST(FileManagerTest, LoadInitialization_WrongInitStrategy);
+    FRIEND_TEST(FileManagerTest, LoadPotential_WrongPoteStrategy_Throws);
+#endif
+
 };
+
+#define CHECK_REQUIRED(JSON, KEY)                                                                  \
+    if (!JSON.contains(KEY)) {                                                                     \
+        throw std::runtime_error("Missing required parameter: " + std::string(KEY));               \
+    }
 
 #endif

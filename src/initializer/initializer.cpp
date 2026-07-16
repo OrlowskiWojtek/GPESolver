@@ -189,8 +189,6 @@ void DataInitializer::init_with_multiple_gaussian() {
         }
     }
 
-    rotate_centers(centers_x, centers_y, 180.);
-
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
             for (int k = 1; k < nz - 1; k++) {

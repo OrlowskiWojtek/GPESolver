@@ -368,7 +368,7 @@ void kernel_potential_half_step_inplace(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
     int i = blockIdx.z * blockDim.z + threadIdx.z;
 
-    if (i >= nx || j >= ny || k >= nz) return;
+    if (i >= nx || j >= ny || k >= nz || i <= 0 || j <= 0 || k <= 0) return;
     
     int idx = (i * ny + j) * nz + k;
     
