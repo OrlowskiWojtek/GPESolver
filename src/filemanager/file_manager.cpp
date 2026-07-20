@@ -515,10 +515,10 @@ void FileManager::load_simulation(nlohmann::json &j) {
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->iter_imag = j["iter_imag"];
     params->iter_real = j["iter_real"];
-    params->n_atoms = j["n_atoms"];
-    params->m       = UnitConverter::mass_Da_to_au(j["m"]);
+    params->n_atoms   = j["n_atoms"];
+    params->m         = UnitConverter::mass_Da_to_au(j["m"]);
 
-    if(params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
+    if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
         CHECK_REQUIRED(j, "edd");
     }
 
@@ -531,7 +531,7 @@ void FileManager::load_simulation(nlohmann::json &j) {
 
         params->const_edd = false;
         params->edd_start = j["edd_start"];
-        params->edd_start = j["edd_stop"];
+        params->edd_stop  = j["edd_stop"];
     }
 
     // fftw_n_threads no required with default value equal to 4
