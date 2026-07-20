@@ -1,7 +1,7 @@
 #include "filemanager/file_manager.hpp"
-#include "parameters/potentials.hpp"
 #include "context/context.hpp"
 #include "output.hpp"
+#include "parameters/potentials.hpp"
 #include "units.hpp"
 #include <fstream>
 
@@ -470,7 +470,7 @@ void FileManager::load_potential(nlohmann::json &j) {
     CHECK_REQUIRED(j, "pote_strategy");
 
     params->pote_key = j["pote_strategy"];
-    if(!PotentialRegistry::instance().contains(params->pote_key)){
+    if (!PotentialRegistry::instance().contains(params->pote_key)) {
         throw std::runtime_error("Not know potential option");
     }
 
@@ -509,16 +509,26 @@ void FileManager::load_simulation(nlohmann::json &j) {
     CHECK_REQUIRED(j, "calc_strategy");
     CHECK_REQUIRED(j, "iter_imag");
     CHECK_REQUIRED(j, "iter_real");
-    CHECK_REQUIRED(j, "edd");
     CHECK_REQUIRED(j, "n_atoms");
     CHECK_REQUIRED(j, "m");
 
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->iter_imag = j["iter_imag"];
     params->iter_real = j["iter_real"];
-    params->edd       = j["edd"];
-    params->n_atoms   = j["n_atoms"];
-    params->m         = UnitConverter::mass_Da_to_au(j["m"]);
+    params->n_atoms = j["n_atoms"];
+    params->m       = UnitConverter::mass_Da_to_au(j["m"]);
+
+    if (j.contains("edd")) {
+        params->const_edd = true;
+        params->edd       = j["edd"];
+    } else {
+        CHECK_REQUIRED(j, "edd_start");
+        CHECK_REQUIRED(j, "edd_stop");
+
+        params->const_edd = false;
+        params->edd_start = j["edd_start"];
+        params->edd_start = j["edd_stop"];
+    }
 
     // fftw_n_threads no required with default value equal to 4
     params->fftw_n_threads = j.value("fftw_n_threads", 4);

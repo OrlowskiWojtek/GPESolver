@@ -25,10 +25,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
 else()
     # GCC / Clang
     target_compile_options(compiler_flags INTERFACE
-        -Wall
+        #-Wall
         -O3 
-        -ffast-math 
-        -funroll-loops
+        #-ffast-math 
+        #-funroll-loops
     )
 endif()
 

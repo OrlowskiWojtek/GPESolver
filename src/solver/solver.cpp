@@ -73,6 +73,9 @@ void AbstractGrossPitaevskiSolver::calc_evolution() {
     OutputFormatter::printInfo("Starting real time evolution");
 
     for (size_t iter = 0; iter <= params->iter_real; iter++) {
+        if (!params->const_edd)
+            params->update_edd(iter);
+
         real_time_iter();
 
         if (iter % 1000 == 0) {
@@ -102,7 +105,6 @@ void AbstractGrossPitaevskiSolver::imag_time_iter() {
 }
 
 void AbstractGrossPitaevskiSolver::real_time_iter() {
-
     real_fft_potential_half_step();
     calc_fi3d();
     real_fft_kinetic_step();

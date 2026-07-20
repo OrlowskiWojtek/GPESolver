@@ -41,7 +41,7 @@ if(USE_CUDA)
         solver/cuda_solver/gpu_solver.cpp
     )
     
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
+    #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
     
     target_link_libraries(SolverManager PUBLIC
         CUDA::cudart

@@ -5,7 +5,6 @@
 #include <gtest/gtest.h>
 #endif
 
-
 #include "context/context.hpp"
 #include "manager/sim_mediator.hpp"
 #include "nlohmann/json.hpp"
@@ -97,7 +96,7 @@ private:
 
     //! \brief Loading version v0, all parameters required even if not used
     void load_all_v0(nlohmann::json &);
-    //! \brief Loading version v1, parameters not required if not used 
+    //! \brief Loading version v1, parameters not required if not used
     void load_all_v1(nlohmann::json &);
 
     //! \brief Buffer for loading wavefunctions.
@@ -140,8 +139,9 @@ private:
     FRIEND_TEST(FileManagerTest, CheckRequired_ErrorMessageContainsKey);
     FRIEND_TEST(FileManagerTest, LoadInitialization_WrongInitStrategy);
     FRIEND_TEST(FileManagerTest, LoadPotential_WrongPoteStrategy_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_EraseEddThrow);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_EraseEddNoThrow);
 #endif
-
 };
 
 #define CHECK_REQUIRED(JSON, KEY)                                                                  \
