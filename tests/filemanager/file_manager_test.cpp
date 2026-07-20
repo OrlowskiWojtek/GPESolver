@@ -120,6 +120,22 @@ TEST_F(FileManagerTest, LoadSimulation_OptionalFftwThreads_UsesDefault) {
     EXPECT_NO_THROW(fileManager->load_simulation(j));
 }
 
+TEST_F(FileManagerTest, LoadSimulation_EraseEddNoThrow) {
+    nlohmann::json j = validJson;
+    j.erase("edd");
+    j["edd_start"] = 1.5;
+    j["edd_stop"] = 1.5;
+
+    EXPECT_NO_THROW(fileManager->load_simulation(j));
+}
+
+TEST_F(FileManagerTest, LoadSimulation_EraseEddThrow) {
+    nlohmann::json j = validJson;
+    j.erase("edd");
+
+    EXPECT_THROW(fileManager->load_simulation(j), std::runtime_error);
+}
+
 // ============================================
 // load_initialization tests
 // ============================================
