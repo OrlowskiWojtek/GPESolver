@@ -123,6 +123,7 @@ TEST_F(FileManagerTest, LoadSimulation_OptionalFftwThreads_UsesDefault) {
 TEST_F(FileManagerTest, LoadSimulation_EraseEddNoThrow) {
     nlohmann::json j = validJson;
     j.erase("edd");
+    j["calc_strategy"] = "RT";
     j["edd_start"] = 1.5;
     j["edd_stop"] = 1.5;
 

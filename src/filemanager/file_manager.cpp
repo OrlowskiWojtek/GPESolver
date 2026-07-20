@@ -518,6 +518,10 @@ void FileManager::load_simulation(nlohmann::json &j) {
     params->n_atoms = j["n_atoms"];
     params->m       = UnitConverter::mass_Da_to_au(j["m"]);
 
+    if(params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
+        CHECK_REQUIRED(j, "edd");
+    }
+
     if (j.contains("edd")) {
         params->const_edd = true;
         params->edd       = j["edd"];
