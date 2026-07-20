@@ -71,6 +71,7 @@ void FileManager::load_params() {
     } catch (const std::exception &e) {
         OutputFormatter::printWarning("Can't load using input using v1 format, reason:\n" +
                                       std::string(e.what()));
+        throw e;
     }
 
     check_params();
@@ -224,12 +225,6 @@ void FileManager::check_params() {
     }
     if (params->m <= 0) {
         throw std::runtime_error("Mass must be positive.");
-    }
-    if (params->fftw_n_threads <= 0) {
-        throw std::runtime_error("FFTW number of threads must be positive.");
-    }
-    if (params->n_gauss_max <= 0) {
-        throw std::runtime_error("Number of Gaussian maxima must be positive.");
     }
 
     if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) ||
@@ -446,6 +441,10 @@ void FileManager::load_initialization(nlohmann::json &j) {
     if (params->init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS) {
         CHECK_REQUIRED(j, "initial_maximas");
         params->n_gauss_max = j["initial_maximas"];
+
+        if (params->n_gauss_max <= 0) {
+            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+        }
     }
 
     if (params->init_strategy.type == InitializationOption::Type::SETUP_GAUSS) {
@@ -536,6 +535,9 @@ void FileManager::load_simulation(nlohmann::json &j) {
 
     // fftw_n_threads no required with default value equal to 4
     params->fftw_n_threads = j.value("fftw_n_threads", 4);
+    if (params->fftw_n_threads <= 0) {
+        throw std::runtime_error("FFTW number of threads must be positive.");
+    }
 }
 
 void FileManager::load_all_v1(nlohmann::json &j) {
