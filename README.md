@@ -107,6 +107,8 @@ Parameters can be described as:
 | `m` | mass of single atom | Da |
 | `omega_x, y, z` | trap frequencies (used in generating all potentials) | Hz |
 | `edd` | $\varepsilon_{dd}$ - parameter from Gross-Pitaevski Equation  | - |
+| `edd_start` | $\varepsilon_{dd}$ - at the begining of real time evolution  | - |
+| `edd_stop` | $\varepsilon_{dd}$ - at the end of real time evolution  | - |
 | `iter_imag` | number of imaginary time iterations | - |
 | `iter_real` | number of real time iterations | - |
 | `calc_strategy` | type of calculations - options below. | - |
