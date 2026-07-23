@@ -54,7 +54,7 @@ void launch_kernel_normalize(
     double norm_factor
 );
 
-__global__ void kernel_calc_norm_sq(
+__global__ void kernel_calc_norm(
     const cuDoubleComplex* __restrict__ data,
     double* __restrict__ result,
     int N
@@ -89,6 +89,11 @@ void launch_kernel_calc_energies(
     const double* pote,
     const double* fi3d,
     energies_t& ene,
+    double* __restrict__ d_kin_dev,
+    double* __restrict__ d_pot_dev,
+    double* __restrict__ d_int_dev,
+    double* __restrict__ d_ext_dev,
+    double* __restrict__ d_bmf_dev,
     int nx, int ny, int nz,
     double dx, double dy, double dz,
     double m, double ggp11, double cdd, double gamma,

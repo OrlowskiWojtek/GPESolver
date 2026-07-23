@@ -289,8 +289,14 @@ function animate_iso_bce(data_dir::String, output_file::String)
                viewmode = :fitzoom)
 
     BCEContext = load_from_binary(joinpath(data_dir, files[1]))
-    rho = Observable(Array{Float64,3}(abs.(BCEContext.psi)))
+    BCEslice = get_BEC_slice(BCEContext)
+
+    rho = Observable(Array{Float64,3}(abs.(BCEContext.psi).^2))
     x, y, z = BCEContext.x, BCEContext.y, BCEContext.z
+
+    hm_rho = Observable(Array{Float64, 2}(abs.(BCEslice.psi) .^ 2))
+    hm_x = BCEslice.x
+    hm_y = BCEslice.y
 
     # Normalize rho similar to plot_single_state
     raw_rho = rho[]
@@ -332,10 +338,23 @@ function animate_iso_bce(data_dir::String, output_file::String)
                 isorange = 0.1 * max_val)
     end
 
-    record(fig, output_file, 1:n_frames; framerate=10) do frame
+    max_hm_rho = 10 * round(maximum(hm_rho[] / 10))
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  transparency = true,
+                  colormap = colormap,
+                  #colorrange = (0, max_hm_rho),
+                  transformation=(:xy, z[begin + 2]))
+
+    origin = Point3f(x[begin], y[end], z[begin + 2])
+    direction = Vec3f(0, 0, abs(z[end] - z[begin + 2]))
+
+    record(fig, output_file, 1:n_frames, framerate=10) do frame
         println("Loading frame ", joinpath(data_dir, files[frame]))
-        raw_rho = abs.(load_from_binary(joinpath(data_dir, files[frame])).psi)
+        file = joinpath(data_dir, files[frame])
+        context = load_from_binary(file)
+        raw_rho = abs.(context.psi)
         rho_normalized[] = (raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho)))
+        hm_rho[] = abs.(get_BEC_slice(context).psi) .^ 2
     end
 end
 

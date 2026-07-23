@@ -2,6 +2,7 @@
 #define COMPLEX_PARAMS_HPP
 
 #include <string>
+#include <stdexcept>
 
 class AbstractParam {
 public:
@@ -78,16 +79,18 @@ public:
     void from_string(std::string str) override {
         if (str == "COS")
             type = Type::COS;
-        if (str == "GAUSS")
+        else if (str == "GAUSS")
             type = Type::GAUSS;
-        if (str == "MULTIPLE_GAUSS")
+        else if (str == "MULTIPLE_GAUSS")
             type = Type::MULTIPLE_GAUSS;
-        if (str == "SETUP_GAUSS")
+        else if (str == "SETUP_GAUSS")
             type = Type::SETUP_GAUSS;
-        if (str == "BINARY_FILE")
+        else if (str == "BINARY_FILE")
             type = Type::FROM_BINARY_FILE;
-        if (str == "TEXT_FILE")
+        else if (str == "TEXT_FILE")
             type = Type::FROM_TEXT_FILE;
+        else
+            throw std::runtime_error("Unknown initialization strategy: " + str);
     }
 
     Type type = Type::MULTIPLE_GAUSS;

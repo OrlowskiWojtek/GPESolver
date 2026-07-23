@@ -1,7 +1,11 @@
 #include "solver/fft_solvers/cpu/fftw_split_solver.hpp"
 #include "output.hpp"
 
-FFTWRealTimeSplitSolver::FFTWRealTimeSplitSolver() {
+FFTWRealTimeSplitSolver::FFTWRealTimeSplitSolver(wavefunction_t *psi,
+                                                 potential_t *fi3d,
+                                                 potential_t *pote)
+    : FFTWAbstractCPUSolver(psi, fi3d, pote) {
+    prepare();
 }
 
 void FFTWRealTimeSplitSolver::prepare_containers() {

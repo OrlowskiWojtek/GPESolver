@@ -1,17 +1,19 @@
 #ifndef GPU_GPE_SOLVER
 #define GPU_GPE_SOLVER
 
-#include "solver/solver_data/gpu_solver_data.hpp"
 #include "solver/solver.hpp"
+#include "solver/solver_data/gpu_solver_data.hpp"
 
-class GpuGrossPitaevskiSolver: public AbstractGrossPitaevskiSolver {
+class GpuGrossPitaevskiSolver : public AbstractGrossPitaevskiSolver {
 public:
-    GpuGrossPitaevskiSolver(AbstractSimulationMediator* mediator);
+    GpuGrossPitaevskiSolver(AbstractSimulationMediator *mediator);
+    ~GpuGrossPitaevskiSolver();
 
 private:
     //! Data used in solver
     GPUSolverData m_data;
-    double* d_norm;
+    double *d_norm;
+    double *d_kin_dev, *d_pot_dev, *d_int_dev, *d_ext_dev, *d_bmf_dev;
 
     void prepare_fft() override;
     void import_pote() override;

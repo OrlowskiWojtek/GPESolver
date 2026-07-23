@@ -2,12 +2,7 @@
 #include "context/context.hpp"
 #include "output.hpp"
 #include <regex>
-
-#ifdef USE_CUDA
-#include "solver/cuda_solver/gpu_solver.hpp"
-#else
-#include "solver/cpu_solver/cpu_solver.hpp"
-#endif
+#include "solver/solver_factory.hpp"
 
 SimulationManager::SimulationManager()
     : params(PhysicalParameters::getInstance())
@@ -15,11 +10,7 @@ SimulationManager::SimulationManager()
     , m_file_manager(std::make_unique<FileManager>(this))
     , m_initializer(std::make_unique<DataInitializer>(this)) {
 
-#ifdef USE_CUDA
-    m_gpe_solver = std::make_unique<GpuGrossPitaevskiSolver>(this);
-#else 
-    m_gpe_solver = std::make_unique<CpuGrossPitaevskiSolver>(this);
-#endif
+    m_gpe_solver = SolverFactory::create(this);
 }
 
 void SimulationManager::initialize() {

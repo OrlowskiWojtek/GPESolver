@@ -3,8 +3,24 @@
 
 GpuGrossPitaevskiSolver::GpuGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator) {
-    poisson_solver  = std::make_unique<CUFFTPoissonSolver>();
-    rt_split_solver = std::make_unique<CUFFTRealTimeSplitSolver>();
+
+    cudaMalloc(&d_norm, sizeof(double));
+
+    cudaMalloc(&d_kin_dev, sizeof(double));
+    cudaMalloc(&d_pot_dev, sizeof(double));
+    cudaMalloc(&d_int_dev, sizeof(double));
+    cudaMalloc(&d_ext_dev, sizeof(double));
+    cudaMalloc(&d_bmf_dev, sizeof(double));
+}
+
+GpuGrossPitaevskiSolver::~GpuGrossPitaevskiSolver() {
+    cudaFree(d_norm);
+
+    cudaFree(d_kin_dev);
+    cudaFree(d_pot_dev);
+    cudaFree(d_int_dev);
+    cudaFree(d_ext_dev);
+    cudaFree(d_bmf_dev);
 }
 
 void GpuGrossPitaevskiSolver::init_containers() {
@@ -13,41 +29,13 @@ void GpuGrossPitaevskiSolver::init_containers() {
     size_t nz = params->nz;
 
     m_data.allocate(nx, ny, nz);
-
-    cudaMalloc(&d_norm, sizeof(double));
 }
 
 void GpuGrossPitaevskiSolver::prepare_fft() {
-    poisson_solver->prepare_gpu(&m_data.cpsi_gpu, &m_data.fi3d_gpu, &m_data.pote_gpu);
-    rt_split_solver->prepare_gpu(&m_data.cpsi_gpu, &m_data.fi3d_gpu, &m_data.pote_gpu);
+    poisson_solver = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
+    rt_split_solver =
+        std::make_unique<CUFFTRealTimeSplitSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
 }
-
-// void GpuGrossPitaevskiSolver::load_buffer(const wavefunction_t &wav) {
-//     size_t nx = params->nx;
-//     size_t ny = params->ny;
-//     size_t nz = params->nz;
-//
-//     if(wav.size() != nx * ny * nz)
-//         throw std::runtime_error("bad initialization");
-//
-//     std::cerr << "loading buffer with size: " << wav.size() << std::endl;
-//     cpsi_gpu  = GpuArray<cuDoubleComplex>(wav.size());
-//     cpsii_gpu = GpuArray<cuDoubleComplex>(wav.size());
-//
-//     cpsi.resize(params->nx, params->ny, params->nz);
-//
-//     auto wav_copy = wav;
-//     cpsi_gpu.copy_from_host(reinterpret_cast<cuDoubleComplex *>(wav_copy.get_data()));
-//     cpsii_gpu.copy_from_host(reinterpret_cast<cuDoubleComplex *>(wav_copy.get_data()));
-// }
-
-// void GpuGrossPitaevskiSolver::load_pote(const potential_t &pote) {
-//     std::cerr << "loading pote" << std::endl;
-//     this->pote_gpu = GpuArray<double>(pote.size());
-//
-//     auto pote_copy = pote;
-//     this->pote_gpu.copy_from_host(pote_copy.get_data());
-// }
 
 void GpuGrossPitaevskiSolver::calc_fi3d() {
     poisson_solver->execute();
@@ -117,6 +105,11 @@ void GpuGrossPitaevskiSolver::calc_energy() {
                                 m_data.pote_gpu.data(),
                                 m_data.fi3d_gpu.data(),
                                 ene,
+                                d_kin_dev,
+                                d_pot_dev,
+                                d_int_dev,
+                                d_ext_dev,
+                                d_bmf_dev,
                                 params->nx,
                                 params->ny,
                                 params->nz,

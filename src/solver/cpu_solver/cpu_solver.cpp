@@ -2,8 +2,6 @@
 
 CpuGrossPitaevskiSolver::CpuGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator) {
-    poisson_solver  = std::make_unique<FFTWPoissonSolver>();
-    rt_split_solver = std::make_unique<FFTWRealTimeSplitSolver>();
 }
 
 void CpuGrossPitaevskiSolver::init_containers() {
@@ -196,8 +194,8 @@ void CpuGrossPitaevskiSolver::calc_energy() {
 }
 
 void CpuGrossPitaevskiSolver::prepare_fft() {
-    poisson_solver->prepare(&m_data.cpsi, &m_data.fi3d, &m_data.pote);
-    rt_split_solver->prepare(&m_data.cpsi, &m_data.fi3d, &m_data.pote);
+    poisson_solver  = std::make_unique<FFTWPoissonSolver>(&m_data.cpsi, &m_data.fi3d, &m_data.pote);
+    rt_split_solver = std::make_unique<FFTWRealTimeSplitSolver>(&m_data.cpsi, &m_data.fi3d, &m_data.pote);
 };
 
 void CpuGrossPitaevskiSolver::import_pote() {

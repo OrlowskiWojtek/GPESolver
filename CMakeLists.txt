@@ -6,6 +6,9 @@ add_library(compiler_flags INTERFACE)
 
 set(CMAKE_CXX_STANDARD 14)
 
+option(USE_CUDA "Build using CUDA" FALSE)
+option(BUILD_TESTS "Build unit tests" FALSE)
+
 # Dla kompilatorów intela
 if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
     # IntelLLVM = icpx, Intel = icpc
@@ -22,14 +25,12 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
 else()
     # GCC / Clang
     target_compile_options(compiler_flags INTERFACE
-        -Wall
+        #-Wall
         -O3 
-        -ffast-math 
-        -funroll-loops
+        #-ffast-math 
+        #-funroll-loops
     )
 endif()
-
-option(USE_CUDA "Build using CUDA" FALSE)
 
 # add CUDA if option is on
 if(USE_CUDA)
@@ -45,6 +46,10 @@ if(USE_CUDA)
     add_definitions(-DUSE_CUDA)
 endif()
 
+if(BUILD_TESTS)
+    add_definitions(-DBUILD_TESTS)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 add_subdirectory(src)
@@ -55,8 +60,6 @@ add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME}
                         SolverManager 
                         compiler_flags)
-
-option(BUILD_TESTS "Build unit tests" ON)
 
 if(BUILD_TESTS)
     add_subdirectory(tests)

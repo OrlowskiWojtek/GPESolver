@@ -140,3 +140,79 @@ for (idx, minima_eps_140) in enumerate(minimas_eps_140)
 
     #save(filename, fig)
 end
+
+## assymetric type
+
+asymetric_eps_150 = [
+    "3k_atoms/2_max/initial_state.gpe.dat",
+    "7k_atoms/1_max/initial_state.gpe.dat",
+    "20k_atoms/2_max/initial_state.gpe.dat",
+    "33k_atoms/3_max/initial_state.gpe.dat",
+    "40k_atoms/4_max/initial_state.gpe.dat",
+];
+
+asymetric_eps_150_atom_counts = [
+    3000,   # 5k_atoms
+    7000,
+    20000,
+    33000,
+    40000
+];
+
+for (idx, as_eps_150) in enumerate(asymetric_eps_150)
+    file = joinpath("../../build/run_find_initial_states_assymetric", as_eps_150)
+    N = asymetric_eps_150_atom_counts[idx]
+    maxs = match(r"(\d+)_max", file)
+
+    fig = plot_single_state(file; hide_decs = (idx != 1), n_atoms = N)
+
+    dir = "plots/asymetric_eps15/"
+    filename = joinpath(dir, "wavefunction_$(N)_atoms_" * maxs[1] * "_condensates" * ".png")
+    #display(fig)
+
+    save(filename, fig)
+end
+
+## some stuff to remove later
+
+dir = "../../build/run_check_size_bigger_grid/"
+
+files = [
+"10800xy/16800z/initial_state.gpe.dat",
+"10800xy/18000z/initial_state.gpe.dat",
+"10800xy/19200z/initial_state.gpe.dat",
+"10800xy/20400z/initial_state.gpe.dat",
+"11520xy/16800z/initial_state.gpe.dat",
+"11520xy/18000z/initial_state.gpe.dat",
+"11520xy/19200z/initial_state.gpe.dat",
+"11520xy/20400z/initial_state.gpe.dat",
+"13440xy/16800z/initial_state.gpe.dat",
+"13440xy/18000z/initial_state.gpe.dat",
+"13440xy/19200z/initial_state.gpe.dat",
+"13440xy/20400z/initial_state.gpe.dat",
+"14400xy/16800z/initial_state.gpe.dat",
+"14400xy/18000z/initial_state.gpe.dat",
+"14400xy/19200z/initial_state.gpe.dat",
+"14400xy/20400z/initial_state.gpe.dat",
+"15360xy/16800z/initial_state.gpe.dat",
+"15360xy/18000z/initial_state.gpe.dat",
+"15360xy/19200z/initial_state.gpe.dat",
+"15360xy/20400z/initial_state.gpe.dat",
+"16800xy/16800z/initial_state.gpe.dat"
+]
+
+for (idx, file) in enumerate(files)
+    file = joinpath(dir, file)
+    N = 20000
+    xy = match(r"(\d+)xy", file)
+    z = match(r"(\d+)z", file)
+
+    fig = plot_single_state(file; hide_decs = false, n_atoms = N)
+
+    outdir = "plots/xyz/"
+    filename = joinpath(outdir, "wvg_" * xy[1] * "xy_" * z[1] * "z" * ".png")
+    #display(fig)
+
+    save(filename, fig)
+end
+

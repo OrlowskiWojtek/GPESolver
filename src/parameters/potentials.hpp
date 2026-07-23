@@ -53,6 +53,12 @@ public:
         return (it != id_map_.end()) ? get_function(it->second) : potentials_.find("FREE")->second.func;
     }
 
+    bool contains(const RegisterKey& key){
+        auto it = potentials_.find(key);
+
+        return it != potentials_.end();
+    }
+
 private:
     std::unordered_map<RegisterKey, PotentialInfo> potentials_;
     std::unordered_map<ID, RegisterKey> id_map_;
@@ -66,8 +72,8 @@ static unsigned int ID = 0;
         return 0.; \
     }();
 
-//! Classic harmonic potential with V(x,y,z) = m / 2 * (\omega_x^2 * x + \omega_y^2 * y + \omega_z^2 * z)
-REGISTER_POTENTIAL(REGULAR, [](double x, double y, double z){
+//! Classic harmonic potential with V(x,y,z) = m / 2 * (\omega_x^2 * x^2 + \omega_y^2 * y^2 + \omega_z^2 * z^2)
+REGISTER_POTENTIAL(HARMONIC, [](double x, double y, double z){
         auto params = PhysicalParameters::getInstance();
 
         double vx = 0.5 * params->m * std::pow(x, 2) * std::pow(params->omega_x, 2);
@@ -99,7 +105,7 @@ REGISTER_POTENTIAL(MEXICAN_FREE, [](double x, double y, double z){
         return vx + vy + vz;
 });
 
-//! Cylindrical potential with form V(r, z), where r = sqrt(x,y)
+//! Cylindrical potential with form V(r, z), where r = sqrt(x^2 + y^2)
 REGISTER_POTENTIAL(CYLINDRICAL, [](double x, double y, double z){
         auto params = PhysicalParameters::getInstance();
 

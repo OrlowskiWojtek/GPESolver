@@ -5,7 +5,7 @@
 
 /*! Struct PhysicalParameters.
  *  \brief contains parameters of simulation.
- *
+ *  \todo add default values
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;
@@ -48,7 +48,11 @@ struct PhysicalParameters {
 
     double cdd;
     double add;
+
     double edd;
+    bool const_edd = true;
+    double edd_start;
+    double edd_stop;
 
     //! Number of nodes in calculations - x direction.
     int nx;
@@ -62,9 +66,9 @@ struct PhysicalParameters {
     //! Number of iterations for real time evolution.
     size_t iter_real;
 
-    //! Time step \tau of every imaginary time evolution iteration
-    const double real_time_dt = 1.00e10;
     //! Time step t of every real time evolution iteration
+    const double real_time_dt = 1.00e10;
+    //! Time step \tau of every imaginary time evolution iteration
     const double imag_time_dt = 1.25e11;
 
     //! Distance per node - x direction
@@ -108,6 +112,7 @@ struct PhysicalParameters {
     void print_initialization();
     void set_default_values();
     void init_parameters();
+    void update_edd(uint iter);
 
 private:
     double dxdydz;
