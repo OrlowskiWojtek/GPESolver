@@ -23,13 +23,10 @@ public:
         switch (type) {
         case Type::IMAGINARY_TIME:
             return "IT";
-            break;
         case Type::REAL_TIME:
             return "RT";
-            break;
         case Type::FULL:
             return "FS";
-            break;
         }
 
         return "";

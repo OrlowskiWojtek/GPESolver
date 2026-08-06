@@ -445,6 +445,13 @@ void FileManager::load_initialization(nlohmann::json &j) {
         if (params->n_gauss_max <= 0) {
             throw std::runtime_error("Number of Gaussian maxima must be positive.");
         }
+
+        CHECK_REQUIRED(j, "dd");
+        params->dd = UnitConverter::len_nm_to_au(j["dd"]);
+
+        if (params->dd <= 0) {
+            throw std::runtime_error("dd parameter must be positive.");
+        }
     }
 
     if (params->init_strategy.type == InitializationOption::Type::SETUP_GAUSS) {
