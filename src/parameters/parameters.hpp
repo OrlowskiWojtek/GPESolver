@@ -109,12 +109,17 @@ struct PhysicalParameters {
     double get_dxdydz();
 
     void print();
-    void print_initialization();
+
     void set_default_values();
     void init_parameters();
     void update_edd(uint iter);
 
 private:
+    void print_initialization_parameters();
+    void print_simulation_parameters();
+    void print_box_parameters();
+    void print_potential_parameters();
+
     double dxdydz;
 
     PhysicalParameters() {};
