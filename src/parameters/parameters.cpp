@@ -128,9 +128,17 @@ void PhysicalParameters::print_simulation_parameters() {
     OutputFormatter::printBoxedMessage("epsilon_dd_start: ", edd_start);
     OutputFormatter::printBoxedMessage("epsilon_dd_stop: ", edd_stop);
 
-    OutputFormatter::printBoxedMessage("Number of iterations");
+    OutputFormatter::printBoxedMessage("ITERATIONS");
     OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));
     OutputFormatter::printBoxedMessage("REAL -  " + std::to_string(iter_real));
+
+    std::stringstream ss;
+    ss << std::scientific << imag_time_dt;
+    OutputFormatter::printBoxedMessage("imag_dt -  " + ss.str());
+    ss.str(std::string());
+    ss << std::scientific << real_time_dt;
+    OutputFormatter::printBoxedMessage("real_dt -  " + ss.str());
+    
     OutputFormatter::printBoxedMessage("Calculation strategy:", calc_strategy.to_string());
 
     OutputFormatter::printBorderLine();

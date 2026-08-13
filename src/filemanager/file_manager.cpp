@@ -540,6 +540,9 @@ void FileManager::load_simulation(nlohmann::json &j) {
         params->edd_stop  = j["edd_stop"];
     }
 
+    params->imag_time_dt = j.value("imag_dt", 1.25e11);
+    params->real_time_dt = j.value("real_dt", 1.00e10);
+
     // fftw_n_threads no required with default value equal to 4
     params->fftw_n_threads = j.value("fftw_n_threads", 4);
     if (params->fftw_n_threads <= 0) {
