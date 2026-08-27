@@ -152,6 +152,7 @@ TEST_F(FileManagerTest, LoadInitialization_SingleGauss_Success) {
 TEST_F(FileManagerTest, LoadInitialization_MultipleGauss_MissingInitialMaximas_Throws) {
     nlohmann::json j = validJson;
     j["init_strategy"] = "MULTIPLE_GAUSS";
+    j["dd"] = 1500;
     j.erase("initial_maximas");
     // Missing "initial_maximas"
 
@@ -161,6 +162,7 @@ TEST_F(FileManagerTest, LoadInitialization_MultipleGauss_MissingInitialMaximas_T
 TEST_F(FileManagerTest, LoadInitialization_MultipleGauss_WithInitialMaximas_Success) {
     nlohmann::json j = validJson;
     j["init_strategy"] = "MULTIPLE_GAUSS";
+    j["dd"] = 1500;
     j["initial_maximas"] = 5;
 
     EXPECT_NO_THROW(fileManager->load_initialization(j));
@@ -293,6 +295,7 @@ TEST_F(FileManagerTest, LoadAllV1_CompleteConfig_Success) {
 TEST_F(FileManagerTest, LoadAllV1_MultipleGaussScenario_Success) {
     nlohmann::json j = validJson;
     j["init_strategy"] = "MULTIPLE_GAUSS";
+    j["dd"] = 1500;
     j["initial_maximas"] = 3;
 
     EXPECT_NO_THROW(fileManager->load_all_v1(j));

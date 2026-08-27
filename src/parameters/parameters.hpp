@@ -67,9 +67,9 @@ struct PhysicalParameters {
     size_t iter_real;
 
     //! Time step t of every real time evolution iteration
-    const double real_time_dt = 1.00e10;
+    double real_time_dt = 1.00e10;
     //! Time step \tau of every imaginary time evolution iteration
-    const double imag_time_dt = 1.25e11;
+    double imag_time_dt = 1.25e11;
 
     //! Distance per node - x direction
     double dx;
@@ -109,12 +109,17 @@ struct PhysicalParameters {
     double get_dxdydz();
 
     void print();
-    void print_initialization();
+
     void set_default_values();
     void init_parameters();
     void update_edd(uint iter);
 
 private:
+    void print_initialization_parameters();
+    void print_simulation_parameters();
+    void print_box_parameters();
+    void print_potential_parameters();
+
     double dxdydz;
 
     PhysicalParameters() {};

@@ -54,15 +54,15 @@ void PhysicalParameters::update_edd(uint iter) {
     edd = edd_start + (edd_stop - edd_start) * iter / iter_real;
 
     double a = add / edd;
-    ggp11 = 4 * M_PI * a / m;
-    gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
+    ggp11    = 4 * M_PI * a / m;
+    gamma    = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
 }
 
 double PhysicalParameters::get_dxdydz() {
     return dxdydz;
 }
 
-void PhysicalParameters::print_initialization() {
+void PhysicalParameters::print_initialization_parameters() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Initialization method:");
     OutputFormatter::printBoxedMessage(init_strategy.to_string());
@@ -88,38 +88,11 @@ void PhysicalParameters::print_initialization() {
     OutputFormatter::printBorderLine();
 }
 
-void PhysicalParameters::print() {
-    OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Parameters");
-    OutputFormatter::printBorderLine();
-    OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Potential");
-    OutputFormatter::printBoxedMessage(pote_key);
-    OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Number of iterations");
-    OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));
-    OutputFormatter::printBoxedMessage("REAL -  " + std::to_string(iter_real));
-    OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Calculation strategy:");
-    OutputFormatter::printBoxedMessage(calc_strategy.to_string());
-    print_initialization();
-    OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
-    OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
-    OutputFormatter::printBoxedMessage("Scattering length (nm): ",
-                                       UnitConverter::len_au_to_nm(add));
-    OutputFormatter::printBoxedMessage("Potential minimas dd: ", UnitConverter::len_au_to_nm(dd));
-    OutputFormatter::printBorderLine();
-    OutputFormatter::printBoxedMessage("Dipole-dipole interaction");
-    OutputFormatter::printBoxedMessage("Cdd (au): ", cdd);
-    OutputFormatter::printBoxedMessage("epsilon_dd: ", edd);
+void PhysicalParameters::print_box_parameters() {
     OutputFormatter::printBorderLine();
 
-    OutputFormatter::printBoxedMessage("Trap frequencies:");
-    OutputFormatter::printBoxedMessage("omega_x (Hz): ", UnitConverter::freq_au_to_Hz(omega_x));
-    OutputFormatter::printBoxedMessage("omega_y (Hz): ", UnitConverter::freq_au_to_Hz(omega_y));
-    OutputFormatter::printBoxedMessage("omega_z (Hz): ", UnitConverter::freq_au_to_Hz(omega_z));
+    OutputFormatter::printBoxedMessage("COMPUTATIONAL BOX PARAMETERS");
 
-    OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Grid size");
     OutputFormatter::printBoxedMessage("nx: ", nx);
     OutputFormatter::printBoxedMessage("ny: ", ny);
@@ -136,4 +109,65 @@ void PhysicalParameters::print() {
     OutputFormatter::printBoxedMessage("z (nm): ", UnitConverter::len_au_to_nm(dz) * nz);
 
     OutputFormatter::printBorderLine();
+}
+
+//! \todo: make dependency like parameters -> not need to print all parameters all the time
+void PhysicalParameters::print_simulation_parameters() {
+    OutputFormatter::printBorderLine();
+
+    OutputFormatter::printBoxedMessage("SIMULATION PARAMETERS");
+
+    OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
+    OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
+    OutputFormatter::printBoxedMessage("Scattering length (nm): ",
+                                       UnitConverter::len_au_to_nm(add));
+
+    OutputFormatter::printBoxedMessage("Dipole-dipole interaction");
+    OutputFormatter::printBoxedMessage("Cdd (au): ", cdd);
+    OutputFormatter::printBoxedMessage("epsilon_dd: ", edd);
+    OutputFormatter::printBoxedMessage("epsilon_dd_start: ", edd_start);
+    OutputFormatter::printBoxedMessage("epsilon_dd_stop: ", edd_stop);
+
+    OutputFormatter::printBoxedMessage("ITERATIONS");
+    OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));
+    OutputFormatter::printBoxedMessage("REAL -  " + std::to_string(iter_real));
+
+    std::stringstream ss;
+    ss << std::scientific << imag_time_dt;
+    OutputFormatter::printBoxedMessage("imag_dt -  " + ss.str());
+    ss.str(std::string());
+    ss << std::scientific << real_time_dt;
+    OutputFormatter::printBoxedMessage("real_dt -  " + ss.str());
+    
+    OutputFormatter::printBoxedMessage("Calculation strategy:", calc_strategy.to_string());
+
+    OutputFormatter::printBorderLine();
+}
+
+void PhysicalParameters::print_potential_parameters(){
+    OutputFormatter::printBorderLine();
+
+    OutputFormatter::printBoxedMessage("POTENTIAL_PARAMETERS");
+
+    OutputFormatter::printBoxedMessage("Potential:", pote_key);
+    OutputFormatter::printBoxedMessage("Trap frequencies:");
+
+    OutputFormatter::printBoxedMessage("omega_x (Hz): ", UnitConverter::freq_au_to_Hz(omega_x));
+    OutputFormatter::printBoxedMessage("omega_y (Hz): ", UnitConverter::freq_au_to_Hz(omega_y));
+    OutputFormatter::printBoxedMessage("omega_z (Hz): ", UnitConverter::freq_au_to_Hz(omega_z));
+
+    OutputFormatter::printBoxedMessage("Potential minimas dd: ", UnitConverter::len_au_to_nm(dd));
+
+    OutputFormatter::printBorderLine();
+}
+
+void PhysicalParameters::print() {
+    OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("GPE SOLVER PARAMETERS");
+    OutputFormatter::printBorderLine();
+
+    print_initialization_parameters();
+    print_simulation_parameters();
+    print_potential_parameters();
+    print_box_parameters();
 }
