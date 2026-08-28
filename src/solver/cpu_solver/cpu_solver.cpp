@@ -85,7 +85,7 @@ void CpuGrossPitaevskiSolver::imag_iter_nonlinear_step() {
             for (int k = 1; k < nz - 1; k++) {
                 cpsii(i, j, k) =
                     cpsii(i, j, k) -
-                    params->imag_time_dt * ((params->ggp11 - params->cdd / 3) *
+                    params->imag_time_dt * (params->ggp11 *
                                                 std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
                                             params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
                                                 cpsi(i, j, k) * params->w_15);
@@ -114,7 +114,7 @@ void CpuGrossPitaevskiSolver::real_fft_potential_half_step() {
                 double v_ext   = m_data.pote(i, j, k);
                 double density = std::norm(cpsi(i, j, k));
 
-                double v_int = (params->ggp11 - params->cdd / 3) * density * w +
+                double v_int = params->ggp11 * density * w +
                                params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) * params->w_15;
 
                 double total_potential = v_ext + params->cdd * m_data.fi3d(i, j, k) + v_int;
@@ -173,8 +173,6 @@ void CpuGrossPitaevskiSolver::calc_energy() {
                 // Dipole-dipole interaction energy
                 ene.e_ext += 0.5 * params->cdd * m_data.fi3d(i, j, k) * std::norm(cpsi(i, j, k)) *
                              params->n_atoms;
-                ene.e_ext -= params->cdd / 3. * std::pow(std::norm(cpsi(i, j, k)), 2) / 2. *
-                             std::pow(params->n_atoms, 2);
 
                 // beyond mean-field energy
                 ene.e_bmf += 2. / 5. * params->gamma * std::pow(std::abs(cpsi(i, j, k)), 5);

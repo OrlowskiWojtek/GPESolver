@@ -78,6 +78,9 @@ struct PhysicalParameters {
     //! Distance per node - z direction.
     double dz;
 
+    //! spherical cutoff radius for dipol-dipol interaction
+    double Rc;
+
     // Number of threads used in FFTW calculations.
     int fftw_n_threads = 1;
 

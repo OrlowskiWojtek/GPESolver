@@ -23,6 +23,7 @@ void FFTWPoissonSolver::prepare_containers() {
     double dkz = 2. * M_PI / (nz * dz);
 
     int N = nx * ny * (nz / 2 + 1);
+    double Rc = p->Rc;
 
     h_Vdip_k = new complex_type[N];
 
@@ -35,9 +36,13 @@ void FFTWPoissonSolver::prepare_containers() {
                 double kz  = (k <= (nz / 2)) ? k * dkz : (k - nz) * dkz;
 
                 double k2 = kx * kx + ky * ky + kz * kz;
+                double kk = std::sqrt(k2);
 
                 if (k2 > 1e-30) {
-                    real(h_Vdip_k[idx]) = (kz * kz / k2);
+                    real(h_Vdip_k[idx]) = (kz * kz / k2 - 1. / 3.)
+                        * (1. 
+                        + 3. * (cos(kk * Rc) / (kk * kk      * Rc * Rc))
+                        - 3. * (sin(kk * Rc) / (kk * kk * kk * Rc * Rc * Rc)));
                     imag(h_Vdip_k[idx]) = 0.0;
                 } else {
                     real(h_Vdip_k[idx]) = 0.0;

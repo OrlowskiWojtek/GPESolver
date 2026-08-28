@@ -71,9 +71,9 @@ void imag_time_iteration_kernel(
     linear.x = laplacian.x + (v + cdd * fi) * psi.x;
     linear.y = laplacian.y + (v + cdd * fi) * psi.y;
 
-    // Część nieliniowa: N(psi) = [(g - cdd/3)*|psi|² + γ*|psi|³] * psi * w
+    // Część nieliniowa: N(psi) = [(g)*|psi|² + γ*|psi|³] * psi * w
     double abs_psi3 = abs_psi * abs_psi * abs_psi;
-    double nonlinear_factor = (ggp11 - cdd / 3.0) * norm_psi * w + gamma * abs_psi3 * w_15;
+    double nonlinear_factor = (ggp11) * norm_psi * w + gamma * abs_psi3 * w_15;
 
     cuDoubleComplex nonlinear;
     nonlinear.x = nonlinear_factor * psi.x;
@@ -273,8 +273,7 @@ void kernel_calc_energies(
         eint = 0.5 * ggp11 * psi_norm2 * psi_norm2;
 
         // Dipole-dipole energy
-        ext = 0.5 * cdd * fi3d[idx] * psi_norm2 * n_atoms 
-            - cdd / 3.0 * psi_norm2 * psi_norm2 / 2.0 * n_atoms * n_atoms;
+        ext = 0.5 * cdd * fi3d[idx] * psi_norm2 * n_atoms;
 
         // Beyond mean-field
         double psi_norm5 = psi_norm2 * psi_norm2 * sqrt(psi_norm2);
@@ -381,7 +380,7 @@ void kernel_potential_half_step_inplace(
     double abs_psi = sqrt(norm_psi);
     
     double abs_psi3 = abs_psi * abs_psi * abs_psi;
-    double v_int = (ggp11 - cdd / 3.0) * norm_psi * n_atoms 
+    double v_int = ggp11 * norm_psi * n_atoms 
                    + gamma * abs_psi3 * w_15;
     
     double total_potential = v_ext + cdd * fi + v_int;
