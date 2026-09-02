@@ -22,6 +22,7 @@ void CUFFTPoissonSolver::prepare_containers() {
     double dkx = 2. * M_PI / (nx * dx);
     double dky = 2. * M_PI / (ny * dy);
     double dkz = 2. * M_PI / (nz * dz);
+    double Rc = p->Rc;
 
     int N = nx * ny * (nz / 2 + 1);
 
@@ -36,9 +37,16 @@ void CUFFTPoissonSolver::prepare_containers() {
                 double kz  = (k <= (nz / 2)) ? k * dkz : (k - nz) * dkz;
 
                 double k2 = kx * kx + ky * ky + kz * kz;
+                double kk = std::sqrt(k2);
 
                 if (k2 > 1e-30) {
-                    real(h_Vdip_k[idx]) = (kz * kz / k2);
+                    // Cutoff potential introduced in [1]
+                    real(h_Vdip_k[idx]) = (kz * kz / k2 - 1. / 3.) 
+                        * (1. 
+                        + 3. * (cos(kk * Rc) / (kk * kk      * Rc * Rc))
+                        - 3. * (sin(kk * Rc) / (kk * kk * kk * Rc * Rc * Rc))
+                        );
+
                     imag(h_Vdip_k[idx]) = 0.0;
                 } else {
                     real(h_Vdip_k[idx]) = 0.0;
