@@ -12,25 +12,12 @@ DataInitializer::DataInitializer(AbstractSimulationMediator *_mediator)
 void DataInitializer::initialize_wavefunction() {
     OutputFormatter::printInfo("Initializing wavefunction");
 
-    switch (params->init_strategy.type) {
-    case InitializationOption::Type::COS:
-        init_with_cos();
-        break;
-    case InitializationOption::Type::GAUSS:
-        init_with_gaussian();
-        break;
-    case InitializationOption::Type::MULTIPLE_GAUSS:
-        init_with_multiple_gaussian();
-        break;
-    case InitializationOption::Type::SETUP_GAUSS:
-        init_with_setup_gaussian();
-        break;
-    case InitializationOption::Type::FROM_BINARY_FILE:
+    if(params->init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE) {
         init_from_binary_file();
-        break;
-    case InitializationOption::Type::FROM_TEXT_FILE:
+    } else if (params->init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE) {
         init_from_text_file();
-        break;
+    } else {
+        init_wavefunction();
     }
 
     p_mediator->on_data_initialized(_data);

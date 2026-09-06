@@ -25,12 +25,9 @@ private:
     void init_with_setup_gaussian();
     //! Init with cosinus
     void init_with_cos();
-
-    //! rotate centers around z axis
-    void rotate_centers(std::vector<double> &centers_x, std::vector<double> &centers_y, double degrees);
-
     //! apply already set pote function to _pote container
     void init_pote();
+    void init_wavefunction();
 
     wavefunction_t _data;
     potential_t _pote;
