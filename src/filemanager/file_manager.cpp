@@ -2,6 +2,7 @@
 #include "context/context.hpp"
 #include "output.hpp"
 #include "parameters/potentials.hpp"
+#include "parameters/wavefunctions.hpp"
 #include "units.hpp"
 #include <fstream>
 
@@ -35,7 +36,7 @@ void FileManager::save_params() {
     j["edd"]             = params->edd;
     j["fftw_n_threads"]  = params->fftw_n_threads;
     j["calc_strategy"]   = params->calc_strategy.to_string();
-    j["init_strategy"]   = params->init_strategy.to_string();
+    j["init_strategy"]   = params->wvf_key;
     j["pote_strategy"]   = params->pote_key;
     j["load_filename"]   = params->load_filename;
     j["initial_maximas"] = params->n_gauss_max;
@@ -436,9 +437,13 @@ void FileManager::save_pote_to_text_file(const potential_t &pote, std::string fi
 void FileManager::load_initialization(nlohmann::json &j) {
     CHECK_REQUIRED(j, "init_strategy");
 
-    params->init_strategy.from_string(j["init_strategy"]);
+    params->wvf_key = j["init_strategy"];
+    if (!InitializerRegistry::instance().contains(params->wvf_key)) {
+        InitializerRegistry::instance().print_options();
+        throw std::runtime_error("Not know potential option");
+    }
 
-    if (params->init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS) {
+    if (params->wvf_key == "MULTIPLE_GAUSS") {
         CHECK_REQUIRED(j, "initial_maximas");
         params->n_gauss_max = j["initial_maximas"];
 
@@ -454,7 +459,25 @@ void FileManager::load_initialization(nlohmann::json &j) {
         }
     }
 
-    if (params->init_strategy.type == InitializationOption::Type::SETUP_GAUSS) {
+    if (params->wvf_key == "CYLINDRICAL_GAUSS") {
+        CHECK_REQUIRED(j, "initial_maximas");
+        params->n_gauss_max = j["initial_maximas"];
+
+        if (params->n_gauss_max <= 0) {
+            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+        }
+    }
+
+    if (params->wvf_key == "RANDOM_GAUSS") {
+        CHECK_REQUIRED(j, "initial_maximas");
+        params->n_gauss_max = j["initial_maximas"];
+
+        if (params->n_gauss_max <= 0) {
+            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+        }
+    }
+
+    if (params->wvf_key == "SETUP_GAUSS") {
         CHECK_REQUIRED(j, "bec_droplets_x");
         CHECK_REQUIRED(j, "bec_droplets_y");
         CHECK_REQUIRED(j, "bec_droplets_z");
@@ -464,8 +487,8 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->bec_droplets_z = j["bec_droplets_z"];
     }
 
-    if (params->init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE ||
-        params->init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE) {
+    if (params->wvf_key == "BINARY_FILE"||
+        params->wvf_key == "TEXT_FILE") {
         CHECK_REQUIRED(j, "load_filename");
 
         params->load_filename = j["load_filename"];
@@ -477,6 +500,7 @@ void FileManager::load_potential(nlohmann::json &j) {
 
     params->pote_key = j["pote_strategy"];
     if (!PotentialRegistry::instance().contains(params->pote_key)) {
+        PotentialRegistry::instance().print_options();
         throw std::runtime_error("Not know potential option");
     }
 
@@ -573,7 +597,7 @@ void FileManager::load_all_v0(nlohmann::json &j) {
     params->fftw_n_threads = j["fftw_n_threads"];
 
     params->calc_strategy.from_string(j["calc_strategy"]);
-    params->init_strategy.from_string(j["init_strategy"]);
+    params->wvf_key = j["init_strategy"];
     params->pote_key = j["pote_strategy"];
 
     params->n_gauss_max    = j["initial_maximas"];

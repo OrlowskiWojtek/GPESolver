@@ -73,20 +73,20 @@ double PhysicalParameters::get_dxdydz() {
 void PhysicalParameters::print_initialization_parameters() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Initialization method:");
-    OutputFormatter::printBoxedMessage(init_strategy.to_string());
-    if (init_strategy.type == InitializationOption::Type::MULTIPLE_GAUSS) {
+    OutputFormatter::printBoxedMessage(wvf_key);
+    if (wvf_key == "MULTIPLE_GAUSS") {
         OutputFormatter::printBoxedMessage("Number of initial maximas:");
         OutputFormatter::printBoxedMessage(n_gauss_max);
     }
-    if (init_strategy.type == InitializationOption::Type::FROM_BINARY_FILE) {
+    if (wvf_key == "BINARY_FILE") {
         OutputFormatter::printBoxedMessage("Binary file name:");
         OutputFormatter::printBoxedMessage(load_filename);
     }
-    if (init_strategy.type == InitializationOption::Type::FROM_TEXT_FILE) {
+    if (wvf_key == "TEXT_FILE") {
         OutputFormatter::printBoxedMessage("Text file name:");
         OutputFormatter::printBoxedMessage(load_filename);
     }
-    if (init_strategy.type == InitializationOption::Type::SETUP_GAUSS) {
+    if (wvf_key == "SETUP_GAUSS") {
         OutputFormatter::printBoxedMessage("Gaussians configuration:");
         OutputFormatter::printBoxedMessage(std::to_string(bec_droplets_x) + " x " +
                                            std::to_string(bec_droplets_y) + " x " +

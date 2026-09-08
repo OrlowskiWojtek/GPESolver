@@ -1,19 +1,20 @@
 #ifndef POTENTIALS_HPP
 #define POTENTIALS_HPP
+/*! File containing potentials for solver */
 
+#include "parameters/parameters.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <functional>
 #include <iostream>
 #include <string>
-#include <functional>
 #include <unordered_map>
-#include <cmath>
-#include "parameters/parameters.hpp"
 
 class PotentialRegistry {
 public:
     using RegisterKey = std::string;
-    using ID = unsigned int;
+    using ID          = unsigned int;
     using pote_func_t = std::function<double(double, double, double)>;
 
     struct PotentialInfo {
@@ -22,7 +23,7 @@ public:
         pote_func_t func;
     };
 
-    static PotentialRegistry& instance() {
+    static PotentialRegistry &instance() {
         static PotentialRegistry registry;
         return registry;
     }
@@ -30,15 +31,23 @@ public:
     // Register a potential with key, id, and function
     void register_potential(RegisterKey key, ID id, pote_func_t func) {
         potentials_[key] = {key, id, func};
-        id_map_[id] = key;
+        id_map_[id]      = key;
+    }
+
+    void print_options() {
+        std::cout << "POTENTIAL OPTIONS ARE: \n";
+        std::for_each(potentials_.begin(), potentials_.end(), [](const auto &info) {
+            std::cout << " " << info.second.key << " ";
+        });
+        std::cout << std::endl;
     }
 
     // Getters
-    pote_func_t get_function(const RegisterKey& key) const {
+    pote_func_t get_function(const RegisterKey &key) const {
         auto it = potentials_.find(key);
 
-        if(it == potentials_.end()){
-            std::for_each(potentials_.begin(), potentials_.end(), [](const auto& info){
+        if (it == potentials_.end()) {
+            std::for_each(potentials_.begin(), potentials_.end(), [](const auto &info) {
                 std::cout << " " << info.second.key << " ";
             });
             std::cout << std::endl;
@@ -50,10 +59,11 @@ public:
 
     pote_func_t get_function(ID id) const {
         auto it = id_map_.find(id);
-        return (it != id_map_.end()) ? get_function(it->second) : potentials_.find("FREE")->second.func;
+        return (it != id_map_.end()) ? get_function(it->second)
+                                     : potentials_.find("FREE")->second.func;
     }
 
-    bool contains(const RegisterKey& key){
+    bool contains(const RegisterKey &key) {
         auto it = potentials_.find(key);
 
         return it != potentials_.end();
@@ -66,95 +76,110 @@ private:
 
 static unsigned int ID = 0;
 
-#define REGISTER_POTENTIAL(KEY, FUNC) \
-    static auto _registrar_##KEY = []() { \
-        PotentialRegistry::instance().register_potential(#KEY, ID++, FUNC); \
-        return 0.; \
+#define REGISTER_POTENTIAL(KEY, FUNC)                                                              \
+    static auto _registrar_##KEY = []() {                                                          \
+        PotentialRegistry::instance().register_potential(#KEY, ID++, FUNC);                        \
+        return 0.;                                                                                 \
     }();
 
-//! Classic harmonic potential with V(x,y,z) = m / 2 * (\omega_x^2 * x^2 + \omega_y^2 * y^2 + \omega_z^2 * z^2)
-REGISTER_POTENTIAL(HARMONIC, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
+//! Classic harmonic potential with V(x,y,z) = m / 2 * (\omega_x^2 * x^2 + \omega_y^2 * y^2 +
+//! \omega_z^2 * z^2)
+REGISTER_POTENTIAL(HARMONIC, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
 
-        double vx = 0.5 * params->m * std::pow(x, 2) * std::pow(params->omega_x, 2);
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double vx = 0.5 * params->m * std::pow(x, 2) * std::pow(params->omega_x, 2);
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vx + vy + vz;
+    return vx + vy + vz;
 });
 
 //! Mexican hat potential with minimas separate by d
-REGISTER_POTENTIAL(MEXICAN, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
+REGISTER_POTENTIAL(MEXICAN, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
 
-        double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4);
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4);
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vx + vy + vz;
+    return vx + vy + vz;
 });
 
 //! Mexican hat after quenching to single-well potential
-REGISTER_POTENTIAL(MEXICAN_FREE, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
+REGISTER_POTENTIAL(MEXICAN_FREE, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
 
-        double vx = params->aa * std::pow(x, 4);
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double vx = params->aa * std::pow(x, 4);
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vx + vy + vz;
+    return vx + vy + vz;
 });
 
 //! Cylindrical potential with form V(r, z), where r = sqrt(x^2 + y^2)
-REGISTER_POTENTIAL(CYLINDRICAL, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
+REGISTER_POTENTIAL(CYLINDRICAL, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
 
-        double r = std::sqrt(x*x + y*y);
+    double r = std::sqrt(x * x + y * y);
 
-        double vr = 0.5 * params->m * std::pow(r, 2) * std::pow((params->omega_y + params->omega_x) / 2., 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double vr =
+        0.5 * params->m * std::pow(r, 2) * std::pow((params->omega_y + params->omega_x) / 2., 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vr + vz;
+    return vr + vz;
 });
 
 //! Bound droplets only in z plane;
-REGISTER_POTENTIAL(FREE, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+REGISTER_POTENTIAL(FREE, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
+    double vz   = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vz;
+    return vz;
 });
 
 //! Bound droplets only in z plane;
-REGISTER_POTENTIAL(MEXICAN_ASYMETRIC, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
+REGISTER_POTENTIAL(MEXICAN_ASYMETRIC, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
 
-        // Fixed assymetry on level 0.5 nK between wells
-        double conv = 27211.4 * 11.6 * 1e9;
-        double nK25 = 0.25 / conv;
-        double slope = nK25 / params->dd;
+    // Fixed assymetry on level 0.5 nK between wells
+    double conv  = 27211.4 * 11.6 * 1e9;
+    double nK25  = 0.25 / conv;
+    double slope = nK25 / params->dd;
 
-        double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4) - slope * x;;
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double vx = -params->b * std::pow(x, 2) + params->aa * std::pow(x, 4) - slope * x;
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vx + vy + vz;
+    return vx + vy + vz;
 });
 
-REGISTER_POTENTIAL(MEXICAN_ASYMETRIC_FREE, [](double x, double y, double z){
-        auto params = PhysicalParameters::getInstance();
+REGISTER_POTENTIAL(MEXICAN_ASYMETRIC_FREE, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
 
-        // Fixed assymetry on level 0.5 nK between wells
-        double conv = 27211.4 * 11.6 * 1e9;
-        double nK25 = 0.25 / conv;
-        double slope = nK25 / params->dd;
+    // Fixed assymetry on level 0.5 nK between wells
+    double conv  = 27211.4 * 11.6 * 1e9;
+    double nK25  = 0.25 / conv;
+    double slope = nK25 / params->dd;
 
-        double vx = params->aa * std::pow(x, 4)  - slope * x;
-        double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
-        double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double vx = params->aa * std::pow(x, 4) - slope * x;
+    double vy = 0.5 * params->m * std::pow(y, 2) * std::pow(params->omega_y, 2);
+    double vz = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
 
-        return vx + vy + vz;
+    return vx + vy + vz;
 });
 
+REGISTER_POTENTIAL(SQUARE, [](double x, double y, double z) {
+    auto params = PhysicalParameters::getInstance();
+
+    double vz  = 0.5 * params->m * std::pow(z, 2) * std::pow(params->omega_z, 2);
+    double R   = 4500. / 0.0529;
+    double vxy = 0.;
+
+    if (fabs(x) > R || fabs(y) > R) {
+        vxy = 100 * params->omega_z;
+    }
+
+    return vz + vxy;
+});
 
 #endif
