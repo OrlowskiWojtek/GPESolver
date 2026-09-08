@@ -71,12 +71,11 @@ Example input file has been shown below:
 
 ```gpe_params.json
 {
-    "dd": 1500.0,
     "dx": 120.0,
     "dy": 120.0,
     "dz": 600.0,
     "edd": 1.50,
-    "load_filename": "initial_state",
+    "calc_strategy": "IT",
     "iter_imag": 1000,
     "iter_real": 300000,
     "m": 163.929,
@@ -84,14 +83,10 @@ Example input file has been shown below:
     "nx": 128,
     "ny": 128,
     "nz": 32,
-    "fftw_n_threads": 4,
-    "calc_strategy": "IT",
     "init_strategy": "MULTIPLE_GAUSS",
-    "pote_strategy": "MEXICAN",
     "initial_maximas": 2,
-    "bec_droplets_x": 3,
-    "bec_droplets_y": 3,
-    "bec_droplets_z": 2,
+    "dd": 1500.0,
+    "pote_strategy": "MEXICAN",
     "omega_x": 60,
     "omega_y": 60,
     "omega_z": 120
@@ -137,6 +132,8 @@ Initialization options:
 - BINARY_FILE (loads from binary file with extension .gpe.bin),
 - SETUP_GAUSS (Many Gaussian-distributed condensate centers, evenly distributed in the x y z directions), uses bec_droplets_x, y, z parameters,
 - MULTIPLE_GAUSS (Many Gaussian-distributed condensate centers, distributed in xy plane configurations), uses initial_maxias parameter,
+- CYLINDRICAL_GAUSS (Many Gaussian-distributed condensate centers, distributed uniformly on a circle), uses initial_maxias parameter,
+- RANDOM_GAUSS (Many Gaussian-distributed condensate centers, distributed randomly within a circle), uses initial_maxias parameter,
 - GAUSS (Single Gaussian density initialization in the middle) 
 - COS (Starting from cosine function zeroed at the boundaries of the box) 
 
