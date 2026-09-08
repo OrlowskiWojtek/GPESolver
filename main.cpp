@@ -6,6 +6,8 @@ int main(int argc, char** argv) {
     OutputFormatter::printBoxedMessage("Gross Pitaevski Equation Solver");
     OutputFormatter::printBorderLine();
 
+    std::srand(std::time(0));
+
     std::unique_ptr<SimulationManager> manager = std::make_unique<SimulationManager>();
     try{
         manager->initialize();

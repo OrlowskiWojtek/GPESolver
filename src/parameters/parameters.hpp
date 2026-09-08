@@ -103,8 +103,8 @@ struct PhysicalParameters {
     //! Calculation strategy (options)
     CalcStrategy calc_strategy;
 
-    //! Initialization option
-    InitializationOption init_strategy;
+    //! Type of wavefunction used for initial state
+    std::string wvf_key;
     
     //! Type of potential used for initial state finding
     std::string pote_key;
