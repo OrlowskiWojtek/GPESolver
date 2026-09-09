@@ -54,8 +54,8 @@ void AbstractGrossPitaevskiSolver::calc_initial_state() {
 
         if (iter % 100 == 0) {
             //if(save_data) { <- need to calc energies every 100 iterations, however does not need to save data every time, pretty much I know the basics now
-            //export_data();
-            //p_mediator->save_checkpoint(buf_data->cpsi);
+            export_data();
+            p_mediator->save_checkpoint(buf_data->cpsi);
             //}
             calc_energy();
             summarize_energies();
@@ -201,6 +201,11 @@ void AbstractGrossPitaevskiSolver::summarize_energies() {
     double tot_diff = (ext_diff) + (bmf_diff) + (kin_diff) + (pot_diff) + (int_diff);
 
     OutputFormatter::printBorderLine();
+    OutputFormatter::printBoxedMessage("Energies");
+    OutputFormatter::printScientificRow<double>(
+        {"dip-dip", "contact", "lhy", "kinetic", "potential", "total"},
+        {enes_now.e_ext, enes_now.e_int, enes_now.e_bmf, enes_now.e_kin, enes_now.e_pot, enes_now.e_total});
+    OutputFormatter::printBoxedMessage("Differences");
     OutputFormatter::printScientificRow<double>(
         {"dip-dip", "contact", "lhy", "kinetic", "potential", "total"},
         {ext_diff, int_diff, bmf_diff, kin_diff, pot_diff, tot_diff});
