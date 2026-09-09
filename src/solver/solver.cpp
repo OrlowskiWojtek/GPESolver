@@ -40,6 +40,7 @@ void AbstractGrossPitaevskiSolver::solve() {
     case CalcStrategy::Type::FULL:
         calc_initial_state();
 
+        export_data();
         p_mediator->save_initial_state(buf_data->cpsi);
         free_potential_well();
         calc_evolution();
