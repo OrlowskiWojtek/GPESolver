@@ -166,3 +166,12 @@ Whole computational code has been enclosed within solver/ directory.
 
 Plotting utilities are done in Julia and gnuplot.
 All data analysis is done using Julia scripts, but final plots are often done using gnuplot.
+
+## TODO:
+- [ ] automatic / changing time step (first iterations are very sensitive, time step can enhance but need to find a barrier)
+- [ ] - fix parameters (print and load-dependence)
+- [/] - automatic stop after getting initial state (difference in energy, but maybe not total energy, but all energies)
+- [ ] - imaginary time split-step
+- [ ] - initializer tests
+- [x] - time for planned end (upgraded print every x iterations (1000 or 1e4))
+- [ ] - fix size dependence of initial states -> user should be able to set the scale

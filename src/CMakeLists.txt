@@ -27,7 +27,6 @@ if(USE_CUDA)
     
     set(CMAKE_CUDA_ARCHITECTURES 60)
     target_link_libraries(SolverManager PUBLIC CUDA::cufftw CUDA::cufft CUDA::cudart)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
 endif()
 
 if(USE_CUDA)
@@ -40,8 +39,6 @@ if(USE_CUDA)
         solver/cuda_solver/cuda_kernels.cu
         solver/cuda_solver/gpu_solver.cpp
     )
-    
-    #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
     
     target_link_libraries(SolverManager PUBLIC
         CUDA::cudart

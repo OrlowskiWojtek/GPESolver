@@ -26,6 +26,7 @@ public:
 protected:
     // time of last checkpoint
     std::chrono::time_point<std::chrono::steady_clock> iter_time_ms;
+    std::chrono::time_point<std::chrono::steady_clock> start_time_ms;
     PhysicalParameters *params;
 
     energies_container_t enes;
@@ -45,7 +46,8 @@ protected:
     void free_potential_well();
     void imag_time_iter();
     void real_time_iter();
-    void summarize_imag_iter();
+    void summarize_imag_iter(int current_iter);
+    void summarize_energies();
     void summarize_real_iter();
 
     //! CPU data buffer for file saving and program integration
