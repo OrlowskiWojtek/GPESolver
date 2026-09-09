@@ -30,6 +30,7 @@ void AbstractGrossPitaevskiSolver::solve() {
     case CalcStrategy::Type::IMAGINARY_TIME:
         calc_initial_state();
 
+        export_data();
         p_mediator->save_initial_state(buf_data->cpsi);
         break;
     case CalcStrategy::Type::REAL_TIME:
