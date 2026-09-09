@@ -67,9 +67,9 @@ void DataInitializer::init_wavefunction() {
     _data_func = InitializerRegistry::instance().get_function(params->wvf_key);
     _data.resize(nx, ny, nz);
 
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
                 double x = p_sctx->get_x(i);
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
