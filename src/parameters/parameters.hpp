@@ -81,8 +81,11 @@ struct PhysicalParameters {
     //! spherical cutoff radius for dipol-dipol interaction
     double Rc;
 
-    // Number of threads used in FFTW calculations.
+    //! Number of threads used in FFTW calculations.
     int fftw_n_threads = 1;
+
+    //! Whether to save data during imaginary time evolution
+    bool save_imag_time_data = false;
 
     //! Number of gaussian maximas to initialize
     //! Used only if initializing from multiple gaussians.

@@ -53,10 +53,10 @@ void AbstractGrossPitaevskiSolver::calc_initial_state() {
         imag_time_iter();
 
         if (iter % 100 == 0) {
-            //if(save_data) { <- need to calc energies every 100 iterations, however does not need to save data every time, pretty much I know the basics now
-            export_data();
-            p_mediator->save_checkpoint(buf_data->cpsi);
-            //}
+            if(params->save_imag_time_data) { 
+                export_data();
+                p_mediator->save_checkpoint(buf_data->cpsi);
+            }
             calc_energy();
             summarize_energies();
             summarize_imag_iter(iter);
