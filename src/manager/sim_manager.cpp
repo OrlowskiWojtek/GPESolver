@@ -45,6 +45,7 @@ void SimulationManager::save_initial_state(const wavefunction_t &wvf) {
 
 void SimulationManager::save_energies(const energies_container_t &enes) {
     m_file_manager->save_energies(enes);
+    m_file_manager->save_energies_bin(enes);
 }
 
 void SimulationManager::on_params_loaded() {

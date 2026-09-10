@@ -10,6 +10,7 @@ const char FileManager::PARAMS_FILENAME[]       = "gpe_params.json";
 const char FileManager::TEXT_FILE_EXTENSION[]   = ".gpe.dat";
 const char FileManager::BINARY_FILE_EXTENSION[] = ".gpe.bin";
 const char FileManager::ENERGIES_FILENAME[]     = "energy.gpe.dat";
+const char FileManager::BINARY_ENERGIES_FILENAME[]     = "energy.gpe.bin";
 
 FileManager::FileManager(AbstractSimulationMediator *mediator)
     : mediator(mediator)
@@ -396,6 +397,43 @@ void FileManager::save_energies(const energies_container_t &energies) {
         file << iter << "\t" << enes.e_kin << "\t" << enes.e_pot << "\t" << enes.e_int << "\t"
              << enes.e_ext << "\t" << enes.e_bmf << "\t" << enes.e_total << std::endl;
         iter++;
+    }
+
+    file.close();
+}
+
+//! Saves energies to binary file in structure:
+//! number_of_measured_energies -> then one by one (not whole vectors)
+//! e_kin -> e_pot -> e_int -> e_ext -> e_bmf -> e_total
+void FileManager::save_energies_bin(const energies_container_t &energies) {
+    std::string FILENAME = std::string(BINARY_ENERGIES_FILENAME);
+    OutputFormatter::printInfo("Saving energies to: " + FILENAME);
+
+    std::ofstream file(FILENAME, std::ios::out | std::ios::binary);
+
+    if (!file.is_open()) {
+        OutputFormatter::printError("Could not open last state file for writing.");
+        return;
+    }
+
+    size_t data_points = energies.size();
+    file.write(reinterpret_cast<char *>(&data_points), sizeof(size_t));
+
+    for(size_t i = 0; i < data_points; i++) {
+        auto& ene = energies[i];
+        double e_kin = ene.e_kin;
+        double e_pot = ene.e_pot;
+        double e_int = ene.e_int;
+        double e_ext = ene.e_ext;
+        double e_bmf = ene.e_bmf;
+        double e_tot = ene.e_total;
+
+        file.write(reinterpret_cast<char *>(&e_kin), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_pot), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_int), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_ext), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_bmf), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_tot), sizeof(double));
     }
 
     file.close();

@@ -32,9 +32,13 @@ public:
     //! \brief Saves parameters to file.
     void save_params();
 
-    //! \brief Saves energies to file.
+    //! \brief Saves energies to ASCII file.
     //! \param energies Container of energies to save.
     void save_energies(const energies_container_t &energies);
+
+    //! \brief Saves energies to BINARY file.
+    //! \param energies Container of energies to save.
+    void save_energies_bin(const energies_container_t &energies);
 
     //! \brief Loads wavefunction from a text file.
     //! \param filename Name of the text file.
@@ -77,6 +81,8 @@ private:
     static const char PARAMS_FILENAME[];
     //! \brief Name of the energies file.
     static const char ENERGIES_FILENAME[];
+    //! \brief Name of the energies binary file.
+    static const char BINARY_ENERGIES_FILENAME[];
     //! \brief Extension for text files.
     static const char TEXT_FILE_EXTENSION[];
     //! \brief Extension for binary files.
