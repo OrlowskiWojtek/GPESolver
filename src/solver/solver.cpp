@@ -87,7 +87,7 @@ void AbstractGrossPitaevskiSolver::calc_evolution() {
         if (iter % 1000 == 0) {
             export_data();
             p_mediator->save_checkpoint(buf_data->cpsi);
-            summarize_real_iter();
+            summarize_real_iter(iter);
             calc_energy();
         }
     }
@@ -98,6 +98,7 @@ void AbstractGrossPitaevskiSolver::calc_evolution() {
                                        UnitConverter::ene_au_to_meV(ene.e_total));
     OutputFormatter::printBorderLine();
 
+    export_data();
     p_mediator->save_data(buf_data->cpsi);
     p_mediator->save_energies(enes);
 }
@@ -162,13 +163,28 @@ void AbstractGrossPitaevskiSolver::summarize_imag_iter(int current_iter) {
     iter_time_ms = now;
 }
 
-void AbstractGrossPitaevskiSolver::summarize_real_iter() {
+void AbstractGrossPitaevskiSolver::summarize_real_iter(int current_iter) {
+    if(current_iter == 0){
+        return;
+    }
     auto now = std::chrono::steady_clock::now();
+
+    double frc = static_cast<double>(current_iter) /  
+                 static_cast<double>(params->iter_real);
 
     int time_elapsed_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(now - iter_time_ms).count();
-    OutputFormatter::printInfo("Time per 1000 iterations: " + std::to_string(time_elapsed_ms) +
-                               " ms");
+
+    int time_elapsed_ms_from_start =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time_ms).count();
+    int time_predicted_ms =  time_elapsed_ms_from_start * ( 1. / frc - 1.);
+
+    OutputFormatter::printInfo("Time per 1000 iterations: " +
+                               std::to_string(time_elapsed_ms) +
+                               " ms | finished " +
+                               std::to_string(frc * 100.) +
+                               " % | predicted time [s]: " +
+                               std::to_string(time_predicted_ms / 1000));
 
     iter_time_ms = now;
 }

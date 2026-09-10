@@ -48,7 +48,7 @@ protected:
     void real_time_iter();
     void summarize_imag_iter(int current_iter);
     void summarize_energies();
-    void summarize_real_iter();
+    void summarize_real_iter(int current_iter);
 
     //! CPU data buffer for file saving and program integration
     std::unique_ptr<CPUSolverData> buf_data;
