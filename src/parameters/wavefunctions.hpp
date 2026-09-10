@@ -270,4 +270,14 @@ REGISTER_INITIALIZER(RANDOM_GAUSS, [](double x, double y, double z) {
     return std::complex<double>(val, 0.);
 });
 
+//! TODO: workaround this structure, these are valid, however need different place to be
+REGISTER_INITIALIZER(TEXT_FILE, [](double x, double y, double z) -> std::complex<double> {
+
+    return std::complex<double>(0., 0.);
+});
+
+REGISTER_INITIALIZER(BINARY_FILE, [](double x, double y, double z) -> std::complex<double> {
+    return std::complex<double>(0., 0.);
+});
+
 #endif
