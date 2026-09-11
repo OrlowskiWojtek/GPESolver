@@ -1,10 +1,8 @@
 #include "solver/fft_solvers/cpu/fftw_split_solver.hpp"
 #include "output.hpp"
 
-FFTWRealTimeSplitSolver::FFTWRealTimeSplitSolver(wavefunction_t *psi,
-                                                 potential_t *fi3d,
-                                                 potential_t *pote)
-    : FFTWAbstractCPUSolver(psi, fi3d, pote) {
+FFTWRealTimeSplitSolver::FFTWRealTimeSplitSolver(wavefunction_t *psi, potential_t *fi3d)
+    : FFTWAbstractCPUSolver(psi, fi3d) {
     prepare();
 }
 
@@ -18,7 +16,7 @@ void FFTWRealTimeSplitSolver::prepare_containers() {
     double dz = p->dz;
 
     int N            = nx * ny * nz;
-    double dt        = p->real_time_dt;
+    double dt        = p->time_dt;
     h_kinetic_factor = new double[N];
 
     for (int i = 0; i < nx; i++) {

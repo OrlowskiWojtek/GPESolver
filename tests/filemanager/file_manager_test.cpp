@@ -29,8 +29,8 @@ protected:
             {"calc_strategy", "IT"},
             {"init_strategy", "GAUSS"},
             {"pote_strategy", "HARMONIC"},
-            {"iter_imag", 1000},
-            {"iter_real", 5000},
+            {"iter_total", 1000},
+            {"time_step", 1e10},
             {"edd", 0.0},
             {"fftw_n_threads", 4}
         };
@@ -91,9 +91,9 @@ TEST_F(FileManagerTest, LoadSimulation_MissingCalcStrategy_Throws) {
     EXPECT_THROW(fileManager->load_simulation(j), std::runtime_error);
 }
 
-TEST_F(FileManagerTest, LoadSimulation_MissingNIterImag_Throws) {
+TEST_F(FileManagerTest, LoadSimulation_MissingNIterTotal_Throws) {
     nlohmann::json j = validJson;
-    j.erase("iter_imag");
+    j.erase("iter_total");
 
     EXPECT_THROW(fileManager->load_simulation(j), std::runtime_error);
 }

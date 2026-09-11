@@ -1,10 +1,10 @@
-#include "solver/cpu_solver/cpu_solver.hpp"
+#include "solver/cpu_solver/cpu_rt_solver.hpp"
 
-CpuGrossPitaevskiSolver::CpuGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
+CpuRTGrossPitaevskiSolver::CpuRTGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator) {
 }
 
-void CpuGrossPitaevskiSolver::init_containers() {
+void CpuRTGrossPitaevskiSolver::init_containers() {
     size_t nx = params->nx;
     size_t ny = params->ny;
     size_t nz = params->nz;
@@ -12,11 +12,11 @@ void CpuGrossPitaevskiSolver::init_containers() {
     m_data.allocate(nx, ny, nz);
 }
 
-void CpuGrossPitaevskiSolver::calc_fi3d() {
+void CpuRTGrossPitaevskiSolver::calc_fi3d() {
     poisson_solver->execute();
 }
 
-void CpuGrossPitaevskiSolver::calc_norm() {
+void CpuRTGrossPitaevskiSolver::calc_norm() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
@@ -33,7 +33,7 @@ void CpuGrossPitaevskiSolver::calc_norm() {
     xnorma *= params->get_dxdydz();
 }
 
-void CpuGrossPitaevskiSolver::normalize() {
+void CpuRTGrossPitaevskiSolver::normalize() {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
@@ -47,61 +47,12 @@ void CpuGrossPitaevskiSolver::normalize() {
     }
 }
 
-void CpuGrossPitaevskiSolver::imag_iter_linear_step() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    wavefunction_t &cpsi  = m_data.cpsi;
-    wavefunction_t &cpsii = m_data.cpsii;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                double v = m_data.pote(i, j, k);
-                std::complex<double> c1 =
-                    -0.5 / (params->m * std::pow(params->dx, 2)) *
-                        (cpsi(i - 1, j, k) + cpsi(i + 1, j, k) - 2. * cpsi(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dy, 2)) *
-                        (cpsi(i, j - 1, k) + cpsi(i, j + 1, k) - 2. * cpsi(i, j, k)) -
-                    0.5 / (params->m * std::pow(params->dz, 2)) *
-                        (cpsi(i, j, k - 1) + cpsi(i, j, k + 1) - 2. * cpsi(i, j, k)) +
-                    cpsi(i, j, k) * (v + params->cdd * m_data.fi3d(i, j, k));
-                cpsii(i, j, k) = cpsi(i, j, k) - params->imag_time_dt * c1;
-            }
-        }
-    }
-}
-
-void CpuGrossPitaevskiSolver::imag_iter_nonlinear_step() {
-    int nx = params->nx;
-    int ny = params->ny;
-    int nz = params->nz;
-
-    wavefunction_t &cpsi  = m_data.cpsi;
-    wavefunction_t &cpsii = m_data.cpsii;
-    double w              = params->n_atoms;
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
-                cpsii(i, j, k) =
-                    cpsii(i, j, k) -
-                    params->imag_time_dt * (params->ggp11 *
-                                                std::norm(cpsi(i, j, k)) * cpsi(i, j, k) * w +
-                                            params->gamma * std::pow(std::abs(cpsi(i, j, k)), 3) *
-                                                cpsi(i, j, k) * params->w_15);
-            }
-        }
-    }
-
-    cpsi = cpsii;
-}
-
-void CpuGrossPitaevskiSolver::real_fft_potential_half_step() {
+void CpuRTGrossPitaevskiSolver::real_fft_potential_half_step() {
     int nx           = params->nx;
     int ny           = params->ny;
     int nz           = params->nz;
     double w         = params->n_atoms;
-    double dt_factor = params->real_time_dt / 2.;
+    double dt_factor = params->time_dt / 2.;
 
     wavefunction_t &cpsi = m_data.cpsi;
     double psi_re;
@@ -130,11 +81,11 @@ void CpuGrossPitaevskiSolver::real_fft_potential_half_step() {
     }
 }
 
-void CpuGrossPitaevskiSolver::real_fft_kinetic_step() {
+void CpuRTGrossPitaevskiSolver::real_fft_kinetic_step() {
     rt_split_solver->execute();
 }
 
-void CpuGrossPitaevskiSolver::calc_energy() {
+void CpuRTGrossPitaevskiSolver::calc_energy() {
     ene.e_kin = 0.;
     ene.e_pot = 0.;
     ene.e_int = 0.;
@@ -191,20 +142,42 @@ void CpuGrossPitaevskiSolver::calc_energy() {
     enes.emplace_back(ene);
 }
 
-void CpuGrossPitaevskiSolver::prepare_fft() {
-    poisson_solver  = std::make_unique<FFTWPoissonSolver>(&m_data.cpsi, &m_data.fi3d, &m_data.pote);
-    rt_split_solver = std::make_unique<FFTWRealTimeSplitSolver>(&m_data.cpsi, &m_data.fi3d, &m_data.pote);
+void CpuRTGrossPitaevskiSolver::prepare_fft() {
+    poisson_solver = std::make_unique<FFTWPoissonSolver>(&m_data.cpsi, &m_data.fi3d);
+    rt_split_solver =
+        std::make_unique<FFTWRealTimeSplitSolver>(&m_data.cpsi, &m_data.fi3d);
 };
 
-void CpuGrossPitaevskiSolver::import_pote() {
+void CpuRTGrossPitaevskiSolver::import_pote() {
     m_data.pote = buf_data->pote;
 };
 
-void CpuGrossPitaevskiSolver::import_data() {
-    m_data.cpsi = buf_data->cpsi;
+void CpuRTGrossPitaevskiSolver::import_data() {
+    m_data.cpsi  = buf_data->cpsi;
     m_data.cpsii = buf_data->cpsii;
 };
 
-void CpuGrossPitaevskiSolver::export_data() {
+void CpuRTGrossPitaevskiSolver::export_data() {
     buf_data->cpsi = m_data.cpsi;
 };
+
+void CpuRTGrossPitaevskiSolver::iterate() {
+    real_fft_potential_half_step();
+    calc_fi3d();
+    real_fft_kinetic_step();
+    real_fft_potential_half_step();
+}
+
+void CpuRTGrossPitaevskiSolver::adjust(int iter) {
+    if (!params->const_edd)
+        params->update_edd(iter);
+}
+
+void CpuRTGrossPitaevskiSolver::finish() {
+    export_data();
+    p_mediator->save_data(buf_data->cpsi);
+}
+
+const int CpuRTGrossPitaevskiSolver::iter_per_summary() const {
+    return 1000;
+}

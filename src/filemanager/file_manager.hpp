@@ -119,7 +119,7 @@ private:
     FRIEND_TEST(FileManagerTest, LoadBox_MissingAllRequired_Throws);
     FRIEND_TEST(FileManagerTest, LoadSimulation_AllRequiredParams_Success);
     FRIEND_TEST(FileManagerTest, LoadSimulation_MissingCalcStrategy_Throws);
-    FRIEND_TEST(FileManagerTest, LoadSimulation_MissingNIterImag_Throws);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_MissingNIterTotal_Throws);
     FRIEND_TEST(FileManagerTest, LoadSimulation_MissingNAtoms_Throws);
     FRIEND_TEST(FileManagerTest, LoadSimulation_MissingMass_Throws);
     FRIEND_TEST(FileManagerTest, LoadSimulation_OptionalFftwThreads_UsesDefault);

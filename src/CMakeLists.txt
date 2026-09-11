@@ -37,7 +37,8 @@ if(USE_CUDA)
         solver/fft_solvers/gpu/cufft_poisson_solver.cpp
         solver/fft_solvers/gpu/cufft_split_solver.cpp
         solver/cuda_solver/cuda_kernels.cu
-        solver/cuda_solver/gpu_solver.cpp
+        solver/cuda_solver/gpu_it_solver.cpp
+        solver/cuda_solver/gpu_rt_solver.cpp
     )
     
     target_link_libraries(SolverManager PUBLIC
@@ -53,7 +54,8 @@ else()
     target_sources(SolverManager PRIVATE
         solver/fft_solvers/cpu/fftw_poisson_solver.cpp
         solver/fft_solvers/cpu/fftw_split_solver.cpp
-        solver/cpu_solver/cpu_solver.cpp
+        solver/cpu_solver/cpu_it_solver.cpp
+        solver/cpu_solver/cpu_rt_solver.cpp
     )
 
     target_link_libraries(SolverManager PUBLIC

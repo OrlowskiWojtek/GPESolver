@@ -15,8 +15,7 @@ class CalcStrategy : public AbstractParam {
 public:
     enum class Type {
         IMAGINARY_TIME, //!< Run imaginary time evolution
-        REAL_TIME,      //!< Run real time evolution
-        FULL,           //!< Run both: imaginary time and real time evolution
+        REAL_TIME      //!< Run real time evolution
     };
 
     std::string to_string() override {
@@ -25,8 +24,6 @@ public:
             return "IT";
         case Type::REAL_TIME:
             return "RT";
-        case Type::FULL:
-            return "FS";
         }
 
         return "";
@@ -37,11 +34,9 @@ public:
             type = CalcStrategy::Type::IMAGINARY_TIME;
         if (str == "RT")
             type = CalcStrategy::Type::REAL_TIME;
-        if (str == "FS")
-            type = CalcStrategy::Type::FULL;
     }
 
-    Type type = CalcStrategy::Type::FULL;
+    Type type = CalcStrategy::Type::IMAGINARY_TIME;
 };
 
 #endif

@@ -171,7 +171,9 @@ All data analysis is done using Julia scripts, but final plots are often done us
 - [ ] automatic / changing time step (first iterations are very sensitive, time step can enhance but need to find a barrier)
 - [ ] - fix parameters (print and load-dependence)
 - [/] - automatic stop after getting initial state (difference in energy, but maybe not total energy, but all energies)
+- [!] - different energy on gpu/cpu rt solver after same ammount of iterations - the problem lies in fourier transform, as without it results are the same
 - [ ] - imaginary time split-step
+    - [ ] this requires a bit of a refactor. REAL and IMAG time should be kind of independent or strongly related (i mean its only sign if you have the same method).
 - [ ] - initializer tests
 - [x] - time for planned end (upgraded print every x iterations (1000 or 1e4))
 - [ ] - fix size dependence of initial states -> user should be able to set the scale

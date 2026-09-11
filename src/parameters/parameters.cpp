@@ -20,9 +20,6 @@ void PhysicalParameters::set_default_values() {
     ny = 40 * 2 + 1;
     nz = 20 * 2 + 1;
 
-    iter_imag = 10000;
-    iter_real = 300000;
-
     edd = 1.45;
 
     dx = UnitConverter::len_nm_to_au(150);
@@ -59,7 +56,7 @@ void PhysicalParameters::init_parameters() {
 }
 
 void PhysicalParameters::update_edd(uint iter) {
-    edd = edd_start + (edd_stop - edd_start) * iter / iter_real;
+    edd = edd_start + (edd_stop - edd_start) * iter / iter_total;
 
     double a = add / edd;
     ggp11    = 4 * M_PI * a / m;
@@ -137,15 +134,11 @@ void PhysicalParameters::print_simulation_parameters() {
     OutputFormatter::printBoxedMessage("epsilon_dd_stop: ", edd_stop);
 
     OutputFormatter::printBoxedMessage("ITERATIONS");
-    OutputFormatter::printBoxedMessage("IMAGINARY -  " + std::to_string(iter_imag));
-    OutputFormatter::printBoxedMessage("REAL -  " + std::to_string(iter_real));
+    OutputFormatter::printBoxedMessage("TOTAL -  " + std::to_string(iter_total));
 
     std::stringstream ss;
-    ss << std::scientific << imag_time_dt;
-    OutputFormatter::printBoxedMessage("imag_dt -  " + ss.str());
-    ss.str(std::string());
-    ss << std::scientific << real_time_dt;
-    OutputFormatter::printBoxedMessage("real_dt -  " + ss.str());
+    ss << std::scientific << time_dt;
+    OutputFormatter::printBoxedMessage("time step dt -  " + ss.str());
     
     OutputFormatter::printBoxedMessage("Calculation strategy:", calc_strategy.to_string());
 

@@ -6,11 +6,11 @@
 #include "units.hpp"
 #include <fstream>
 
-const char FileManager::PARAMS_FILENAME[]       = "gpe_params.json";
-const char FileManager::TEXT_FILE_EXTENSION[]   = ".gpe.dat";
-const char FileManager::BINARY_FILE_EXTENSION[] = ".gpe.bin";
-const char FileManager::ENERGIES_FILENAME[]     = "energy.gpe.dat";
-const char FileManager::BINARY_ENERGIES_FILENAME[]     = "energy.gpe.bin";
+const char FileManager::PARAMS_FILENAME[]          = "gpe_params.json";
+const char FileManager::TEXT_FILE_EXTENSION[]      = ".gpe.dat";
+const char FileManager::BINARY_FILE_EXTENSION[]    = ".gpe.bin";
+const char FileManager::ENERGIES_FILENAME[]        = "energy.gpe.dat";
+const char FileManager::BINARY_ENERGIES_FILENAME[] = "energy.gpe.bin";
 
 FileManager::FileManager(AbstractSimulationMediator *mediator)
     : mediator(mediator)
@@ -41,8 +41,7 @@ void FileManager::save_params() {
     j["pote_strategy"]   = params->pote_key;
     j["load_filename"]   = params->load_filename;
     j["initial_maximas"] = params->n_gauss_max;
-    j["iter_imag"]       = params->iter_imag;
-    j["iter_real"]       = params->iter_real;
+    j["iter_total"]      = params->iter_total;
     j["omega_x"]         = UnitConverter::freq_au_to_Hz(params->omega_x);
     j["omega_y"]         = UnitConverter::freq_au_to_Hz(params->omega_y);
     j["omega_z"]         = UnitConverter::freq_au_to_Hz(params->omega_z);
@@ -419,8 +418,8 @@ void FileManager::save_energies_bin(const energies_container_t &energies) {
     size_t data_points = energies.size();
     file.write(reinterpret_cast<char *>(&data_points), sizeof(size_t));
 
-    for(size_t i = 0; i < data_points; i++) {
-        auto& ene = energies[i];
+    for (size_t i = 0; i < data_points; i++) {
+        auto &ene    = energies[i];
         double e_kin = ene.e_kin;
         double e_pot = ene.e_pot;
         double e_int = ene.e_int;
@@ -525,8 +524,7 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->bec_droplets_z = j["bec_droplets_z"];
     }
 
-    if (params->wvf_key == "BINARY_FILE"||
-        params->wvf_key == "TEXT_FILE") {
+    if (params->wvf_key == "BINARY_FILE" || params->wvf_key == "TEXT_FILE") {
         CHECK_REQUIRED(j, "load_filename");
 
         params->load_filename = j["load_filename"];
@@ -575,16 +573,14 @@ void FileManager::load_box(nlohmann::json &j) {
 
 void FileManager::load_simulation(nlohmann::json &j) {
     CHECK_REQUIRED(j, "calc_strategy");
-    CHECK_REQUIRED(j, "iter_imag");
-    CHECK_REQUIRED(j, "iter_real");
+    CHECK_REQUIRED(j, "iter_total");
     CHECK_REQUIRED(j, "n_atoms");
     CHECK_REQUIRED(j, "m");
 
     params->calc_strategy.from_string(j["calc_strategy"]);
-    params->iter_imag = j["iter_imag"];
-    params->iter_real = j["iter_real"];
-    params->n_atoms   = j["n_atoms"];
-    params->m         = UnitConverter::mass_Da_to_au(j["m"]);
+    params->iter_total = j["iter_total"];
+    params->n_atoms    = j["n_atoms"];
+    params->m          = UnitConverter::mass_Da_to_au(j["m"]);
 
     if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
         CHECK_REQUIRED(j, "edd");
@@ -604,8 +600,7 @@ void FileManager::load_simulation(nlohmann::json &j) {
         params->edd_stop  = j["edd_stop"];
     }
 
-    params->imag_time_dt = j.value("imag_dt", 1.25e11);
-    params->real_time_dt = j.value("real_dt", 1.00e10);
+    params->time_dt = j.value("time_step", 1e10);
 
     // fftw_n_threads no required with default value equal to 4
     params->fftw_n_threads = j.value("fftw_n_threads", 4);
@@ -631,13 +626,12 @@ void FileManager::load_all_v0(nlohmann::json &j) {
 
     params->edd           = j["edd"];
     params->load_filename = j["load_filename"];
-    params->iter_imag     = j["iter_imag"];
-    params->iter_real     = j["iter_real"];
+    params->iter_total    = j["iter_total"];
 
     params->fftw_n_threads = j["fftw_n_threads"];
 
     params->calc_strategy.from_string(j["calc_strategy"]);
-    params->wvf_key = j["init_strategy"];
+    params->wvf_key  = j["init_strategy"];
     params->pote_key = j["pote_strategy"];
 
     params->n_gauss_max    = j["initial_maximas"];

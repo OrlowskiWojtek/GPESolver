@@ -1,7 +1,7 @@
-#include "solver/cuda_solver/gpu_solver.hpp"
+#include "solver/cuda_solver/gpu_it_solver.hpp"
 #include "solver/cuda_solver/cuda_kernels.hpp"
 
-GpuGrossPitaevskiSolver::GpuGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
+GpuITGrossPitaevskiSolver::GpuITGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator) {
 
     cudaMalloc(&d_norm, sizeof(double));
@@ -13,7 +13,7 @@ GpuGrossPitaevskiSolver::GpuGrossPitaevskiSolver(AbstractSimulationMediator *med
     cudaMalloc(&d_bmf_dev, sizeof(double));
 }
 
-GpuGrossPitaevskiSolver::~GpuGrossPitaevskiSolver() {
+GpuITGrossPitaevskiSolver::~GpuITGrossPitaevskiSolver() {
     cudaFree(d_norm);
 
     cudaFree(d_kin_dev);
@@ -23,7 +23,7 @@ GpuGrossPitaevskiSolver::~GpuGrossPitaevskiSolver() {
     cudaFree(d_bmf_dev);
 }
 
-void GpuGrossPitaevskiSolver::init_containers() {
+void GpuITGrossPitaevskiSolver::init_containers() {
     size_t nx = params->nx;
     size_t ny = params->ny;
     size_t nz = params->nz;
@@ -31,27 +31,25 @@ void GpuGrossPitaevskiSolver::init_containers() {
     m_data.allocate(nx, ny, nz);
 }
 
-void GpuGrossPitaevskiSolver::prepare_fft() {
+void GpuITGrossPitaevskiSolver::prepare_fft() {
     poisson_solver = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
-    rt_split_solver =
-        std::make_unique<CUFFTRealTimeSplitSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
 }
 
-void GpuGrossPitaevskiSolver::calc_fi3d() {
+void GpuITGrossPitaevskiSolver::calc_fi3d() {
     poisson_solver->execute();
 }
 
-void GpuGrossPitaevskiSolver::calc_norm() {
+void GpuITGrossPitaevskiSolver::calc_norm() {
     int N  = params->nx * params->ny * params->nz;
     xnorma = launch_kernel_calc_norm(m_data.cpsi_gpu.data(), d_norm, N) * params->get_dxdydz();
 }
 
-void GpuGrossPitaevskiSolver::normalize() {
+void GpuITGrossPitaevskiSolver::normalize() {
     int N = params->nx * params->ny * params->nz;
     launch_kernel_normalize(m_data.cpsi_gpu.data(), N, xnorma);
 }
 
-void GpuGrossPitaevskiSolver::imag_iter_linear_step() {
+void GpuITGrossPitaevskiSolver::imag_iteration_full() {
     launch_kernel_imag_time_iteration(m_data.cpsi_gpu.data(),
                                       m_data.pote_gpu.data(),
                                       m_data.fi3d_gpu.data(),
@@ -63,38 +61,17 @@ void GpuGrossPitaevskiSolver::imag_iter_linear_step() {
                                       params->dy,
                                       params->dz,
                                       params->m,
-                                      params->imag_time_dt,
+                                      params->time_dt,
                                       params->cdd,
                                       params->ggp11,
                                       params->gamma,
                                       params->n_atoms,
                                       params->w_15);
-}
 
-void GpuGrossPitaevskiSolver::imag_iter_nonlinear_step() {
     m_data.cpsi_gpu.swap(m_data.cpsii_gpu);
 }
 
-void GpuGrossPitaevskiSolver::real_fft_potential_half_step() {
-    launch_kernel_potential_half_step(m_data.cpsi_gpu.data(),
-                                      m_data.pote_gpu.data(),
-                                      m_data.fi3d_gpu.data(),
-                                      params->real_time_dt,
-                                      params->cdd,
-                                      params->ggp11,
-                                      params->gamma,
-                                      params->n_atoms,
-                                      params->w_15,
-                                      params->nx,
-                                      params->ny,
-                                      params->nz);
-}
-
-void GpuGrossPitaevskiSolver::real_fft_kinetic_step() {
-    rt_split_solver->execute();
-}
-
-void GpuGrossPitaevskiSolver::calc_energy() {
+void GpuITGrossPitaevskiSolver::calc_energy() {
     ene.e_kin = 0.;
     ene.e_pot = 0.;
     ene.e_int = 0.;
@@ -133,12 +110,12 @@ void GpuGrossPitaevskiSolver::calc_energy() {
     enes.emplace_back(ene);
 }
 
-void GpuGrossPitaevskiSolver::export_data() {
+void GpuITGrossPitaevskiSolver::export_data() {
     cudaDeviceSynchronize();
     m_data.cpsi_gpu.copy_to_host(reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
 }
 
-void GpuGrossPitaevskiSolver::import_data() {
+void GpuITGrossPitaevskiSolver::import_data() {
     if (m_data.cpsi_gpu.size() != buf_data->cpsi.size() ||
         m_data.cpsii_gpu.size() != buf_data->cpsii.size())
         throw std::runtime_error("bad wavefunction import");
@@ -147,9 +124,29 @@ void GpuGrossPitaevskiSolver::import_data() {
     m_data.cpsii_gpu.copy_from_host(reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
 }
 
-void GpuGrossPitaevskiSolver::import_pote() {
+void GpuITGrossPitaevskiSolver::import_pote() {
     if (m_data.pote_gpu.size() != buf_data->pote.size())
         throw std::runtime_error("bad potential import");
 
     m_data.pote_gpu.copy_from_host(buf_data->pote.get_data());
+}
+
+void GpuITGrossPitaevskiSolver::iterate() {
+    calc_fi3d();
+    imag_iteration_full();
+    calc_norm();
+    normalize();
+}
+
+void GpuITGrossPitaevskiSolver::adjust(int iter) {
+
+}
+
+void GpuITGrossPitaevskiSolver::finish() {
+    export_data();
+    p_mediator->save_initial_state(buf_data->cpsi);
+}
+
+const int GpuITGrossPitaevskiSolver::iter_per_summary() const {
+    return 1000;
 }

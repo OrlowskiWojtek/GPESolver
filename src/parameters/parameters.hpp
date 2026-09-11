@@ -61,15 +61,11 @@ struct PhysicalParameters {
     //! Number of nodes in calculations - z direction.
     int nz;
 
-    //! Number of iterations for imaginary time evolution.
-    size_t iter_imag;
-    //! Number of iterations for real time evolution.
-    size_t iter_real;
+    //! Number of iterations for current simulation.
+    size_t iter_total = 10000;
 
-    //! Time step t of every real time evolution iteration
-    double real_time_dt = 1.00e10;
-    //! Time step \tau of every imaginary time evolution iteration
-    double imag_time_dt = 1.25e11;
+    //! Time step t or \dtau for every iteration
+    double time_dt = 1.00e10;
 
     //! Distance per node - x direction
     double dx;

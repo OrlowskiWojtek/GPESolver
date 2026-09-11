@@ -10,7 +10,7 @@
  */
 class FFTWPoissonSolver : public AbstractPoissonSolver, public FFTWAbstractCPUSolver {
 public:
-    FFTWPoissonSolver(wavefunction_t* psi, potential_t* fi3d, potential_t* pote);
+    FFTWPoissonSolver(wavefunction_t* psi, potential_t* fi3d);
     ~FFTWPoissonSolver();
 
     void execute() override;
