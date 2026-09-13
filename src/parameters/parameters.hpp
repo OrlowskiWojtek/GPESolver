@@ -81,7 +81,7 @@ struct PhysicalParameters {
     int fftw_n_threads = 1;
 
     //! Whether to save data during imaginary time evolution
-    bool save_imag_time_data = false;
+    bool save_data = false;
 
     //! Number of gaussian maximas to initialize
     //! Used only if initializing from multiple gaussians.

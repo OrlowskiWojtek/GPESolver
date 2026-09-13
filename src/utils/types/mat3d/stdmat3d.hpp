@@ -32,6 +32,9 @@ public:
     inline T *get_data();
     const  T *get_data() const;
 
+    T *__restrict__ get_data_restrict() noexcept { return data.data(); }
+    const T *__restrict__ get_data_restrict() const noexcept { return data.data(); }
+
 private:
     int _nx, _ny, _nz;
     int N;

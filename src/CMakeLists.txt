@@ -54,10 +54,22 @@ else()
     target_sources(SolverManager PRIVATE
         solver/fft_solvers/cpu/fftw_poisson_solver.cpp
         solver/fft_solvers/cpu/fftw_split_solver.cpp
+        solver/fft_solvers/cpu/fftw_imag_split_solver.cpp
         solver/cpu_solver/cpu_it_solver.cpp
+        solver/cpu_solver/cpu_it_split_solver.cpp
         solver/cpu_solver/cpu_rt_solver.cpp
     )
 
     target_link_libraries(SolverManager PUBLIC
 		${FFTW3_LIBRARIES})
+endif()
+
+if(USE_OPENMP)
+    find_package(OpenMP COMPONENTS CXX REQUIRED)
+    if(OpenMPFound)
+        message("Found openMP libraries")
+    endif()
+
+    target_link_libraries(SolverManager PUBLIC
+        OpenMP::OpenMP_CXX)
 endif()

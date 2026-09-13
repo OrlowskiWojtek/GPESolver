@@ -54,11 +54,11 @@ void FFTWPoissonSolver::prepare_containers() {
 }
 
 void FFTWPoissonSolver::execute() {
-    int nx    = 2 * p->nx;
-    int ny    = 2 * p->ny;
-    int nz    = 2 * p->nz;
-    int N     = nx * ny * nz;
-    int N_out = nx * ny * (nz / 2 + 1);
+    const int nx    = 2 * p->nx;
+    const int ny    = 2 * p->ny;
+    const int nz    = 2 * p->nz;
+    const int N     = nx * ny * nz;
+    const int N_out = nx * ny * (nz / 2 + 1);
 
     auto &rpsi = *psi;
     for (int i = 0; i < nx; ++i) {

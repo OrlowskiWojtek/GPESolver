@@ -31,7 +31,7 @@ void AbstractGrossPitaevskiSolver::solve() {
         iterate();
 
         if (iter % iter_per_summary() == 0) {
-            if(params->save_imag_time_data) { 
+            if(params->save_data) { 
                 export_data();
                 p_mediator->save_checkpoint(buf_data->cpsi);
             }
@@ -42,8 +42,8 @@ void AbstractGrossPitaevskiSolver::solve() {
     }
 
     finish();
+    calc_energy();
 
- 
     OutputFormatter::printInfo("Simulation completed");
 
     OutputFormatter::printBorderLine();

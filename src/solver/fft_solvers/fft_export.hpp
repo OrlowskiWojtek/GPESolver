@@ -5,4 +5,5 @@
 #else
 #include "solver/fft_solvers/cpu/fftw_poisson_solver.hpp"
 #include "solver/fft_solvers/cpu/fftw_split_solver.hpp"
+#include "solver/fft_solvers/cpu/fftw_imag_split_solver.hpp"
 #endif

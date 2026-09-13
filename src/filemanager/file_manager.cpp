@@ -585,7 +585,7 @@ void FileManager::load_simulation(nlohmann::json &j) {
     if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
         CHECK_REQUIRED(j, "edd");
 
-        params->save_imag_time_data = j.value("save_imag_data", false);
+        params->save_data = j.value("save_data", false);
     }
 
     if (j.contains("edd")) {
