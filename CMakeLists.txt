@@ -7,6 +7,7 @@ add_library(compiler_flags INTERFACE)
 set(CMAKE_CXX_STANDARD 14)
 
 option(USE_CUDA "Build using CUDA" FALSE)
+option(USE_OPENMP "Build using openMP for CPU parallelization" FALSE)
 option(BUILD_TESTS "Build unit tests" FALSE)
 
 # Dla kompilatorów intela
@@ -21,6 +22,7 @@ else()
     target_compile_options(compiler_flags INTERFACE
         -Wall
         -O3 
+        -march=native
         #-funroll-loops
     )
 endif()
@@ -37,6 +39,10 @@ if(USE_CUDA)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
     add_definitions(-DUSE_CUDA)
+endif()
+
+if(USE_OPENMP)
+    add_definitions(-DUSE_OPENMP)
 endif()
 
 if(BUILD_TESTS)
