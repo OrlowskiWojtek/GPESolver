@@ -6,6 +6,7 @@
 /*! Struct PhysicalParameters.
  *  \brief contains parameters of simulation.
  *  \todo add default values
+ *  \todo merge with filemanager and SingleParameter alike struct (key + value hold)
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;
@@ -53,6 +54,9 @@ struct PhysicalParameters {
     bool const_edd = true;
     double edd_start;
     double edd_stop;
+    
+    //! Adds random noise at the beginning of calculations
+    bool add_random_noise = false;
 
     //! Number of nodes in calculations - x direction.
     int nx;

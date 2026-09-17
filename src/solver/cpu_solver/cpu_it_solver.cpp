@@ -1,5 +1,4 @@
 #include "solver/cpu_solver/cpu_it_solver.hpp"
-#include <iostream>
 
 CpuITGrossPitaevskiSolver::CpuITGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator) {
@@ -85,7 +84,8 @@ void CpuITGrossPitaevskiSolver::imag_iter_linear_step() {
 
                 double v = p_pote[idx];
                 std::complex<double> c1 =
-                    -0.5 / (m * std::pow(dx, 2)) * (p_cpsi[idx_im] + p_cpsi[idx_ip] - 2. * wav) -
+                    -
+                    0.5 / (m * std::pow(dx, 2)) * (p_cpsi[idx_im] + p_cpsi[idx_ip] - 2. * wav) -
                     0.5 / (m * std::pow(dy, 2)) * (p_cpsi[idx_jm] + p_cpsi[idx_jp] - 2. * wav) -
                     0.5 / (m * std::pow(dz, 2)) * (p_cpsi[idx_km] + p_cpsi[idx_kp] - 2. * wav) +
                     wav * (v + cdd * p_fi3d[idx]);
@@ -104,8 +104,8 @@ void CpuITGrossPitaevskiSolver::imag_iter_nonlinear_step() {
     wavefunction_t &cpsii           = m_data.cpsii;
     const double w                  = params->n_atoms;
     const double ggp11              = params->ggp11;
-    const double gamma              = params->ggp11;
-    const double w_15               = params->ggp11;
+    const double gamma              = params->gamma;
+    const double w_15               = params->w_15;
     const double dt                 = params->time_dt;
     const auto *__restrict__ p_cpsi = m_data.cpsi.get_data_restrict();
     auto *__restrict__ p_cpsii      = m_data.cpsii.get_data_restrict();
@@ -116,8 +116,7 @@ void CpuITGrossPitaevskiSolver::imag_iter_nonlinear_step() {
                 const int idx      = i * ny * nz + j * nz + k;
                 const auto wav     = p_cpsi[idx];
                 const auto density = std::norm(wav);
-                p_cpsii[idx]       = p_cpsii[idx] -
-                               dt * density * wav * (ggp11 * w + gamma * std::sqrt(density) * w_15);
+                p_cpsii[idx]       -=dt * density * wav * (ggp11 * w + gamma * std::sqrt(density) * w_15);
             }
         }
     }

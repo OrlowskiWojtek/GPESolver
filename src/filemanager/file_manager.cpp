@@ -20,40 +20,6 @@ FileManager::FileManager(AbstractSimulationMediator *mediator)
 FileManager::~FileManager() {
 }
 
-void FileManager::save_params() {
-    OutputFormatter::printInfo("Saving simulation parameters to" + std::string(PARAMS_FILENAME));
-
-    nlohmann::json j;
-
-    j["n_atoms"]         = params->n_atoms;
-    j["m"]               = UnitConverter::mass_au_to_Da(params->m);
-    j["dd"]              = UnitConverter::len_au_to_nm(params->dd);
-    j["dx"]              = UnitConverter::len_au_to_nm(params->dx);
-    j["dy"]              = UnitConverter::len_au_to_nm(params->dy);
-    j["dz"]              = UnitConverter::len_au_to_nm(params->dz);
-    j["nx"]              = params->nx;
-    j["ny"]              = params->ny;
-    j["nz"]              = params->nz;
-    j["edd"]             = params->edd;
-    j["fftw_n_threads"]  = params->fftw_n_threads;
-    j["calc_strategy"]   = params->calc_strategy.to_string();
-    j["init_strategy"]   = params->wvf_key;
-    j["pote_strategy"]   = params->pote_key;
-    j["load_filename"]   = params->load_filename;
-    j["initial_maximas"] = params->n_gauss_max;
-    j["iter_total"]      = params->iter_total;
-    j["omega_x"]         = UnitConverter::freq_au_to_Hz(params->omega_x);
-    j["omega_y"]         = UnitConverter::freq_au_to_Hz(params->omega_y);
-    j["omega_z"]         = UnitConverter::freq_au_to_Hz(params->omega_z);
-    j["bec_droplets_x"]  = params->bec_droplets_x;
-    j["bec_droplets_y"]  = params->bec_droplets_y;
-    j["bec_droplets_z"]  = params->bec_droplets_z;
-
-    std::ofstream file(PARAMS_FILENAME);
-    file << j.dump(4);
-    file.close();
-}
-
 void FileManager::load_params() {
     OutputFormatter::printInfo("Loading simulation parameters from: " +
                                std::string(PARAMS_FILENAME));
@@ -523,6 +489,8 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->bec_droplets_y = j["bec_droplets_y"];
         params->bec_droplets_z = j["bec_droplets_z"];
     }
+
+    params->add_random_noise = j.value("add_random_noise", false);
 
     if (params->wvf_key == "BINARY_FILE" || params->wvf_key == "TEXT_FILE") {
         CHECK_REQUIRED(j, "load_filename");

@@ -29,9 +29,6 @@ public:
     //! \brief Loads parameters from file.
     void load_params();
 
-    //! \brief Saves parameters to file.
-    void save_params();
-
     //! \brief Saves energies to ASCII file.
     //! \param energies Container of energies to save.
     void save_energies(const energies_container_t &energies);
