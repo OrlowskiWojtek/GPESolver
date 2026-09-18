@@ -54,33 +54,6 @@ void AbstractGrossPitaevskiSolver::solve() {
     p_mediator->save_energies(enes);
 }
 
-// void AbstractGrossPitaevskiSolver::calc_initial_state() {
-//     OutputFormatter::printInfo("Starting imaginary time evolution");
-// 
-//     for (size_t iter = 0; iter <= params->iter_imag; iter++) {
-//         imag_time_iter();
-// 
-//         if (iter % 100 == 0) {
-//             if(params->save_imag_time_data) { 
-//                 export_data();
-//                 p_mediator->save_checkpoint(buf_data->cpsi);
-//             }
-//             calc_energy();
-//             summarize_energies();
-//             summarize_imag_iter(iter);
-//         }
-//     }
-// 
-//     OutputFormatter::printInfo("Imaginary time evolution completed");
-// 
-//     OutputFormatter::printBorderLine();
-//     OutputFormatter::printBoxedMessage("Minimized energy [meV]: ",
-//                                        UnitConverter::ene_au_to_meV(ene.e_total));
-//     OutputFormatter::printBorderLine();
-// 
-//     p_mediator->save_energies(enes);
-// }
-
 void AbstractGrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
     buf_data->cpsi  = wvf;
     buf_data->cpsii = wvf;
@@ -101,7 +74,6 @@ void AbstractGrossPitaevskiSolver::summarize_iter(int current_iter) {
         return;
     }
 
-    //TODO: change iter_imag to general iter_total
     auto now = std::chrono::steady_clock::now();
     double frc = static_cast<double>(current_iter) /  
                  static_cast<double>(params->iter_total);

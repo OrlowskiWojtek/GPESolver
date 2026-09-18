@@ -24,8 +24,9 @@ public:
     void load_pote(const potential_t &);
 
 protected:
-    // time of last checkpoint
+    //! time of last checkpoint
     std::chrono::time_point<std::chrono::steady_clock> iter_time_ms;
+    //! time of the beginning of calculations
     std::chrono::time_point<std::chrono::steady_clock> start_time_ms;
     PhysicalParameters *params;
 
@@ -33,30 +34,21 @@ protected:
     energies_t ene;
 
     //! current norm of wavefunction
-    double xnorma;
+    double xnorma = 0;
 
-    // std::unique_ptr<AbstractPoissonSolver> poisson_solver;
-    // std::unique_ptr<AbstractRealTimeSplitSolver> rt_split_solver;
     AbstractSimulationMediator *p_mediator;
     SimulationContext *p_sctx;
 
-    // void calc_initial_state();
-    // void calc_evolution();
-
-    // void imag_time_iter();
-    // void real_time_iter();
-    // void summarize_imag_iter(int current_iter);
     void summarize_energies();
-    // void summarize_real_iter(int current_iter);
+    void summarize_iter(int current_iter);
+
+    //! CPU data buffer for file saving and program integration
+    std::unique_ptr<CPUSolverData> buf_data;
 
     virtual void iterate()                     = 0;
     virtual void adjust(int iter)              = 0;
     virtual void finish()                      = 0;
     virtual const int iter_per_summary() const = 0;
-    void summarize_iter(int current_iter);
-
-    //! CPU data buffer for file saving and program integration
-    std::unique_ptr<CPUSolverData> buf_data;
 
     //! numerical methods
     virtual void init_containers() = 0;
@@ -64,10 +56,6 @@ protected:
     virtual void calc_fi3d()       = 0;
     virtual void calc_norm()       = 0;
     virtual void normalize()       = 0;
-    // virtual void imag_iter_linear_step()        = 0;
-    // virtual void imag_iter_nonlinear_step()     = 0;
-    // virtual void real_fft_potential_half_step() = 0;
-    // virtual void real_fft_kinetic_step()        = 0;
 
     //! prepare fft transformers
     virtual void prepare_fft() = 0;
