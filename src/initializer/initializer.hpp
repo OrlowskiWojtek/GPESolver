@@ -21,6 +21,8 @@ private:
     void init_pote();
     //! apply already set data function to _data container
     void init_wavefunction();
+    //! applies small random noise to the wavefunction, just to break symmetries
+    void add_initial_noise();
 
     wavefunction_t _data;
     potential_t _pote;

@@ -6,6 +6,7 @@
 /*! Struct PhysicalParameters.
  *  \brief contains parameters of simulation.
  *  \todo add default values
+ *  \todo merge with filemanager and SingleParameter alike struct (key + value hold)
  */
 struct PhysicalParameters {
     PhysicalParameters(const PhysicalParameters &)            = delete;
@@ -53,6 +54,9 @@ struct PhysicalParameters {
     bool const_edd = true;
     double edd_start;
     double edd_stop;
+    
+    //! Adds random noise at the beginning of calculations
+    bool add_random_noise = false;
 
     //! Number of nodes in calculations - x direction.
     int nx;
@@ -61,15 +65,11 @@ struct PhysicalParameters {
     //! Number of nodes in calculations - z direction.
     int nz;
 
-    //! Number of iterations for imaginary time evolution.
-    size_t iter_imag;
-    //! Number of iterations for real time evolution.
-    size_t iter_real;
+    //! Number of iterations for current simulation.
+    size_t iter_total = 10000;
 
-    //! Time step t of every real time evolution iteration
-    double real_time_dt = 1.00e10;
-    //! Time step \tau of every imaginary time evolution iteration
-    double imag_time_dt = 1.25e11;
+    //! Time step t or \dtau for every iteration
+    double time_dt = 1.00e10;
 
     //! Distance per node - x direction
     double dx;
@@ -81,8 +81,11 @@ struct PhysicalParameters {
     //! spherical cutoff radius for dipol-dipol interaction
     double Rc;
 
-    // Number of threads used in FFTW calculations.
+    //! Number of threads used in FFTW calculations.
     int fftw_n_threads = 1;
+
+    //! Whether to save data during imaginary time evolution
+    bool save_data = false;
 
     //! Number of gaussian maximas to initialize
     //! Used only if initializing from multiple gaussians.

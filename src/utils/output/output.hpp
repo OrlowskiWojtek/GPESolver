@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <vector>
 
 class OutputFormatter {
 public:
@@ -34,8 +35,10 @@ public:
         (void)expander{0, (void(oss << args), 0)...};
         std::string message = oss.str();
     
-        assert(message.length() < box_width - 2 &&
-               "Message too long to fit in the box.");
+        if(message.length() > (box_width - 2)){
+            std::cout << "Message too long to fit in the box." << std::endl;
+            return;
+        }                
     
         if(message.length() % 2 == 0){
             message += " ";
@@ -45,9 +48,26 @@ public:
                   << std::setw((box_width + message.length()) / 2) << std::right << message 
                   << std::setw((box_width - message.length()) / 2) << "|" << std::endl;
     }
+    
+    template<typename T>
+    static void printScientificRow(const std::vector<std::string>&& labels,
+                                   const std::vector<T>&& values,
+                                   int width = 10) {
+        if (labels.size() != values.size()) return;
+        std::cout << std::left;
+        for (const auto& lbl : labels)
+            std::cout << std::setw(width) << lbl << "| ";
+        std::cout << "\n";
+        std::cout << std::left << std::scientific << std::setprecision(3);
+        for (const auto& val : values)
+            std::cout << std::setw(width) << val << "| ";
+        std::cout << "\n";
+        std::cout << std::defaultfloat;
+        std::cout << std::flush;
+    }
 
 private:
-    static const int box_width = 60;
+    static const int box_width = 70;
 };
 
 #endif

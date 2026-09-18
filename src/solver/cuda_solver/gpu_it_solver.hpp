@@ -1,19 +1,21 @@
-#ifndef GPU_GPE_SOLVER
-#define GPU_GPE_SOLVER
+#ifndef GPU_IMAGINARY_GPE_SOLVER
+#define GPU_IMAGINARY_GPE_SOLVER
 
 #include "solver/solver.hpp"
 #include "solver/solver_data/gpu_solver_data.hpp"
 
-class GpuGrossPitaevskiSolver : public AbstractGrossPitaevskiSolver {
+class GpuITGrossPitaevskiSolver : public AbstractGrossPitaevskiSolver {
 public:
-    GpuGrossPitaevskiSolver(AbstractSimulationMediator *mediator);
-    ~GpuGrossPitaevskiSolver();
+    GpuITGrossPitaevskiSolver(AbstractSimulationMediator *mediator);
+    ~GpuITGrossPitaevskiSolver();
 
 private:
     //! Data used in solver
     GPUSolverData m_data;
     double *d_norm;
     double *d_kin_dev, *d_pot_dev, *d_int_dev, *d_ext_dev, *d_bmf_dev;
+
+    std::unique_ptr<AbstractPoissonSolver> poisson_solver;
 
     void prepare_fft() override;
     void import_pote() override;
@@ -25,10 +27,13 @@ private:
     void calc_fi3d() override;
     void calc_norm() override;
     void normalize() override;
-    void imag_iter_linear_step() override;
-    void imag_iter_nonlinear_step() override;
-    void real_fft_potential_half_step() override;
-    void real_fft_kinetic_step() override;
+
+    void imag_iteration_full();
+
+    void iterate() override;
+    void adjust(int iter) override;
+    void finish() override;
+    const int iter_per_summary() const override;
 };
 
 #endif

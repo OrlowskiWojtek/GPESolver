@@ -27,7 +27,6 @@ if(USE_CUDA)
     
     set(CMAKE_CUDA_ARCHITECTURES 60)
     target_link_libraries(SolverManager PUBLIC CUDA::cufftw CUDA::cufft CUDA::cudart)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
 endif()
 
 if(USE_CUDA)
@@ -38,10 +37,9 @@ if(USE_CUDA)
         solver/fft_solvers/gpu/cufft_poisson_solver.cpp
         solver/fft_solvers/gpu/cufft_split_solver.cpp
         solver/cuda_solver/cuda_kernels.cu
-        solver/cuda_solver/gpu_solver.cpp
+        solver/cuda_solver/gpu_it_solver.cpp
+        solver/cuda_solver/gpu_rt_solver.cpp
     )
-    
-    #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --fast-math -O3")
     
     target_link_libraries(SolverManager PUBLIC
         CUDA::cudart
@@ -56,9 +54,22 @@ else()
     target_sources(SolverManager PRIVATE
         solver/fft_solvers/cpu/fftw_poisson_solver.cpp
         solver/fft_solvers/cpu/fftw_split_solver.cpp
-        solver/cpu_solver/cpu_solver.cpp
+        solver/fft_solvers/cpu/fftw_imag_split_solver.cpp
+        solver/cpu_solver/cpu_it_solver.cpp
+        solver/cpu_solver/cpu_it_split_solver.cpp
+        solver/cpu_solver/cpu_rt_solver.cpp
     )
 
     target_link_libraries(SolverManager PUBLIC
 		${FFTW3_LIBRARIES})
+endif()
+
+if(USE_OPENMP)
+    find_package(OpenMP COMPONENTS CXX REQUIRED)
+    if(OpenMPFound)
+        message("Found openMP libraries")
+    endif()
+
+    target_link_libraries(SolverManager PUBLIC
+        OpenMP::OpenMP_CXX)
 endif()

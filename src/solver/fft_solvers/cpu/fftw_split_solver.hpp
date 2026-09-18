@@ -12,7 +12,7 @@
 */
 class FFTWRealTimeSplitSolver : public AbstractRealTimeSplitSolver, public FFTWAbstractCPUSolver {
 public:
-    FFTWRealTimeSplitSolver(wavefunction_t* psi, potential_t* fi3d, potential_t* pote);
+    FFTWRealTimeSplitSolver(wavefunction_t* psi, potential_t* fi3d);
     ~FFTWRealTimeSplitSolver();
 
     void execute() override;

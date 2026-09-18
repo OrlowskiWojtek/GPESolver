@@ -10,7 +10,6 @@ SimulationManager::SimulationManager()
     , m_file_manager(std::make_unique<FileManager>(this))
     , m_initializer(std::make_unique<DataInitializer>(this)) {
 
-    m_gpe_solver = SolverFactory::create(this);
 }
 
 void SimulationManager::initialize() {
@@ -45,11 +44,14 @@ void SimulationManager::save_initial_state(const wavefunction_t &wvf) {
 
 void SimulationManager::save_energies(const energies_container_t &enes) {
     m_file_manager->save_energies(enes);
+    m_file_manager->save_energies_bin(enes);
 }
 
 void SimulationManager::on_params_loaded() {
     params->init_parameters();
     params->print();
+
+    m_gpe_solver = SolverFactory::create(this);
 
     p_sctx->initialize();
     m_gpe_solver->initialize();

@@ -1,12 +1,12 @@
-#include "solver/fft_solvers/cpu/fftw_split_solver.hpp"
+#include "solver/fft_solvers/cpu/fftw_imag_split_solver.hpp"
 #include "output.hpp"
 
-FFTWRealTimeSplitSolver::FFTWRealTimeSplitSolver(wavefunction_t *psi, potential_t *fi3d)
+FFTWImagTimeSplitSolver::FFTWImagTimeSplitSolver(wavefunction_t *psi, potential_t *fi3d)
     : FFTWAbstractCPUSolver(psi, fi3d) {
     prepare();
 }
 
-void FFTWRealTimeSplitSolver::prepare_containers() {
+void FFTWImagTimeSplitSolver::prepare_containers() {
     int nx = p->nx;
     int ny = p->ny;
     int nz = p->nz;
@@ -31,7 +31,7 @@ void FFTWRealTimeSplitSolver::prepare_containers() {
 
                 double k_sq = kx * kx + ky * ky + kz * kz;
 
-                double factor = -dt / (2.0 * p->m) * k_sq;
+                double factor = dt / (2.0 * p->m) * k_sq;
 
                 h_kinetic_factor[i * ny * nz + j * nz + k] = factor;
             }
@@ -39,7 +39,7 @@ void FFTWRealTimeSplitSolver::prepare_containers() {
     }
 }
 
-void FFTWRealTimeSplitSolver::execute() {
+void FFTWImagTimeSplitSolver::execute() {
     int nx = p->nx;
     int ny = p->ny;
     int nz = p->nz;
@@ -62,9 +62,9 @@ void FFTWRealTimeSplitSolver::execute() {
     for (int i = 0; i < N; i++) {
         double factor = h_kinetic_factor[i];
 
-        std::complex<double> evolution_operator = std::exp(std::complex<double>(0.0, factor));
         std::complex<double> psi_k(h_rho_k[i][0], h_rho_k[i][1]);
-        std::complex<double> res = psi_k * evolution_operator;
+        std::complex<double> res = psi_k * std::exp(- factor);
+
         h_rho_k[i][0]            = res.real();
         h_rho_k[i][1]            = res.imag();
     }
@@ -72,9 +72,9 @@ void FFTWRealTimeSplitSolver::execute() {
     fftw_execute(plan_bwd);
 
     double norm_factor = 1.0 / static_cast<double>(N);
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
+    for (int i = 1; i < nx-1; i++) {
+        for (int j = 1; j < ny-1; j++) {
+            for (int k = 1; k < nz-1; k++) {
                 size_t idx = (i * ny + j) * nz + k;
                 rpsi(i, j, k) =
                     std::complex<double>(real(h_rho_r[idx]), imag(h_rho_r[idx])) * norm_factor;
@@ -83,14 +83,14 @@ void FFTWRealTimeSplitSolver::execute() {
     }
 }
 
-FFTWRealTimeSplitSolver::~FFTWRealTimeSplitSolver() {
+FFTWImagTimeSplitSolver::~FFTWImagTimeSplitSolver() {
     fftw_free(h_rho_r);
     fftw_free(h_rho_k);
 
     delete[] h_kinetic_factor;
 }
 
-void FFTWRealTimeSplitSolver::prepare_transforms() {
+void FFTWImagTimeSplitSolver::prepare_transforms() {
     int nx = p->nx;
     int ny = p->ny;
     int nz = p->nz;

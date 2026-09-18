@@ -6,10 +6,11 @@
 #include "units.hpp"
 #include <fstream>
 
-const char FileManager::PARAMS_FILENAME[]       = "gpe_params.json";
-const char FileManager::TEXT_FILE_EXTENSION[]   = ".gpe.dat";
-const char FileManager::BINARY_FILE_EXTENSION[] = ".gpe.bin";
-const char FileManager::ENERGIES_FILENAME[]     = "energy.gpe.dat";
+const char FileManager::PARAMS_FILENAME[]          = "gpe_params.json";
+const char FileManager::TEXT_FILE_EXTENSION[]      = ".gpe.dat";
+const char FileManager::BINARY_FILE_EXTENSION[]    = ".gpe.bin";
+const char FileManager::ENERGIES_FILENAME[]        = "energy.gpe.dat";
+const char FileManager::BINARY_ENERGIES_FILENAME[] = "energy.gpe.bin";
 
 FileManager::FileManager(AbstractSimulationMediator *mediator)
     : mediator(mediator)
@@ -17,41 +18,6 @@ FileManager::FileManager(AbstractSimulationMediator *mediator)
 }
 
 FileManager::~FileManager() {
-}
-
-void FileManager::save_params() {
-    OutputFormatter::printInfo("Saving simulation parameters to" + std::string(PARAMS_FILENAME));
-
-    nlohmann::json j;
-
-    j["n_atoms"]         = params->n_atoms;
-    j["m"]               = UnitConverter::mass_au_to_Da(params->m);
-    j["dd"]              = UnitConverter::len_au_to_nm(params->dd);
-    j["dx"]              = UnitConverter::len_au_to_nm(params->dx);
-    j["dy"]              = UnitConverter::len_au_to_nm(params->dy);
-    j["dz"]              = UnitConverter::len_au_to_nm(params->dz);
-    j["nx"]              = params->nx;
-    j["ny"]              = params->ny;
-    j["nz"]              = params->nz;
-    j["edd"]             = params->edd;
-    j["fftw_n_threads"]  = params->fftw_n_threads;
-    j["calc_strategy"]   = params->calc_strategy.to_string();
-    j["init_strategy"]   = params->wvf_key;
-    j["pote_strategy"]   = params->pote_key;
-    j["load_filename"]   = params->load_filename;
-    j["initial_maximas"] = params->n_gauss_max;
-    j["iter_imag"]       = params->iter_imag;
-    j["iter_real"]       = params->iter_real;
-    j["omega_x"]         = UnitConverter::freq_au_to_Hz(params->omega_x);
-    j["omega_y"]         = UnitConverter::freq_au_to_Hz(params->omega_y);
-    j["omega_z"]         = UnitConverter::freq_au_to_Hz(params->omega_z);
-    j["bec_droplets_x"]  = params->bec_droplets_x;
-    j["bec_droplets_y"]  = params->bec_droplets_y;
-    j["bec_droplets_z"]  = params->bec_droplets_z;
-
-    std::ofstream file(PARAMS_FILENAME);
-    file << j.dump(4);
-    file.close();
 }
 
 void FileManager::load_params() {
@@ -401,6 +367,43 @@ void FileManager::save_energies(const energies_container_t &energies) {
     file.close();
 }
 
+//! Saves energies to binary file in structure:
+//! number_of_measured_energies -> then one by one (not whole vectors)
+//! e_kin -> e_pot -> e_int -> e_ext -> e_bmf -> e_total
+void FileManager::save_energies_bin(const energies_container_t &energies) {
+    std::string FILENAME = std::string(BINARY_ENERGIES_FILENAME);
+    OutputFormatter::printInfo("Saving energies to: " + FILENAME);
+
+    std::ofstream file(FILENAME, std::ios::out | std::ios::binary);
+
+    if (!file.is_open()) {
+        OutputFormatter::printError("Could not open last state file for writing.");
+        return;
+    }
+
+    size_t data_points = energies.size();
+    file.write(reinterpret_cast<char *>(&data_points), sizeof(size_t));
+
+    for (size_t i = 0; i < data_points; i++) {
+        auto &ene    = energies[i];
+        double e_kin = ene.e_kin;
+        double e_pot = ene.e_pot;
+        double e_int = ene.e_int;
+        double e_ext = ene.e_ext;
+        double e_bmf = ene.e_bmf;
+        double e_tot = ene.e_total;
+
+        file.write(reinterpret_cast<char *>(&e_kin), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_pot), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_int), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_ext), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_bmf), sizeof(double));
+        file.write(reinterpret_cast<char *>(&e_tot), sizeof(double));
+    }
+
+    file.close();
+}
+
 void FileManager::save_pote_to_text_file(const potential_t &pote, std::string filename) {
     filename.append(TEXT_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to text file: " + std::string(filename));
@@ -487,8 +490,9 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->bec_droplets_z = j["bec_droplets_z"];
     }
 
-    if (params->wvf_key == "BINARY_FILE"||
-        params->wvf_key == "TEXT_FILE") {
+    params->add_random_noise = j.value("add_random_noise", false);
+
+    if (params->wvf_key == "BINARY_FILE" || params->wvf_key == "TEXT_FILE") {
         CHECK_REQUIRED(j, "load_filename");
 
         params->load_filename = j["load_filename"];
@@ -537,19 +541,19 @@ void FileManager::load_box(nlohmann::json &j) {
 
 void FileManager::load_simulation(nlohmann::json &j) {
     CHECK_REQUIRED(j, "calc_strategy");
-    CHECK_REQUIRED(j, "iter_imag");
-    CHECK_REQUIRED(j, "iter_real");
+    CHECK_REQUIRED(j, "iter_total");
     CHECK_REQUIRED(j, "n_atoms");
     CHECK_REQUIRED(j, "m");
 
     params->calc_strategy.from_string(j["calc_strategy"]);
-    params->iter_imag = j["iter_imag"];
-    params->iter_real = j["iter_real"];
-    params->n_atoms   = j["n_atoms"];
-    params->m         = UnitConverter::mass_Da_to_au(j["m"]);
+    params->iter_total = j["iter_total"];
+    params->n_atoms    = j["n_atoms"];
+    params->m          = UnitConverter::mass_Da_to_au(j["m"]);
 
     if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
         CHECK_REQUIRED(j, "edd");
+
+        params->save_data = j.value("save_data", false);
     }
 
     if (j.contains("edd")) {
@@ -564,8 +568,7 @@ void FileManager::load_simulation(nlohmann::json &j) {
         params->edd_stop  = j["edd_stop"];
     }
 
-    params->imag_time_dt = j.value("imag_dt", 1.25e11);
-    params->real_time_dt = j.value("real_dt", 1.00e10);
+    params->time_dt = j.value("time_step", 1e10);
 
     // fftw_n_threads no required with default value equal to 4
     params->fftw_n_threads = j.value("fftw_n_threads", 4);
@@ -591,13 +594,12 @@ void FileManager::load_all_v0(nlohmann::json &j) {
 
     params->edd           = j["edd"];
     params->load_filename = j["load_filename"];
-    params->iter_imag     = j["iter_imag"];
-    params->iter_real     = j["iter_real"];
+    params->iter_total    = j["iter_total"];
 
     params->fftw_n_threads = j["fftw_n_threads"];
 
     params->calc_strategy.from_string(j["calc_strategy"]);
-    params->wvf_key = j["init_strategy"];
+    params->wvf_key  = j["init_strategy"];
     params->pote_key = j["pote_strategy"];
 
     params->n_gauss_max    = j["initial_maximas"];

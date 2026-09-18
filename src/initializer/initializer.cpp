@@ -2,6 +2,7 @@
 #include "output.hpp"
 #include "parameters/potentials.hpp"
 #include "parameters/wavefunctions.hpp"
+#include <random>
 
 DataInitializer::DataInitializer(AbstractSimulationMediator *_mediator)
     : params(PhysicalParameters::getInstance())
@@ -18,6 +19,10 @@ void DataInitializer::initialize_wavefunction() {
         init_from_text_file();
     } else {
         init_wavefunction();
+    }
+
+    if (params->add_random_noise) {
+        add_initial_noise();
     }
 
     p_mediator->on_data_initialized(_data);
@@ -67,9 +72,9 @@ void DataInitializer::init_wavefunction() {
     _data_func = InitializerRegistry::instance().get_function(params->wvf_key);
     _data.resize(nx, ny, nz);
 
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-            for (int k = 0; k < nz; k++) {
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
                 double x = p_sctx->get_x(i);
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
@@ -85,4 +90,26 @@ void DataInitializer::change_potential(std::string pote_key) {
 
     init_pote();
     p_mediator->on_pote_initialized(_pote);
+}
+
+void DataInitializer::add_initial_noise() {
+    const int nx = params->nx;
+    const int ny = params->ny;
+    const int nz = params->nz;
+
+    const double noise_level = 0.1;
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::uniform_real_distribution<double> dist(0, noise_level);
+
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double rand_real = dist(rng);
+
+                _data(i, j, k) *= (1 + rand_real);
+            }
+        }
+    }
 }
