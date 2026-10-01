@@ -552,8 +552,6 @@ void FileManager::load_simulation(nlohmann::json &j) {
 
     if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
         CHECK_REQUIRED(j, "edd");
-
-        params->save_data = j.value("save_data", false);
     }
 
     if (j.contains("edd")) {
@@ -568,7 +566,8 @@ void FileManager::load_simulation(nlohmann::json &j) {
         params->edd_stop  = j["edd_stop"];
     }
 
-    params->time_dt = j.value("time_step", 1e10);
+    params->time_dt   = j.value("time_step", 1e10);
+    params->save_data = j.value("save_data", false);
 
     // fftw_n_threads no required with default value equal to 4
     params->fftw_n_threads = j.value("fftw_n_threads", 4);
