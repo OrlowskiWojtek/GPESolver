@@ -27,8 +27,6 @@ struct PhysicalParameters {
     //! Trap angular frequency in z direction | defuault 120 Hz
     double omega_z;
 
-    //! Smallest trap frequency in system.
-    double omega0;
     //! Mass of atom;
     double m;
     //! Number of used atoms;
