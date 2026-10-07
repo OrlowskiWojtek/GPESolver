@@ -11,7 +11,7 @@ void kernel_multiply_dipole(
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < N) {
-        complex_type a = __ldg(&data[idx]);
+        complex_type a = data[idx];
         complex_type b = __ldg(&kernel[idx]);
         
         data[idx].x = a.x * b.x - a.y * b.y;
