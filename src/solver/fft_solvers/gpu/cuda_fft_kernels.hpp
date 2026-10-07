@@ -11,15 +11,15 @@ extern "C" {
 // ============================== //
 __global__
 void kernel_fill_from_psi(
-    cufftDoubleReal* rho, 
-    const cufftDoubleComplex* psi, 
+    cufftDoubleReal* __restrict__ rho, 
+    const cufftDoubleComplex* __restrict__ psi, 
     int nx, int ny, int nz, 
     int full_nx, int full_ny, int full_nz, 
     double n_atoms);
 
 void launch_kernel_fill_from_psi(
-    cufftDoubleReal* rho, 
-    const cufftDoubleComplex* psi, 
+    cufftDoubleReal* __restrict__ rho, 
+    const cufftDoubleComplex* __restrict__ psi, 
     int nx, int ny, int nz, 
     int full_nx, int full_ny, int full_nz, 
     double n_atoms);
@@ -28,14 +28,14 @@ void launch_kernel_fill_from_psi(
 
 __global__
 void kernel_multiply_dipole(
-    complex_type* data, 
-    const complex_type* kernel, 
-    int N);
+    complex_type* __restrict__ data, 
+    const complex_type* __restrict__ kernel, 
+    const int N);
 
 void launch_kernel_multiply_dipole(
-    complex_type* data, 
-    const complex_type* kernel, 
-    int N);
+    complex_type* __restrict__ data, 
+    const complex_type* __restrict__ kernel, 
+    const int N);
 
 // ============================== //
 

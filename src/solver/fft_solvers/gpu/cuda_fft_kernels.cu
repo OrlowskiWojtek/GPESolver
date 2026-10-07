@@ -5,26 +5,24 @@
 
 __global__
 void kernel_multiply_dipole(
-    complex_type* data, 
-    const complex_type* kernel, 
-    int N) 
+    complex_type* __restrict__ data, 
+    const complex_type* __restrict__ kernel, 
+    const int N) 
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < N) {
-        double ar = data[idx].x;
-        double ai = data[idx].y;
-        double br = kernel[idx].x;
-        double bi = kernel[idx].y;
+        complex_type a = __ldg(&data[idx]);
+        complex_type b = __ldg(&kernel[idx]);
         
-        data[idx].x = ar * br - ai * bi;
-        data[idx].y = ar * bi + ai * br;
+        data[idx].x = a.x * b.x - a.y * b.y;
+        data[idx].y = a.x * b.y + a.y * b.x;
     }
 }
 
 void launch_kernel_multiply_dipole(
-    complex_type* data, 
-    const complex_type* kernel, 
-    int N) 
+    complex_type* __restrict__ data, 
+    const complex_type* __restrict__ kernel, 
+    const int N) 
 {
     kernel_multiply_dipole<<<(N+255)/256, 256>>>(data, kernel, N);
 }
@@ -33,8 +31,8 @@ void launch_kernel_multiply_dipole(
 
 __global__
 void kernel_fill_from_psi(
-    real_type* rho, 
-    const complex_type* psi, 
+    real_type* __restrict__ rho, 
+    const complex_type* __restrict__ psi, 
     int nx, int ny, int nz, 
     int full_nx, int full_ny, int full_nz,
     double n_atoms){
@@ -42,15 +40,18 @@ void kernel_fill_from_psi(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
     int i = blockIdx.z * blockDim.z + threadIdx.z;
 
-    int rho_idx = (i * full_ny + j) * full_nz + k;
-    int psi_idx = (i * ny + j) * nz + k;
     if (i >= full_nx || j >= full_ny || k >= full_nz) {
         return;
     }
 
+    int rho_idx = (i * full_ny + j) * full_nz + k;
     if (i < nx && j < ny && k < nz) {
-        double psi_sq = psi[psi_idx].x * psi[psi_idx].x + 
-                        psi[psi_idx].y * psi[psi_idx].y;
+
+        int psi_idx = (i * ny + j) * nz + k;
+        complex_type wav = __ldg(&psi[psi_idx]);
+
+        double psi_sq = wav.x * wav.x + 
+                        wav.y * wav.y;
 
         rho[rho_idx] = psi_sq * n_atoms;
     } else {
@@ -59,8 +60,8 @@ void kernel_fill_from_psi(
 }
 
 void launch_kernel_fill_from_psi(
-    real_type* rho, 
-    const complex_type* psi, 
+    real_type* __restrict__ rho, 
+    const complex_type* __restrict__ psi, 
     int nx, int ny, int nz, 
     int full_nx, int full_ny, int full_nz,
     double n_atoms){
