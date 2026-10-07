@@ -120,13 +120,16 @@ void launch_kernel_imag_time_iteration(
 __global__ 
 void kernel_normalize(
     cuDoubleComplex* __restrict__ data,
-    int N,
-    double norm_factor
+    const double* __restrict__ norm_factor,
+    double dxdydz,
+    int N
 ) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    double norm = sqrt(norm_factor[0] * dxdydz);
+
     if (idx < N) {
-        data[idx].x /= sqrt(norm_factor);
-        data[idx].y /= sqrt(norm_factor);
+        data[idx].x /= norm;
+        data[idx].y /= norm;
     }
 }
 
@@ -178,19 +181,21 @@ double launch_kernel_calc_norm(
     }
     //cudaDeviceSynchronize();
 
-    cudaMemcpy(&h_result, d_norm, sizeof(double), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(&h_result, d_norm, sizeof(double), cudaMemcpyDeviceToHost);
     
-    return h_result;
+    return 0;
 }
 
 void launch_kernel_normalize(
     cuDoubleComplex* data,
-    int N,
-    double norm_factor
+    const double* __restrict__ norm_factor,
+    double dxdydz,
+    int N
 ) {
     int block = 256;
     int grid  = (N + block - 1) / block;
-    kernel_normalize<<<grid, block>>>(data, N, norm_factor);
+
+    kernel_normalize<<<grid, block>>>(data, norm_factor, dxdydz, N);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("Error after normalize kernel: %s\n", cudaGetErrorString(err));

@@ -41,12 +41,12 @@ void GpuITGrossPitaevskiSolver::calc_fi3d() {
 
 void GpuITGrossPitaevskiSolver::calc_norm() {
     int N  = params->nx * params->ny * params->nz;
-    xnorma = launch_kernel_calc_norm(m_data.cpsi_gpu.data(), d_norm, N) * params->get_dxdydz();
+    launch_kernel_calc_norm(m_data.cpsi_gpu.data(), d_norm, N);
 }
 
 void GpuITGrossPitaevskiSolver::normalize() {
     int N = params->nx * params->ny * params->nz;
-    launch_kernel_normalize(m_data.cpsi_gpu.data(), N, xnorma);
+    launch_kernel_normalize(m_data.cpsi_gpu.data(), d_norm, params->get_dxdydz(), N);
 }
 
 void GpuITGrossPitaevskiSolver::imag_iteration_full() {
@@ -148,5 +148,5 @@ void GpuITGrossPitaevskiSolver::finish() {
 }
 
 const int GpuITGrossPitaevskiSolver::iter_per_summary() const {
-    return 1000;
+    return 100;
 }
