@@ -10,20 +10,20 @@ option(USE_CUDA "Build using CUDA" FALSE)
 option(USE_OPENMP "Build using openMP for CPU parallelization" FALSE)
 option(BUILD_TESTS "Build unit tests" FALSE)
 
-# Dla kompilatorów intela
 if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
-    # IntelLLVM = icpx, Intel = icpc
     target_compile_options(compiler_flags INTERFACE
-        -O3
-        -axCORE-AVX2,CORE-AVX512
+        $<$<COMPILE_LANGUAGE:CXX>:-O3>
+        $<$<COMPILE_LANGUAGE:CXX>:-axCORE-AVX2,CORE-AVX512>
+    )
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "NVHPC|PGI|NVIDIA")
+    target_compile_options(compiler_flags INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:-O3>
     )
 else()
-    # GCC / Clang
     target_compile_options(compiler_flags INTERFACE
-        -Wall
-        -O3 
-        -march=native
-        #-funroll-loops
+        $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+        $<$<COMPILE_LANGUAGE:CXX>:-O3>
+        $<$<COMPILE_LANGUAGE:CXX>:-march=native>
     )
 endif()
 
@@ -34,7 +34,7 @@ if(USE_CUDA)
     #find_package(CUDAToolkit REQUIRED)
 
     message("Found CUDA toolkit, ver. " ${CUDAToolkit_VERSION})
-    set(CMAKE_CUDA_ARCHITECTURES 60 86)  # GTX 1050 = Pascal, compute 6.1, 86 RTX 3050
+    set(CMAKE_CUDA_ARCHITECTURES 90)
     set(CMAKE_CUDA_STANDARD 14)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
