@@ -1,5 +1,5 @@
-#ifndef CPU_IMAGINARY_GPE_SOLVER
-#define CPU_IMAGINARY_GPE_SOLVER
+#ifndef CPU_IMAGINARY_BINARY_GPE_SOLVER
+#define CPU_IMAGINARY_BINARY_GPE_SOLVER
 
 #include "solver/solver.hpp"
 #include <array>
@@ -31,7 +31,7 @@ struct BinaryMixtureParameters {
     //! Adds random noise at the beginning of calculations
     bool add_random_noise = false;
 
-
+    void set_to_default();
 private:
 
     BinaryMixtureParameters() {};
@@ -56,30 +56,12 @@ private:
     //! norm for second component
     double norm_b = 0;
 
-    std::unique_ptr<AbstractPoissonSolver> poisson_solver;
+    std::unique_ptr<AbstractPoissonSolver> poisson_solver_a;
+    std::unique_ptr<AbstractPoissonSolver> poisson_solver_b;
 
     //! arrays for gauss integration u -> ui, w -> wi
-    static constexpr std::array<double, 8> ug = {
-        0.019855071751231884,
-        0.101666761293186630,
-        0.237233795041835507,
-        0.408282678752175098,
-        0.591717321247824902,
-        0.762766204958164493,
-        0.898333238706813370,
-        0.980144928248768116
-    };
-
-    static constexpr std::array<double, 8> wg = {
-        0.050614268145188129,
-        0.111190517226687235,
-        0.156853322938943644,
-        0.181341891689180991,
-        0.181341891689180991,
-        0.156853322938943644,
-        0.111190517226687235,
-        0.050614268145188129
-    };
+    static std::array<double, 8> ug;
+    static std::array<double, 8> wg;
 
     void lhy_point(double n1, double n2, double &lhy1, double&lhy2);
     void calc_lhy();

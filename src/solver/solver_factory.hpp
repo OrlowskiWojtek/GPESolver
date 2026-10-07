@@ -8,6 +8,7 @@
 #include "solver/cuda_solver/gpu_it_solver.hpp"
 #include "solver/cuda_solver/gpu_rt_solver.hpp"
 #else
+#include "solver/cpu_solver/cpu_it_binary_solver.hpp"
 #include "solver/cpu_solver/cpu_it_solver.hpp"
 #include "solver/cpu_solver/cpu_it_split_solver.hpp"
 #include "solver/cpu_solver/cpu_rt_solver.hpp"
@@ -33,7 +34,8 @@ public:
 #else
         switch (params->calc_strategy.type) {
         case CalcStrategy::Type::IMAGINARY_TIME:
-            return std::make_unique<CpuITGrossPitaevskiSolver>(mediator);
+            return std::make_unique<CpuITBinaryGrossPitaevskiSolver>(mediator);
+            //return std::make_unique<CpuITGrossPitaevskiSolver>(mediator);
             //return std::make_unique<CpuITSplitGrossPitaevskiSolver>(mediator);
             break;
         case CalcStrategy::Type::REAL_TIME:

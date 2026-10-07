@@ -58,6 +58,7 @@ else()
         solver/cpu_solver/cpu_it_solver.cpp
         solver/cpu_solver/cpu_it_split_solver.cpp
         solver/cpu_solver/cpu_rt_solver.cpp
+        solver/cpu_solver/cpu_it_binary_solver.cpp
     )
 
     target_link_libraries(SolverManager PUBLIC
