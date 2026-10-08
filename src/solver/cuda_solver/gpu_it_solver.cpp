@@ -1,5 +1,5 @@
 #include "solver/cuda_solver/gpu_it_solver.hpp"
-#include "solver/cuda_solver/cuda_kernels.hpp"
+#include "solver/cuda_solver/cuda_kernels.cuh"
 
 GpuITGrossPitaevskiSolver::GpuITGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator) {

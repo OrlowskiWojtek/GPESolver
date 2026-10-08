@@ -37,7 +37,7 @@ if(USE_CUDA)
     #find_package(CUDAToolkit REQUIRED)
 
     message("Found CUDA toolkit, ver. " ${CUDAToolkit_VERSION})
-    set(CMAKE_CUDA_ARCHITECTURES 90)
+    set(CMAKE_CUDA_ARCHITECTURES 86 90)
     set(CMAKE_CUDA_STANDARD 14)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 

@@ -1,4 +1,4 @@
-#include "solver/cuda_solver/cuda_kernels.hpp"
+#include "solver/cuda_solver/cuda_kernels.cuh"
 
 __global__
 void imag_time_iteration_kernel(

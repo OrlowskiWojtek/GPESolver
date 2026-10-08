@@ -5,6 +5,7 @@
 #include "solver/solver.hpp"
 
 #ifdef USE_CUDA
+#include "solver/cuda_solver/gpu_it_binary_solver.hpp"
 #include "solver/cuda_solver/gpu_it_solver.hpp"
 #include "solver/cuda_solver/gpu_rt_solver.hpp"
 #else
@@ -22,7 +23,8 @@ public:
 #ifdef USE_CUDA
         switch (params->calc_strategy.type) {
         case CalcStrategy::Type::IMAGINARY_TIME:
-            return std::make_unique<GpuITGrossPitaevskiSolver>(mediator);
+            return std::make_unique<GpuITBinaryGrossPitaevskiSolver>(mediator);
+            //return std::make_unique<GpuITGrossPitaevskiSolver>(mediator);
             break;
         case CalcStrategy::Type::REAL_TIME:
             return std::make_unique<GpuRTGrossPitaevskiSolver>(mediator);

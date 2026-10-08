@@ -4,6 +4,7 @@ add_library(SolverManager
     filemanager/file_manager.cpp
     initializer/initializer.cpp
     parameters/parameters.cpp
+    parameters/binary_parameters.cpp
     manager/sim_manager.cpp
     context/context.cpp
     solver/fft_solvers/fft_context.cpp
@@ -37,6 +38,8 @@ if(USE_CUDA)
         solver/fft_solvers/gpu/cufft_poisson_solver.cpp
         solver/fft_solvers/gpu/cufft_split_solver.cpp
         solver/cuda_solver/cuda_kernels.cu
+        solver/cuda_solver/cuda_binary_kernels.cu
+        solver/cuda_solver/gpu_it_binary_solver.cpp
         solver/cuda_solver/gpu_it_solver.cpp
         solver/cuda_solver/gpu_rt_solver.cpp
     )
