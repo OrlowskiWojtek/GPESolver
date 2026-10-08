@@ -11,15 +11,18 @@ option(USE_OPENMP "Build using openMP for CPU parallelization" FALSE)
 option(BUILD_TESTS "Build unit tests" FALSE)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Intel|IntelLLVM")
+    message("Compiling with intel")
     target_compile_options(compiler_flags INTERFACE
         $<$<COMPILE_LANGUAGE:CXX>:-O3>
         $<$<COMPILE_LANGUAGE:CXX>:-axCORE-AVX2,CORE-AVX512>
     )
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "NVHPC|PGI|NVIDIA")
+    message("Compiling with NVHPC")
     target_compile_options(compiler_flags INTERFACE
         $<$<COMPILE_LANGUAGE:CXX>:-O3>
     )
 else()
+    message("Compiling with default")
     target_compile_options(compiler_flags INTERFACE
         $<$<COMPILE_LANGUAGE:CXX>:-Wall>
         $<$<COMPILE_LANGUAGE:CXX>:-O3>
