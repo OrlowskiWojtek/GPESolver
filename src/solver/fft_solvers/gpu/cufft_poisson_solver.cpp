@@ -2,6 +2,7 @@
 #include "output.hpp"
 #include "parameters/parameters.hpp"
 #include <cmath>
+#include "nvtx3/nvToolsExt.h"
 
 #include "solver/fft_solvers/gpu/cuda_fft_kernels.hpp"
 
@@ -75,18 +76,26 @@ void CUFFTPoissonSolver::execute() {
     launch_kernel_fill_from_psi(
         d_rho_r, psi->data(), p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
 
+    nvtxRangePushA("D2Z transform");
     //  Forward FFT
     cufftExecD2Z(plan_fwd, d_rho_r, d_rho_k);
+    nvtxRangePop();
 
+    nvtxRangePushA("Kernel multiply dipole");
     // multiply by dipole kernel
     launch_kernel_multiply_dipole(d_rho_k, d_Vdip_k, N_out);
+    nvtxRangePop();
 
+    nvtxRangePushA("Z2D transform");
     // Backward FFT
     cufftExecZ2D(plan_bwd, d_rho_k, d_rho_r);
+    nvtxRangePop();
 
+    nvtxRangePushA("copy to fi3d");
     double norm_factor = 1.0 / static_cast<double>(N);
     launch_kernel_copy_to_fi3d_gpu(
         d_rho_r, fi3d->data(), p->nx, p->ny, p->nz, nx, ny, nz, norm_factor);
+    nvtxRangePop();
 }
 
 CUFFTPoissonSolver::~CUFFTPoissonSolver() {

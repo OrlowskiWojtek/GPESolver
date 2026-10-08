@@ -1,6 +1,5 @@
 #include "solver/fft_solvers/gpu/cufft_split_solver.hpp"
 #include "solver/fft_solvers/gpu/cuda_fft_kernels.hpp"
-
 #include "output.hpp"
 
 CUFFTRealTimeSplitSolver::CUFFTRealTimeSplitSolver(wavefun_gpu_t *psi,
