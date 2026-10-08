@@ -26,6 +26,12 @@ void DataInitializer::initialize_wavefunction() {
     }
 
     p_mediator->on_data_initialized(_data);
+    
+    // TODO: remove/fix
+    params->wvf_key = "GAUSS";
+    params->n_gauss_max = 4;
+    init_wavefunction();
+    p_mediator->on_data_initialized(_data);
 }
 
 void DataInitializer::initialize_potential() {
