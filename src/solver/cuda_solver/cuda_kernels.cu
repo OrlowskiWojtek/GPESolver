@@ -121,21 +121,25 @@ __global__
 void kernel_normalize(
     cuDoubleComplex* __restrict__ data,
     const double* __restrict__ norm_factor,
-    double dxdydz,
     int N
 ) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    double norm = sqrt(norm_factor[0] * dxdydz);
 
     if (idx < N) {
-        data[idx].x /= norm;
-        data[idx].y /= norm;
+        const double norm = sqrt(norm_factor[0]);
+        cuDoubleComplex v = data[idx];
+
+        v.x /= norm;
+        v.y /= norm;
+
+        data[idx] = v;
     }
 }
 
 __global__ void kernel_calc_norm(
     const cuDoubleComplex* __restrict__ data,
     double* __restrict__ result,
+    const double dxdydz,
     int N
 ) {
     __shared__ double sdata[256];
@@ -158,44 +162,38 @@ __global__ void kernel_calc_norm(
     }
     
     if (tid == 0) {
-        atomicAdd(result, sdata[0]);
+        atomicAdd(result, sdata[0] * dxdydz);
     }
 }
 
-double launch_kernel_calc_norm(
+void launch_kernel_calc_norm(
     const cuDoubleComplex* data,
     double* __restrict__ d_norm,
+    const double dxdydz,
     int N
 ) {
-    double h_result = 0.0;
     cudaMemset(d_norm, 0, sizeof(double));
 
     int block = 256;
     int grid  = (N + block - 1) / block;
-    kernel_calc_norm<<<grid, block>>>(data, d_norm, N);
 
+    kernel_calc_norm<<<grid, block>>>(data, d_norm, dxdydz, N);
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("Error after calc norm kernel: %s\n", cudaGetErrorString(err));
-    }
-    //cudaDeviceSynchronize();
-
-    // cudaMemcpy(&h_result, d_norm, sizeof(double), cudaMemcpyDeviceToHost);
-    
-    return 0;
+    } 
 }
 
 void launch_kernel_normalize(
     cuDoubleComplex* data,
     const double* __restrict__ norm_factor,
-    double dxdydz,
     int N
 ) {
     int block = 256;
     int grid  = (N + block - 1) / block;
 
-    kernel_normalize<<<grid, block>>>(data, norm_factor, dxdydz, N);
+    kernel_normalize<<<grid, block>>>(data, norm_factor, N);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("Error after normalize kernel: %s\n", cudaGetErrorString(err));

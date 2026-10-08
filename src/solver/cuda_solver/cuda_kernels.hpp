@@ -45,26 +45,26 @@ void launch_kernel_imag_time_iteration(const cuDoubleComplex *d_cpsi,
 __global__ void kernel_normalize(
     cuDoubleComplex* __restrict__ data,
     const double* __restrict__ norm_factor,
-    double dxdydz,
     int N
 );
 
 void launch_kernel_normalize(
     cuDoubleComplex* data,
     const double* __restrict__ norm_factor,
-    double dxdydz,
     int N
 );
 
 __global__ void kernel_calc_norm(
     const cuDoubleComplex* __restrict__ data,
     double* __restrict__ result,
+    const double dxdydz,
     int N
 );
 
-double launch_kernel_calc_norm(
+void launch_kernel_calc_norm(
     const cuDoubleComplex* data,
     double* __restrict__ d_norm,
+    const double dxdydz,
     int N
 );
 

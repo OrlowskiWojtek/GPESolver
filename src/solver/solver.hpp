@@ -77,4 +77,15 @@ protected:
                   << " ms" << std::endl;                                                           \
     }()
 
+#ifdef USE_CUDA
+
+#include "nvtx3/nvToolsExt.h"
+
+#define MEASURE_NVTX(func, ...) \
+    nvtxRangePushA(#func);      \
+    func(__VA_ARGS__);          \
+    nvtxRangePop();
+
+#endif
+
 #endif

@@ -43,12 +43,12 @@ void GpuRTGrossPitaevskiSolver::calc_fi3d() {
 
 void GpuRTGrossPitaevskiSolver::calc_norm() {
     int N  = params->nx * params->ny * params->nz;
-    launch_kernel_calc_norm(m_data.cpsi_gpu.data(), d_norm, N);
+    launch_kernel_calc_norm(m_data.cpsi_gpu.data(), d_norm, params->get_dxdydz(), N);
 }
 
 void GpuRTGrossPitaevskiSolver::normalize() {
     int N = params->nx * params->ny * params->nz;
-    launch_kernel_normalize(m_data.cpsi_gpu.data(), d_norm, params->get_dxdydz(), N);
+    launch_kernel_normalize(m_data.cpsi_gpu.data(), d_norm, N);
 }
 
 void GpuRTGrossPitaevskiSolver::real_fft_potential_half_step() {
