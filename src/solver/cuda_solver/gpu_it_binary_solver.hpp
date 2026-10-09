@@ -5,8 +5,6 @@
 #include "solver/solver_data/gpu_solver_data.hpp"
 #include "parameters/binary_parameters.hpp"
 
-#include <array>
-
 class GpuITBinaryGrossPitaevskiSolver : public AbstractGrossPitaevskiSolver {
 public:
     GpuITBinaryGrossPitaevskiSolver(AbstractSimulationMediator *mediator);
@@ -30,8 +28,9 @@ private:
 
     void lhy_point(double n1, double n2, double &lhy1, double&lhy2);
     void calc_lhy();
-    void copy_from_gpu1();
-    void copy_from_gpu0();
+    void copy_fi3d_from_gpu1();
+    void copy_data_from_gpu1();
+    void copy_data_from_gpu0();
     //! LHY potential of component a
     GpuArray<double> flhy_a;
     //! LHY potential of component b
