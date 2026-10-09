@@ -13,8 +13,12 @@ GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
     : AbstractGrossPitaevskiSolver(mediator)
     , p_mix(BinaryMixtureParameters::getInstance()) {
 
+    cudaSetDevice(0);
     cudaMalloc(&d_norm_a, sizeof(double));
+    cudaSetDevice(1);
     cudaMalloc(&d_norm_b, sizeof(double));
+
+    cudaSetDevice(0);
 
     if(!initialize_gauss()){
         throw std::runtime_error("Can't copy static arrays onto GPU");
