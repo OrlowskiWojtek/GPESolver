@@ -13,6 +13,9 @@ public:
 private:
     BinaryMixtureParameters* p_mix;
 
+    cudaStream_t copy_stream_0 = nullptr;
+    cudaStream_t copy_stream_1 = nullptr;
+
     //! Data for first component 'a' of a condensate
     GPUSolverData m_data_a_0; //!< first gpu
     GPUSolverData m_data_a_1; //!< second gpu

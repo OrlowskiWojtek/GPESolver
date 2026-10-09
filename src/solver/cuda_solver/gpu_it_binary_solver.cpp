@@ -14,8 +14,11 @@ GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
     , p_mix(BinaryMixtureParameters::getInstance()) {
 
     cudaSetDevice(0);
+    cudaStreamCreateWithFlags(&copy_stream_0, cudaStreamNonBlocking);
     cudaMalloc(&d_norm_a, sizeof(double));
+
     cudaSetDevice(1);
+    cudaStreamCreateWithFlags(&copy_stream_1, cudaStreamNonBlocking);
     cudaMalloc(&d_norm_b, sizeof(double));
 
     cudaSetDevice(0);
@@ -28,8 +31,15 @@ GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
 }
 
 GpuITBinaryGrossPitaevskiSolver::~GpuITBinaryGrossPitaevskiSolver() {
-    cudaFree(&d_norm_a);
-    cudaFree(&d_norm_b);
+    cudaSetDevice(0);
+    cudaStreamDestroy(copy_stream_0);
+    cudaFree(d_norm_a);
+
+    cudaSetDevice(1);
+    cudaStreamDestroy(copy_stream_1);
+    cudaFree(d_norm_b);
+
+    cudaSetDevice(0);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::init_containers() {
@@ -159,14 +169,18 @@ const int GpuITBinaryGrossPitaevskiSolver::iter_per_summary() const {
 }
 
 void GpuITBinaryGrossPitaevskiSolver::iterate() {
-    copy_data_from_gpu1(); // copying fi3d and dens_b from gpu1 of b species to gpu0
+    copy_data_from_gpu1();
     MEASURE_NVTX(calc_fi3d);
-    cudaDeviceSynchronize();
-    
+
+    cudaSetDevice(0);
+    cudaStreamSynchronize(copy_stream_0);
+
     copy_fi3d_from_gpu1();
     MEASURE_NVTX(calc_lhy); // this uses dens_a and dens_b, now from both gpus
-    cudaDeviceSynchronize();
+    //
     
+    cudaStreamSynchronize(copy_stream_0);
+
     MEASURE_NVTX(imag_iter_full_step);
 
     copy_data_from_gpu0();
@@ -241,10 +255,11 @@ void GpuITBinaryGrossPitaevskiSolver::copy_fi3d_from_gpu1() {
     const size_t fi3d_bytes = m_data_b_1.fi3d_gpu.size() * sizeof(double);
 
     cudaError_t error = cudaMemcpyPeerAsync(m_data_b_0.fi3d_gpu.data(),
-                           0,
-                           m_data_b_1.fi3d_gpu.data(),
-                           1,
-                           fi3d_bytes);
+                                            0,
+                                            m_data_b_1.fi3d_gpu.data(),
+                                            1,
+                                            fi3d_bytes,
+                                            copy_stream_0);
 
     if (error != cudaSuccess) {
         throw std::runtime_error(
@@ -262,10 +277,11 @@ void GpuITBinaryGrossPitaevskiSolver::copy_data_from_gpu1() {
         m_data_b_1.cpsi_gpu.size() * sizeof(cuDoubleComplex);
 
     cudaError_t error = cudaMemcpyPeerAsync(m_data_b_0.cpsi_gpu.data(),
-                                       0,
-                                       m_data_b_1.cpsi_gpu.data(),
-                                       1,
-                                       cpsi_bytes);
+                                            0,
+                                            m_data_b_1.cpsi_gpu.data(),
+                                            1,
+                                            cpsi_bytes,
+                                            copy_stream_0);
 
     if (error != cudaSuccess) {
         throw std::runtime_error(
@@ -282,7 +298,7 @@ void GpuITBinaryGrossPitaevskiSolver::copy_data_from_gpu0() {
     const size_t cpsi_bytes =
         m_data_b_0.cpsi_gpu.size() * sizeof(cuDoubleComplex);
 
-    cudaError_t error = cudaMemcpyPeerAsync(m_data_b_1.cpsi_gpu.data(),
+    cudaError_t error = cudaMemcpyPeer(m_data_b_1.cpsi_gpu.data(),
                                        1,
                                        m_data_b_0.cpsi_gpu.data(),
                                        0,
