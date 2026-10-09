@@ -41,6 +41,7 @@ void GpuITBinaryGrossPitaevskiSolver::init_containers() {
     m_data_a_1.allocate(nx, ny, nz);
     m_data_b_1.allocate(nx, ny, nz);
 
+    cudaSetDevice(0);
     flhy_a = GpuArray<double>(nx, ny, nz);
     flhy_b = GpuArray<double>(nx, ny, nz);
 }
@@ -51,6 +52,8 @@ void GpuITBinaryGrossPitaevskiSolver::calc_fi3d() {
 
     cudaSetDevice(1);
     poisson_solver_b->execute(); // this uses dens_b, output pote_b, works on gpu 1
+    
+    cudaSetDevice(0);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::calc_norm() {
@@ -63,6 +66,8 @@ void GpuITBinaryGrossPitaevskiSolver::calc_norm() {
     cudaSetDevice(1);
     launch_kernel_calc_norm(
         m_data_b_1.cpsi_gpu.data(), d_norm_b, params->get_dxdydz(), N);
+
+    cudaSetDevice(0);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::normalize() {
@@ -73,6 +78,8 @@ void GpuITBinaryGrossPitaevskiSolver::normalize() {
     
     cudaSetDevice(1);
     launch_kernel_normalize(m_data_b_1.cpsi_gpu.data(), d_norm_b, N);
+
+    cudaSetDevice(0);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::calc_energy() {
@@ -147,6 +154,7 @@ void GpuITBinaryGrossPitaevskiSolver::iterate() {
     MEASURE_NVTX(calc_fi3d); 
     // copy data from gpu2 to gpu1
     // here I need to copy data from gpu1 to gpu0
+    copy_from_gpu1();
     MEASURE_NVTX(calc_lhy); // this uses dens_a and dens_b, now from both gpus
     MEASURE_NVTX(imag_iter_full_step);
     // copy data from gpu1 to gpu2

@@ -1,0 +1,7 @@
+
+First iteration:
+step 1: dens_a and dens_b on both gpus
+step 2: split calc_fi3d
+step 3: keep calc_lhy on gpu0
+
+Second iteration:
