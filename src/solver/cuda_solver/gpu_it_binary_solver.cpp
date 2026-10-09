@@ -93,10 +93,13 @@ void GpuITBinaryGrossPitaevskiSolver::prepare_fft() {
     // ok, for now, normalization is broken, however assuming, that all number
     // of atoms = 40000 (
     //
+    cudaSetDevice(0);
     poisson_solver_a = std::make_unique<CUFFTPoissonSolver>(&m_data_a_0.cpsi_gpu,
                                                             &m_data_a_0.fi3d_gpu);
+    cudaSetDevice(1);
     poisson_solver_b = std::make_unique<CUFFTPoissonSolver>(&m_data_b_1.cpsi_gpu,
                                                             &m_data_b_1.fi3d_gpu);
+    cudaSetDevice(0);
 };
 
 void GpuITBinaryGrossPitaevskiSolver::import_pote() {
@@ -156,7 +159,7 @@ const int GpuITBinaryGrossPitaevskiSolver::iter_per_summary() const {
 
 void GpuITBinaryGrossPitaevskiSolver::iterate() {
     MEASURE_NVTX(calc_fi3d); 
-    // copy data from gpu2 to gpu1
+    // copy data from gpu1 to gpu0
     // here I need to copy data from gpu1 to gpu0
     copy_from_gpu1();
     MEASURE_NVTX(calc_lhy); // this uses dens_a and dens_b, now from both gpus
