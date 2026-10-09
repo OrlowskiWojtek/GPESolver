@@ -28,4 +28,9 @@ void BinaryMixtureParameters::set_to_default() {
     cdd11 = 12.0 * M_PI * 131.0 / m_a;
     cdd22 = 12.0 * M_PI * 131.0 / m_b;
     cdd12 = 12.0 * M_PI * 131.0 / reduced_mass;
+
+    // Precalculated things
+    four_third_pi2 = 4.0 / (3.0 * M_PI * M_PI);
+    factor_m1 = four_third_pi2 * pow(m_a, 1.5);
+    factor_m2 = four_third_pi2 * pow(m_b, 1.5);
 }

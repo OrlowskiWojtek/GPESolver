@@ -46,9 +46,8 @@ void kernel_fill_from_psi(
 
     int rho_idx = (i * full_ny + j) * full_nz + k;
     if (i < nx && j < ny && k < nz) {
-
         int psi_idx = (i * ny + j) * nz + k;
-        complex_type wav = __ldg(&psi[psi_idx]);
+        complex_type wav = psi[psi_idx];
 
         double psi_sq = wav.x * wav.x + 
                         wav.y * wav.y;

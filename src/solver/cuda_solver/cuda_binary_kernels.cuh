@@ -92,7 +92,10 @@ void launch_kernel_calc_lhy(
     const double cdd22,
     const int nx,
     const int ny,
-    const int nz
+    const int nz,
+    const double four_third_pi2,
+    const double factor_m1,
+    const double factor_m2
 );
 
 __global__
@@ -113,7 +116,10 @@ void kernel_calc_lhy(
     const double cdd22,
     const int nx,
     const int ny,
-    const int nz
+    const int nz,
+    const double four_third_pi2,
+    const double factor_m1,
+    const double factor_m2
 );
 
 #endif

@@ -25,8 +25,11 @@ struct BinaryMixtureParameters {
     // cdd12 = \mu_0 \mu_a \mu_b
     double cdd11, cdd22, cdd12;   // dipole strengths
 
-    //! Adds random noise at the beginning of calculations
-    bool add_random_noise = false;
+
+    // Precompute factors
+    double four_third_pi2;
+    double factor_m1;
+    double factor_m2;
 
     void set_to_default();
 private:

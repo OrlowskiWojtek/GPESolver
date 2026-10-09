@@ -16,9 +16,12 @@ private:
     BinaryMixtureParameters* p_mix;
 
     //! Data for first component 'a' of a condensate
-    GPUSolverData m_data_a;
+    GPUSolverData m_data_a_0; //!< first gpu
+    GPUSolverData m_data_a_1; //!< second gpu
     //! Data for second component 'b' of a condensate
-    GPUSolverData m_data_b;
+    GPUSolverData m_data_b_0;
+    GPUSolverData m_data_b_1;
+
     double *d_norm_a;
     double *d_norm_b;
 
@@ -27,6 +30,7 @@ private:
 
     void lhy_point(double n1, double n2, double &lhy1, double&lhy2);
     void calc_lhy();
+    void copy_from_gpu1();
     //! LHY potential of component a
     GpuArray<double> flhy_a;
     //! LHY potential of component b

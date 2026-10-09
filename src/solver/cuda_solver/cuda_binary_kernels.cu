@@ -246,7 +246,10 @@ void kernel_calc_lhy(
     const double cdd22,
     const int nx,
     const int ny,
-    const int nz
+    const int nz,
+    const double four_third_pi2,
+    const double factor_m1,
+    const double factor_m2
 ) {
     int k = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -261,11 +264,6 @@ void kernel_calc_lhy(
     // Densities: |psi|^2 * n_atoms
     const double n1 = (psi_a[idx].x * psi_a[idx].x + psi_a[idx].y * psi_a[idx].y) * n_atoms_a;
     const double n2 = (psi_b[idx].x * psi_b[idx].x + psi_b[idx].y * psi_b[idx].y) * n_atoms_b;
-
-    // Precompute factors
-    constexpr double four_third_pi2 = 4.0 / (3.0 * M_PI * M_PI);
-    const double factor_m1 = four_third_pi2 * pow(m_a, 1.5);
-    const double factor_m2 = four_third_pi2 * pow(m_b, 1.5);
 
     double mu1 = 0.0;
     double mu2 = 0.0;
@@ -284,6 +282,8 @@ void kernel_calc_lhy(
         const double D    = sqrt(fmax(diff * diff + 4.0 * g12_eff * g12_eff * n1 * n2, 1e-30));
         const double lambda_p = 0.5 * (g11_eff * n1 + g22_eff * n2 + D);
         const double lambda_m = 0.5 * (g11_eff * n1 + g22_eff * n2 - D);
+
+        // change to val * sqrt(val)
         const double s_p      = pow(fmax(lambda_p, 0.0), 1.5);
         const double s_m      = pow(fmax(lambda_m, 0.0), 1.5);
 
@@ -317,7 +317,10 @@ void launch_kernel_calc_lhy(
     const double cdd22,
     const int nx,
     const int ny,
-    const int nz
+    const int nz,
+    const double four_third_pi2,
+    const double factor_m1,
+    const double factor_m2
 ) {
     dim3 block(8, 8, 8);
     dim3 grid((nz + 7) / 8, (ny + 7) / 8, (nx + 7) / 8);
@@ -326,7 +329,8 @@ void launch_kernel_calc_lhy(
         psi_a, psi_b, flhy_a, flhy_b,
         m_a, m_b, n_atoms_a, n_atoms_b,
         g11, g12, g22, cdd11, cdd12, cdd22,
-        nx, ny, nz
+        nx, ny, nz,
+        four_third_pi2, factor_m1, factor_m2
     );
 
     cudaError_t err = cudaGetLastError();
