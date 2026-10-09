@@ -31,6 +31,7 @@ private:
     void lhy_point(double n1, double n2, double &lhy1, double&lhy2);
     void calc_lhy();
     void copy_from_gpu1();
+    void copy_from_gpu0();
     //! LHY potential of component a
     GpuArray<double> flhy_a;
     //! LHY potential of component b
