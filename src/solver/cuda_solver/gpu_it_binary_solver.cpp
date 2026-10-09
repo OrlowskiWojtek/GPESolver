@@ -13,6 +13,8 @@ GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
     : AbstractGrossPitaevskiSolver(mediator)
     , p_mix(BinaryMixtureParameters::getInstance()) {
 
+    cudaDeviceEnablePeerAccess(0, 0);
+
     cudaSetDevice(0);
     cudaStreamCreateWithFlags(&copy_stream_0, cudaStreamNonBlocking);
     cudaMalloc(&d_norm_a, sizeof(double));
