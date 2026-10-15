@@ -27,11 +27,11 @@ void DataInitializer::initialize_wavefunction() {
 
     p_mediator->on_data_initialized(_data);
     
-    // TODO: remove/fix
-    params->wvf_key = "GAUSS";
-    params->n_gauss_max = 4;
-    init_wavefunction();
-    p_mediator->on_data_initialized(_data);
+    // TODO: remove/fix (ONLY FOR BINARY MIXTURES)
+    // params->wvf_key = "GAUSS";
+    // params->n_gauss_max = 4;
+    // init_wavefunction();
+    // p_mediator->on_data_initialized(_data);
 }
 
 void DataInitializer::initialize_potential() {
@@ -40,8 +40,11 @@ void DataInitializer::initialize_potential() {
     init_pote();
 
     if(params->add_random_pote_noise) {
+        OutputFormatter::printInfo("Adding random noise to potential");
         add_initial_pote_noise();
     }
+
+    std::cout << _pote(50,50,10) << std::endl;
 
     p_mediator->on_pote_initialized(_pote);
 }
@@ -100,7 +103,7 @@ void DataInitializer::change_potential(std::string pote_key) {
     params->pote_key = pote_key;
 
     init_pote();
-    p_mediator->on_pote_initialized(_pote);
+    p_mediator->on_pote_changed(_pote);
 }
 
 void DataInitializer::add_initial_noise() {
@@ -138,12 +141,12 @@ void DataInitializer::add_initial_pote_noise() {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<double> dist(-noise_level, noise_level);
 
-    for (int i = 1; i < nx - 1; i++) {
-        for (int j = 1; j < ny - 1; j++) {
-            for (int k = 1; k < nz - 1; k++) {
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
                 double rand_real = dist(rng);
-
-                _pote(i, j, k) *= (1 + rand_real);
+                               
+                _pote(i, j, k) *= (1. + rand_real);
             }
         }
     }
