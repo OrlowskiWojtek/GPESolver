@@ -119,4 +119,62 @@ void kernel_calc_lhy(
     const double factor_m2
 );
 
+// ==== Energies ====
+
+void launch_kernel_calc_enes(
+    const cuDoubleComplex* __restrict__ psi_a,
+    const cuDoubleComplex* __restrict__ psi_b,
+    const double*__restrict__  pote,
+    const double*__restrict__  fi3d_a,
+    const double*__restrict__  fi3d_b,
+    const double*__restrict__  flhy_a,
+    const double*__restrict__  flhy_b,
+    double* d_energy_a,
+    double* d_energy_b,
+    double m_a,
+    double m_b,
+    double n_atoms_a,
+    double n_atoms_b,
+    double g11,
+    double g12,
+    double g22,
+    double cdd11,
+    double cdd12,
+    double cdd22,
+    int nx,
+    int ny,
+    int nz,
+    double dx,
+    double dy,
+    double dz
+);
+
+__global__ void kernel_calc_enes(
+    const cuDoubleComplex* __restrict__ psi_a,
+    const cuDoubleComplex* __restrict__ psi_b,
+    const double*__restrict__  pote,
+    const double*__restrict__  fi3d_a,
+    const double*__restrict__  fi3d_b,
+    const double*__restrict__  flhy_a,
+    const double*__restrict__  flhy_b,
+    double* d_energy_a,
+    double* d_energy_b,
+    double m_a,
+    double m_b,
+    double n_atoms_a,
+    double n_atoms_b,
+    double g11,
+    double g12,
+    double g22,
+    double cdd11,
+    double cdd12,
+    double cdd22,
+    int nx,
+    int ny,
+    int nz,
+    double dx,
+    double dy,
+    double dz
+);
+
 #endif

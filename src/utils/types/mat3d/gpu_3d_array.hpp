@@ -133,6 +133,10 @@ public:
         CUDA_CHECK(cudaMemcpy(host_data, data_, size() * sizeof(T), cudaMemcpyDeviceToHost));
     }
 
+    void copy_to_host_async(T *host_data) const {
+        CUDA_CHECK(cudaMemcpyAsync(host_data, data_, size() * sizeof(T), cudaMemcpyDeviceToHost));
+    }
+
     std::vector<T> copy_to_host() const {
         std::vector<T> result(size());
         copy_to_host(result.data());

@@ -4,6 +4,7 @@
 #include "solver/solver.hpp"
 #include "solver/solver_data/gpu_solver_data.hpp"
 #include "parameters/binary_parameters.hpp"
+#include "gpu_helpers.hpp"
 
 class GpuITBinaryGrossPitaevskiSolver : public AbstractGrossPitaevskiSolver {
 public:
@@ -23,6 +24,9 @@ private:
 
     std::unique_ptr<AbstractPoissonSolver> poisson_solver_a;
     std::unique_ptr<AbstractPoissonSolver> poisson_solver_b;
+
+    GpuEnergy d_energy_a;
+    GpuEnergy d_energy_b;
 
     void lhy_point(double n1, double n2, double &lhy1, double&lhy2);
     void calc_lhy();

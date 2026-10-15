@@ -280,12 +280,12 @@ void kernel_calc_lhy(
 
         const double diff = g11_eff * n1 - g22_eff * n2;
         const double D    = sqrt(fmax(diff * diff + 4.0 * g12_eff * g12_eff * n1 * n2, 1e-30));
-        const double lambda_p = 0.5 * (g11_eff * n1 + g22_eff * n2 + D);
-        const double lambda_m = 0.5 * (g11_eff * n1 + g22_eff * n2 - D);
+        const double lambda_p = fmax(0.5 * (g11_eff * n1 + g22_eff * n2 + D), 0.);
+        const double lambda_m = fmax(0.5 * (g11_eff * n1 + g22_eff * n2 - D), 0.);
 
         // change to val * sqrt(val)
-        const double s_p      = pow(fmax(lambda_p, 0.0), 1.5);
-        const double s_m      = pow(fmax(lambda_m, 0.0), 1.5);
+        const double s_p      = lambda_p * sqrt(lambda_p);
+        const double s_m      = lambda_m * sqrt(lambda_m);
 
         const double dep_p_n1 = 0.5 * (g11_eff + (g11_eff * diff + 2.0 * g12_eff * g12_eff * n2) / D);
         const double dep_m_n1 = 0.5 * (g11_eff - (g11_eff * diff + 2.0 * g12_eff * g12_eff * n2) / D);
@@ -336,5 +336,172 @@ void launch_kernel_calc_lhy(
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("Error after calc_lhy kernel: %s\n", cudaGetErrorString(err));
+    }
+}
+
+// ============== Energies =================
+
+
+
+__global__ 
+void kernel_calc_enes(
+    const cuDoubleComplex* __restrict__ psi_a,
+    const cuDoubleComplex* __restrict__ psi_b,
+    const double*__restrict__  pote,
+    const double*__restrict__  fi3d_a,
+    const double*__restrict__  fi3d_b,
+    const double*__restrict__  flhy_a,
+    const double*__restrict__  flhy_b,
+    double* d_energy_a,
+    double* d_energy_b,
+    double m_a,
+    double m_b,
+    double n_atoms_a,
+    double n_atoms_b,
+    double g11,
+    double g12,
+    double g22,
+    double cdd11,
+    double cdd12,
+    double cdd22,
+    int nx,
+    int ny,
+    int nz,
+    double dx,
+    double dy,
+    double dz
+) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int total = nx * ny * nz;
+    if (idx >= total) return;
+
+    const int i = idx / (ny * nz);
+    const int j = (idx / nz) % ny;
+    const int k = idx % nz;
+
+    // Match the interior-grid integration used by energiacnd.
+    if (i == 0 || i == nx - 1 ||
+        j == 0 || j == ny - 1 ||
+        k == 0 || k == nz - 1) {
+        return;
+    }
+
+    const int idx_ip1 = idx + ny * nz;
+    const int idx_im1 = idx - ny * nz;
+    const int idx_jp1 = idx + nz;
+    const int idx_jm1 = idx - nz;
+    const int idx_kp1 = idx + 1;
+    const int idx_km1 = idx - 1;
+
+    const double volume = dx * dy * dz;
+    const cuDoubleComplex a = psi_a[idx];
+    const cuDoubleComplex b = psi_b[idx];
+
+    const double density_a = a.x * a.x + a.y * a.y;
+    const double density_b = b.x * b.x + b.y * b.y;
+
+    const double rho_a = n_atoms_a * density_a;
+    const double rho_b = n_atoms_b * density_b;
+
+    const cuDoubleComplex lap_a = {
+        (psi_a[idx_im1].x + psi_a[idx_ip1].x - 2.0 * a.x) / (dx * dx) +
+        (psi_a[idx_jm1].x + psi_a[idx_jp1].x - 2.0 * a.x) / (dy * dy) +
+        (psi_a[idx_km1].x + psi_a[idx_kp1].x - 2.0 * a.x) / (dz * dz),
+        (psi_a[idx_im1].y + psi_a[idx_ip1].y - 2.0 * a.y) / (dx * dx) +
+        (psi_a[idx_jm1].y + psi_a[idx_jp1].y - 2.0 * a.y) / (dy * dy) +
+        (psi_a[idx_km1].y + psi_a[idx_kp1].y - 2.0 * a.y) / (dz * dz)
+    };
+
+    const cuDoubleComplex lap_b = {
+        (psi_b[idx_im1].x + psi_b[idx_ip1].x - 2.0 * b.x) / (dx * dx) +
+        (psi_b[idx_jm1].x + psi_b[idx_jp1].x - 2.0 * b.x) / (dy * dy) +
+        (psi_b[idx_km1].x + psi_b[idx_kp1].x - 2.0 * b.x) / (dz * dz),
+        (psi_b[idx_im1].y + psi_b[idx_ip1].y - 2.0 * b.y) / (dx * dx) +
+        (psi_b[idx_jm1].y + psi_b[idx_jp1].y - 2.0 * b.y) / (dy * dy) +
+        (psi_b[idx_km1].y + psi_b[idx_kp1].y - 2.0 * b.y) / (dz * dz)
+    };
+
+    // Real part of (-laplacian(psi) / (2m)) * conj(psi).
+    const double kinetic_a =
+        -n_atoms_a * (lap_a.x * a.x + lap_a.y * a.y) / (2.0 * m_a);
+    const double kinetic_b =
+        -n_atoms_b * (lap_b.x * b.x + lap_b.y * b.y) / (2.0 * m_b);
+
+    const double contact_a =
+        0.5 * density_a * (g11 * rho_a + g12 * rho_b);
+    const double contact_b =
+        0.5 * density_b * (g22 * rho_b + g12 * rho_a);
+
+    // kinetic
+    atomicAdd(&d_energy_a[0], kinetic_a * volume);
+    // potential
+    atomicAdd(&d_energy_a[1], rho_a * pote[idx] * volume);
+    // contact
+    atomicAdd(&d_energy_a[2], contact_a * volume);
+    // dipolar
+    atomicAdd(&d_energy_a[3], 0.5 * rho_a * fi3d_a[idx] * volume);
+    // LHY
+    atomicAdd(&d_energy_a[4], 0.4 * rho_a * flhy_a[idx]);
+
+    atomicAdd(&d_energy_b[0], kinetic_b * volume);
+    atomicAdd(&d_energy_b[1], rho_b * pote[idx] * volume);
+    atomicAdd(&d_energy_b[2], 0.5 * rho_b * fi3d_b[idx] * volume);
+    atomicAdd(&d_energy_b[3], contact_b * volume);
+    atomicAdd(&d_energy_b[4], 0.4 * rho_b * flhy_b[idx]);
+}
+
+void launch_kernel_calc_enes(
+    const cuDoubleComplex* __restrict__ psi_a,
+    const cuDoubleComplex* __restrict__ psi_b,
+    const double* __restrict__ pote,
+    const double* __restrict__ fi3d_a,
+    const double* __restrict__ fi3d_b,
+    const double* __restrict__ flhy_a,
+    const double* __restrict__ flhy_b,
+    double* d_energy_a,
+    double* d_energy_b,
+    const double m_a,
+    const double m_b,
+    const double n_atoms_a,
+    const double n_atoms_b,
+    const double g11,
+    const double g12,
+    const double g22,
+    const double cdd11,
+    const double cdd12,
+    const double cdd22,
+    const int nx,
+    const int ny,
+    const int nz,
+    const double dx,
+    const double dy,
+    const double dz
+) {
+    const int energy_count = 5;
+    cudaError_t err = cudaMemset(d_energy_a, 0, energy_count * sizeof(double));
+    if (err != cudaSuccess) {
+        printf("Error clearing energy buffer: %s\n", cudaGetErrorString(err));
+        return;
+    }
+    err = cudaMemset(d_energy_b, 0, energy_count * sizeof(double));
+    if (err != cudaSuccess) {
+        printf("Error clearing energy buffer: %s\n", cudaGetErrorString(err));
+        return;
+    }
+
+    const int total = nx * ny * nz;
+    const int threads = 256;
+    const int blocks = (total + threads - 1) / threads;
+
+    kernel_calc_enes<<<blocks, threads>>>(
+        psi_a, psi_b, pote, fi3d_a, fi3d_b, flhy_a, flhy_b,
+        d_energy_a, d_energy_b, m_a, m_b, n_atoms_a, n_atoms_b,
+        g11, g12, g22, cdd11, cdd12, cdd22,
+        nx, ny, nz, dx, dy, dz
+    );
+
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Error after kernel_calc_enes: %s\n", cudaGetErrorString(err));
     }
 }

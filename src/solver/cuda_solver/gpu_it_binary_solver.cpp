@@ -2,7 +2,6 @@
 #include "solver/cuda_solver/cuda_binary_kernels.cuh"
 #include "solver/cuda_solver/cuda_kernels.cuh"
 #include "utils/output/output.hpp"
-#include <iostream>
 
 GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
     AbstractSimulationMediator *mediator)
@@ -54,11 +53,66 @@ void GpuITBinaryGrossPitaevskiSolver::calc_norm() {
 void GpuITBinaryGrossPitaevskiSolver::normalize() {
     const int N = params->nx * params->ny * params->nz;
 
+    // TODO: move into common kernel of two
     launch_kernel_normalize(m_data_a.cpsi_gpu.data(), d_norm_a, N);
     launch_kernel_normalize(m_data_b.cpsi_gpu.data(), d_norm_b, N);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::calc_energy() {
+    nvtxRangePushA("CalcEnergyMix");
+
+    launch_kernel_calc_enes(m_data_a.cpsi_gpu.data(),
+                            m_data_b.cpsi_gpu.data(),
+                            m_data_a.pote_gpu.data(),
+                            m_data_a.fi3d_gpu.data(),
+                            m_data_b.fi3d_gpu.data(),
+                            flhy_a.data(),
+                            flhy_b.data(),
+                            d_energy_a.get_data(),
+                            d_energy_b.get_data(),
+                            p_mix->m_a,
+                            p_mix->m_b,
+                            p_mix->n_atoms_a,
+                            p_mix->n_atoms_b,
+                            p_mix->g11,
+                            p_mix->g12,
+                            p_mix->g22,
+                            p_mix->cdd11,
+                            p_mix->cdd12,
+                            p_mix->cdd22,
+                            params->nx,
+                            params->ny,
+                            params->nz,
+                            params->dx,
+                            params->dy,
+                            params->dz);
+
+    // TODO: alloc on CPU (?)
+    double energies[5];
+
+    for(int i = 0; i < 2; i++){
+        auto& target = i ? d_energy_a : d_energy_b;
+        cudaError_t err = cudaMemcpy(energies,
+                                     target.get_data(),
+                                     5 * sizeof(double),
+                                     cudaMemcpyDeviceToHost);
+
+        if (err != cudaSuccess) {
+            throw std::runtime_error(std::string("Can't copy") +
+                                     std::string(cudaGetErrorString(err)));
+        }
+
+        ene.e_kin = energies[0];
+        ene.e_pot = energies[1];
+        ene.e_int = energies[2];
+        ene.e_ext = energies[3];
+        ene.e_bmf = energies[4];
+        ene.sum();
+
+        enes.push_back(ene);
+    }
+
+    nvtxRangePop();
 }
 
 void GpuITBinaryGrossPitaevskiSolver::prepare_fft() {
@@ -97,7 +151,6 @@ void GpuITBinaryGrossPitaevskiSolver::import_data() {
 
     OutputFormatter::printInfo(std::string("Loading to wavefunction: ") +
                                std::string(load_to_a ? "a" : "b"));
-    std::cout << std::boolalpha << load_to_a << std::endl;
 };
 
 //! \todo Task -> how to export cpsi_b?
@@ -109,8 +162,13 @@ void GpuITBinaryGrossPitaevskiSolver::export_data() {
     auto &target = export_to_a ? m_data_a : m_data_b;
 
     cudaDeviceSynchronize();
+
+    // TODO: add event on copy end and then write data.
     target.cpsi_gpu.copy_to_host(
         reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
+
+    OutputFormatter::printInfo(std::string("Exporting wavefunction: ") +
+                               std::string(export_to_a ? "a" : "b"));
 
     export_a_counter++;
 };
