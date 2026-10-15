@@ -2,9 +2,8 @@
 #define GPU_3D_ARRAY_HPP
 
 #include <cstddef>
-#include <iostream>
 #include <stdexcept>
-#include <utility> // std::exchange
+#include <utility>
 #include <vector>
 
 #include "cuda_runtime.h"

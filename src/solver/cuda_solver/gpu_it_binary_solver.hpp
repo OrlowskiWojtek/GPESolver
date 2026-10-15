@@ -13,15 +13,10 @@ public:
 private:
     BinaryMixtureParameters* p_mix;
 
-    cudaStream_t copy_stream_0 = nullptr;
-    cudaStream_t copy_stream_1 = nullptr;
-
     //! Data for first component 'a' of a condensate
-    GPUSolverData m_data_a_0; //!< first gpu
-    GPUSolverData m_data_a_1; //!< second gpu
+    GPUSolverData m_data_a;
     //! Data for second component 'b' of a condensate
-    GPUSolverData m_data_b_0;
-    GPUSolverData m_data_b_1;
+    GPUSolverData m_data_b;
 
     double *d_norm_a;
     double *d_norm_b;
@@ -31,9 +26,6 @@ private:
 
     void lhy_point(double n1, double n2, double &lhy1, double&lhy2);
     void calc_lhy();
-    void copy_fi3d_from_gpu1();
-    void copy_data_from_gpu1();
-    void copy_data_from_gpu0();
     //! LHY potential of component a
     GpuArray<double> flhy_a;
     //! LHY potential of component b

@@ -3,10 +3,7 @@
 
 #include <cuComplex.h>
 
-#define CUDA_KERNEL_DECLARE(kernel_name, ...) \
-    __global__ void kernel_name(__VA_ARGS__); \
-    void launch_##kernel_name(__VA_ARGS__)
-
+// Move gaussian weights to constant memory on a device
 bool initialize_gauss();
 
 void launch_kernel_calc_lhy(
