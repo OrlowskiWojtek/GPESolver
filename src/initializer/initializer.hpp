@@ -23,6 +23,9 @@ private:
     void init_wavefunction();
     //! applies small random noise to the wavefunction, just to break symmetries
     void add_initial_noise();
+    //! applies small random noise to the potential, just to break symmetries
+    //! potential is then pote * noise (noise is the same between experiments)
+    void add_initial_pote_noise();
 
     wavefunction_t _data;
     potential_t _pote;

@@ -53,8 +53,11 @@ struct PhysicalParameters {
     double edd_start;
     double edd_stop;
     
-    //! Adds random noise at the beginning of calculations
+    //! Adds random noise to wavefunction at the beginning of calculations
     bool add_random_noise = false;
+
+    //! Adds random noise to the potenial at the beginning of calculations
+    bool add_random_pote_noise = false;
 
     //! Number of nodes in calculations - x direction.
     int nx;

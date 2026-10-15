@@ -491,6 +491,7 @@ void FileManager::load_initialization(nlohmann::json &j) {
     }
 
     params->add_random_noise = j.value("add_random_noise", false);
+    params->add_random_pote_noise = j.value("add_random_pote_noise", false);
 
     if (params->wvf_key == "BINARY_FILE" || params->wvf_key == "TEXT_FILE") {
         CHECK_REQUIRED(j, "load_filename");
