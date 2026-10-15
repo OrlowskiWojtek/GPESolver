@@ -38,6 +38,11 @@ void DataInitializer::initialize_potential() {
     OutputFormatter::printInfo("Initializing potential");
 
     init_pote();
+
+    if(params->add_random_pote_noise) {
+        add_initial_pote_noise();
+    }
+
     p_mediator->on_pote_initialized(_pote);
 }
 
@@ -103,11 +108,12 @@ void DataInitializer::add_initial_noise() {
     const int ny = params->ny;
     const int nz = params->nz;
 
-    const double noise_level = 0.1;
+    // default seed explicitly added
+    const unsigned int seed = 5489;
+    const double noise_level = 0.05;
 
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::uniform_real_distribution<double> dist(0, noise_level);
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<double> dist(-noise_level, noise_level);
 
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
@@ -115,6 +121,29 @@ void DataInitializer::add_initial_noise() {
                 double rand_real = dist(rng);
 
                 _data(i, j, k) *= (1 + rand_real);
+            }
+        }
+    }
+}
+
+void DataInitializer::add_initial_pote_noise() {
+    const int nx = params->nx;
+    const int ny = params->ny;
+    const int nz = params->nz;
+
+    // default seed explicitly added
+    const unsigned int seed = 5489u;
+    const double noise_level = 0.05;
+
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<double> dist(-noise_level, noise_level);
+
+    for (int i = 1; i < nx - 1; i++) {
+        for (int j = 1; j < ny - 1; j++) {
+            for (int k = 1; k < nz - 1; k++) {
+                double rand_real = dist(rng);
+
+                _pote(i, j, k) *= (1 + rand_real);
             }
         }
     }
