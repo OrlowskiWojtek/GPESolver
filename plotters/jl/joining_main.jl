@@ -13,6 +13,8 @@ struct JoiningRunData
 end
 
 function plot_x_joining(j_data::Vector{JoiningRunData})
+    CairoMakie.activate!()
+
     fig = Figure()
     ax_x = Axis(fig[1,1], ylabel = "x [nm]", xlabel = "t [ms]")
 
@@ -53,4 +55,3 @@ end
 
 #fig = plot_x_joining(j_data[1:10])
 #save("zlepanie.pdf", fig)
-

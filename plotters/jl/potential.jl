@@ -1,5 +1,6 @@
 using CairoMakie
-using GLMakie
+
+CairoMakie.activate!()
 
 ## Finding correct potential profile for ball hitting (only x dimension right now)
 

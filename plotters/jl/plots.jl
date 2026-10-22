@@ -1,9 +1,9 @@
-#using CairoMakie
-using GLMakie
-
+include("plotting_helpers.jl")
 include("context.jl")
 
 function plot_iso_bce(BECContext::IsoBECContext)
+    GLMakie.activate!()
+
     fig = Figure()
     ax = Axis3(fig[1, 1], xlabel="X", ylabel="Y", zlabel="Z", title="Isosurface of BEC Structure", aspect = :data)
 
@@ -39,6 +39,8 @@ function plot_iso_bce(BECContext::IsoBECContext)
 end
 
 function plot_energies(context::EnergiesContext)
+    CairoMakie.activate!()
+
     fig = Figure()
     ax = Axis(fig[1, 1], xlabel="Iteration", ylabel="Energy (meV)")
 
@@ -56,19 +58,24 @@ function plot_energies(context::EnergiesContext)
     fig
 end
 
-function plot_slice(slice::IsoBECSlice)
+function plot_slice(slice::IsoBECSlice, n_atoms::Float64)
+    CairoMakie.activate!()
+
     fig = Figure()
     ax = Axis(fig[1,1], xlabel = "x [nm]", ylabel = "y [nm]")
 
-    rho = abs.(slice.psi)
-    hm = heatmap!(ax, slice.x, slice.y, rho, colormap = :plasma)
-    Colorbar(fig[1,2], hm, label = "|Ψ|")
+    colormap = _bec_density_colormap()
+    rho = abs.(slice.psi) .^ 2 * n_atoms / length_au3_to_μm3(1.)
 
+    hm = heatmap!(ax, slice.x, slice.y, rho; colormap)
+    Colorbar(fig[1,2], hm, label = "ρ / μm⁻³")
 
     return fig;
 end
 
 function plot(pote::PoteContext)
+    CairoMakie.activate!()
+
     fig = Figure()
 
     ax_x = Axis(fig[1,1])
@@ -87,4 +94,18 @@ function plot(pote::PoteContext)
     linkxaxes!(ax_x, ax_z)
 
     return fig;
+end
+
+function plot_potential_comparison(pote::PoteContext, pote2::PoteContext;
+                                   conversion = 27211.4 * 11.6 * 10^9)
+    CairoMakie.activate!()
+
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+
+    lines!(ax, pote.x, pote.pote[:, 10, 1] .* conversion, label="without noise")
+    lines!(ax, pote2.x, pote2.pote[:, 10, 1] .* conversion, label="with noise")
+    axislegend(ax)
+
+    return fig
 end

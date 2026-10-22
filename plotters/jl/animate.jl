@@ -1,6 +1,5 @@
-using GLMakie
 using LaTeXStrings
-using Colors
+include("plotting_helpers.jl")
 # This files includes sets of plots and animations that require time evolution of BEC
 # TODO refactor from common code
 
@@ -11,6 +10,8 @@ include("units.jl")
 set_theme!(theme_latexfonts(), rowgap = 0, colgap = 0)
 
 function animate_pote_interactive_prefetch(data_dir::String)
+    GLMakie.activate!()
+
     files = filter(f -> occursin("changed_potential", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "potential")[2], ".")[1]))
     n_frames = length(files)
@@ -51,21 +52,7 @@ function animate_pote_interactive_prefetch(data_dir::String)
     alphas = [0.1, 0.3, 0.8]
     isovals = [0.01 * max_val, 0.2 * max_val, 0.8 * max_val]
 
-    # Custom colormap
-    colors = [
-        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
-        (3/24, RGB(1.0, 1.0, 1.0)),   # white
-        (3/12, RGB(0.0, 1.0, 0.0)),   # green
-        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
-        (10/12, RGB(1.0, 0.0, 0.0)),  # red
-        (1.0, RGB(0.0, 0.0, 0.0))     # black
-    ]
-    my_cmap = cgrad(
-        [colors[i][2] for i in eachindex(colors)],
-        [colors[i][1] for i in eachindex(colors)];
-        scale=Linear()
-    )
-    colormap = my_cmap
+    colormap = _bec_density_colormap()
 
     # Set lighting
     set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
@@ -97,6 +84,8 @@ function animate_pote_interactive_prefetch(data_dir::String)
 end
 
 function animate_iso_bce_interactive_prefetch(data_dir::String)
+    GLMakie.activate!()
+
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
@@ -130,6 +119,7 @@ function animate_iso_bce_interactive_prefetch(data_dir::String)
 
     for (idx, context) in enumerate(contexts)
         raw_rho = abs.(context.psi)
+        raw_angle = angle.(context.psi)
         all_rho[idx] = (raw_rho .- minimum(raw_rho)) ./ (maximum(raw_rho) .- minimum(raw_rho) .+ eps(eltype(raw_rho)))
         
         slice = get_BEC_slice(context)
@@ -145,21 +135,7 @@ function animate_iso_bce_interactive_prefetch(data_dir::String)
     alphas = [0.3, 0.8]
     isovals = [0.2 * max_val, 0.8 * max_val]
 
-    # Custom colormap
-    colors = [
-        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
-        (3/24, RGB(1.0, 1.0, 1.0)),   # white
-        (3/12, RGB(0.0, 1.0, 0.0)),   # green
-        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
-        (10/12, RGB(1.0, 0.0, 0.0)),  # red
-        (1.0, RGB(0.0, 0.0, 0.0))     # black
-    ]
-    my_cmap = cgrad(
-        [colors[i][2] for i in eachindex(colors)],
-        [colors[i][1] for i in eachindex(colors)];
-        scale=Linear()
-    )
-    colormap = my_cmap
+    colormap = _bec_density_colormap()
 
     # Set lighting
     set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
@@ -200,6 +176,8 @@ function animate_iso_bce_interactive_prefetch(data_dir::String)
 end
 
 function animate_iso_bce_slices_interactive_prefetch(data_dir::String)
+    GLMakie.activate!()
+
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
@@ -232,21 +210,7 @@ function animate_iso_bce_slices_interactive_prefetch(data_dir::String)
     hm_rho = Observable(all_hm_rho[1])
 
     max_val = maximum(hm_rho[])
-    # Custom colormap
-    colors = [
-        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
-        (3/24, RGB(1.0, 1.0, 1.0)),   # white
-        (3/12, RGB(0.0, 1.0, 0.0)),   # green
-        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
-        (10/12, RGB(1.0, 0.0, 0.0)),  # red
-        (1.0, RGB(0.0, 0.0, 0.0))     # black
-    ]
-    my_cmap = cgrad(
-        [colors[i][2] for i in eachindex(colors)],
-        [colors[i][1] for i in eachindex(colors)];
-        scale=Linear()
-    )
-    colormap = my_cmap
+    colormap = _bec_density_colormap()
 
     # Add heatmap at z[begin + 2]
     hm = heatmap!(ax, hm_x, hm_y, hm_rho,
@@ -265,7 +229,43 @@ function animate_iso_bce_slices_interactive_prefetch(data_dir::String)
     display(fig)
 end
 
+function animate_slice_bce(data_dir::String, output_file::String)
+    CairoMakie.activate!()
+
+    files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
+    files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
+    n_frames = length(files)
+
+    fig = Figure()
+    ax = Axis(fig[1, 1],
+              aspect = DataAspect(),
+               xlabel = "x [nm]",
+               ylabel = "y [nm]")
+
+    BCEslice = load_slice_from_binary(joinpath(data_dir, files[begin]))
+
+    hm_rho = Observable(Array{Float64, 2}(abs.(BCEslice.psi) .^ 2))
+    hm_x = BCEslice.x
+    hm_y = BCEslice.y
+
+    colormap = _bec_density_colormap()
+
+    max_hm_rho = 10 * round(maximum(hm_rho[] / 10))
+    hm = heatmap!(ax, hm_x, hm_y, hm_rho,
+                  colormap = colormap)
+                  #colorrange = (0, max_hm_rho))
+
+    record(fig, output_file, 1:n_frames, framerate=10) do frame
+        println("Loading frame ", joinpath(data_dir, files[frame]))
+        file = joinpath(data_dir, files[frame])
+        slice = load_slice_from_binary(file)
+        hm_rho[] = abs.(slice.psi) .^ 2
+    end
+end
+
 function animate_iso_bce(data_dir::String, output_file::String)
+    GLMakie.activate!()
+
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.bin"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
     n_frames = length(files)
@@ -306,21 +306,7 @@ function animate_iso_bce(data_dir::String, output_file::String)
     alphas = [0.3, 0.8]
     isovals = [0.2 * max_val, 0.8 * max_val]
 
-    # Custom colormap (same as plot_single_state)
-    colors = [
-        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
-        (3/24, RGB(1.0, 1.0, 1.0)),   # white
-        (3/12, RGB(0.0, 1.0, 0.0)),   # green
-        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
-        (10/12, RGB(1.0, 0.0, 0.0)),  # red
-        (1.0, RGB(0.0, 0.0, 0.0))     # black
-    ]
-    my_cmap = cgrad(
-        [colors[i][2] for i in eachindex(colors)],
-        [colors[i][1] for i in eachindex(colors)];
-        scale=Linear()
-    )
-    colormap = my_cmap
+    colormap = _bec_density_colormap()
 
     set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
 
@@ -358,50 +344,10 @@ function animate_iso_bce(data_dir::String, output_file::String)
     end
 end
 
-function plot_local_maxima_evolution(psi_vec::Vector{IsoBECContext})
+function _plot_local_maxima_evolution(slice_vec::Vector{IsoBECSlice})
     fig = Figure()
     ax = Axis(fig[1,1], xlabel = "x [nm]", ylabel = "y [nm]")
 
-    n_frames = length(psi_vec)
-    slice = interpolate_slice(get_BEC_slice(psi_vec[begin]))
-    maxima = find_local_maxima(slice)
-    coords = get_coordinates(slice, maxima)
-
-    n_becs = length(coords)
-    all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
-
-    for (idx, context) in enumerate(psi_vec)
-        slice = interpolate_slice(get_BEC_slice(context))
-        maxima = find_local_maxima(slice)
-        coords = get_coordinates(slice, maxima)
-        println("Processing context nr: ", idx)
-
-        for (bec_idx, coord) in enumerate(coords)
-            push!(all_maxima[bec_idx], coord)
-        end 
-    end
-
-    frames = collect(1:length(psi_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
-    for lmax in all_maxima
-        xs = [m.x for m in lmax]
-        ys = [m.y for m in lmax]
-
-        scatter!(ax, xs, ys, color = frames, markersize = 5)
-    end
-
-    Colorbar(fig[1, 2], label="Time [ms]", limits = (0, frames[end]))
-
-    #xlims!(ax, (psi_vec[begin].x[begin], psi_vec[begin].x[end]))
-    #ylims!(ax, (psi_vec[begin].y[begin], psi_vec[begin].y[end]))
-
-    return fig
-end
-
-function plot_local_maxima_evolution(slice_vec::Vector{IsoBECSlice})
-    fig = Figure()
-    ax = Axis(fig[1,1], xlabel = "x [nm]", ylabel = "y [nm]")
-
-    n_frames = length(slice_vec)
     slice = interpolate_slice(slice_vec[begin])
     maxima = find_local_maxima(slice)
     coords = get_coordinates(slice, maxima)
@@ -433,52 +379,21 @@ function plot_local_maxima_evolution(slice_vec::Vector{IsoBECSlice})
     return fig
 end
 
-function plot_local_maxima_coordinates(psi_vec::Vector{IsoBECContext})
-    fig = Figure()
-    ax_x = Axis(fig[1,1], ylabel = "x [nm]", xlabel = "t [ms]")
-    ax_y = Axis(fig[2,1], ylabel = "y [nm]", xlabel = "t [ms]")
-
-    n_frames = length(psi_vec)
-    slice = interpolate_slice(get_BEC_slice(psi_vec[begin]))
-    maxima = find_local_maxima(slice)
-    coords = get_coordinates(slice, maxima)
-
-    n_becs = length(coords)
-    all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
-
-    for (idx, context) in enumerate(psi_vec)
-        println("Processing context: ", idx)
-        slice = interpolate_slice(get_BEC_slice(context); size = (500, 500))
-        maxima = find_local_maxima(slice)
-        coords = get_coordinates(slice, maxima)
-
-        sorted_cords = sort(coords, by = c -> (c.x, c.y))
-
-        for (bec_idx, coord) in enumerate(sorted_cords)
-            push!(all_maxima[bec_idx], coord)
-        end 
-    end
-
-    times = collect(1:length(psi_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
-
-    for (idx, lmax) in enumerate(all_maxima)
-        xs = [m.x for m in lmax]
-        ys = [m.y for m in lmax]
-
-        scatter!(ax_x, times, xs, markersize = 5 + (length(all_maxima) - idx) * 2)
-        scatter!(ax_y, times, ys, markersize = 5 + (length(all_maxima) - idx) * 2)
-    end
-
-    return fig
+function plot_local_maxima_evolution(psi_vec::Vector{IsoBECContext})
+    CairoMakie.activate!()
+    return _plot_local_maxima_evolution(get_BEC_slice.(psi_vec))
 end
 
-function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
-    fig = Figure()
+function plot_local_maxima_evolution(slice_vec::Vector{IsoBECSlice})
+    CairoMakie.activate!()
+    return _plot_local_maxima_evolution(slice_vec)
+end
 
+function _plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice}; interpolation_size)
+    fig = Figure()
     ax_x = Axis(fig[1,1], ylabel = "x [nm]", xlabel = "t [ms]")
     ax_y = Axis(fig[2,1], ylabel = "y [nm]", xlabel = "t [ms]")
 
-    n_frames = length(slice_vec)
     slice = interpolate_slice(slice_vec[begin])
     maxima = find_local_maxima(slice)
     coords = get_coordinates(slice, maxima)
@@ -486,9 +401,9 @@ function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
     n_becs = length(coords)
     all_maxima = [LocalMaximaPhysical[] for n in 1:n_becs]
 
-    for (idx, _slice) in enumerate(slice_vec)
+    for (idx, source_slice) in enumerate(slice_vec)
         println("Processing slice: ", idx)
-        slice = interpolate_slice(_slice; size = (100, 100))
+        slice = interpolate_slice(source_slice; size = interpolation_size)
         maxima = find_local_maxima(slice)
         coords = get_coordinates(slice, maxima)
 
@@ -500,6 +415,7 @@ function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
     end
 
     times = collect(1:length(slice_vec)) .* STEPS_PER_SAVE * time_au_to_ms(TIME_STEP_AU)
+
     for (idx, lmax) in enumerate(all_maxima)
         xs = [m.x for m in lmax]
         ys = [m.y for m in lmax]
@@ -511,7 +427,20 @@ function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
     return fig
 end
 
+function plot_local_maxima_coordinates(psi_vec::Vector{IsoBECContext})
+    CairoMakie.activate!()
+    slices = get_BEC_slice.(psi_vec)
+    return _plot_local_maxima_coordinates(slices; interpolation_size = (500, 500))
+end
+
+function plot_local_maxima_coordinates(slice_vec::Vector{IsoBECSlice})
+    CairoMakie.activate!()
+    return _plot_local_maxima_coordinates(slice_vec; interpolation_size = (100, 100))
+end
+
 function plot_local_maxima_coordinates_one_ax(slice_vec::Vector{IsoBECSlice}; leg_pos = :rc)
+    CairoMakie.activate!()
+
     fig = Figure()
 
     ax = Axis(fig[1,1],
@@ -568,6 +497,8 @@ end
 
 
 function plot_evolution(data_dir::String; step = 40, total_size = 6)
+    GLMakie.activate!()
+
     files = filter(f -> occursin("wavefunction_", f) && endswith(f, ".gpe.dat"), readdir(data_dir))
     files = sort(files, by = f -> parse(Int, split(split(f, "_")[2], ".")[1]))
 
@@ -669,6 +600,8 @@ function plot_evolution(data_dir::String; step = 40, total_size = 6)
 end
 
 function plot_states(files::Vector{String}; total_size = 6)
+    GLMakie.activate!()
+
     if(length(files) > total_size)
         files = files[begin:total_size]
     end
@@ -746,6 +679,8 @@ function plot_states(files::Vector{String}; total_size = 6)
 end
 
 function plot_single_state(file::String; hide_decs = true, n_atoms = 1)
+    GLMakie.activate!()
+
     BCEContext = load_from_text(file)
     BCEslice = get_BEC_slice(BCEContext)
 
@@ -802,22 +737,7 @@ function plot_single_state(file::String; hide_decs = true, n_atoms = 1)
 
     set_lights!(ax, [DirectionalLight(RGBf(1,1,1), Vec3f(-1,1,-1))])
 
-    colors = [
-        (0.0, RGB(0.0, 0.0, 1.0)),    # blue
-        (3/24, RGB(1.0, 1.0, 1.0)),   # white
-        (3/12, RGB(0.0, 1.0, 0.0)),   # green
-        (6/12, RGB(1.0, 1.0, 0.0)),   # yellow
-        (10/12, RGB(1.0, 0.0, 0.0)),  # red
-        (1.0, RGB(0.0, 0.0, 0.0))     # black
-    ]
-
-    # Create interpolated colormap
-    my_cmap = cgrad(
-        [colors[i][2] for i in eachindex(colors)],
-        [colors[i][1] for i in eachindex(colors)];
-        scale=Linear()
-    )
-    colormap = my_cmap
+    colormap = _bec_density_colormap()
     for (i, isovalue) in enumerate(isovals)
         volume!(ax,
                 (x[begin], x[end]),

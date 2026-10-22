@@ -6,7 +6,6 @@ include("files.jl")
 include("plots.jl")
 include("animate.jl")
 
-CairoMakie.activate!()
 using DelimitedFiles
 
 ##
@@ -23,6 +22,8 @@ filenames = [
 
 
 function load_and_save(filename)
+    CairoMakie.activate!()
+
     data = load_from_text(filename)
 
     x_0_index = round(Int32, data.nx / 2 + 1)

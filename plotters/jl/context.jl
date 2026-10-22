@@ -139,28 +139,9 @@ function get_coordinates(slice::IsoBECSlice, maxima::Vector{LocalMaximaGrid})
 end
 
 function number_of_lmax(context::IsoBECContext; n_atoms::Int64 = 1, condensation_threshold = nothing)
-    threshold = 0.6
-    n_max = 0;
-
-    slice   = get_BEC_slice(context)
-    rho     = abs.(slice.psi)
-
-    max_val = threshold * maximum(rho)
-    total_maximas = find_local_maxima(slice)
-
-    for m in total_maximas
-        if(condensation_threshold != nothing)
-            if(m.value * n_atoms < condensation_threshold)
-                @info "Low number of atoms in maximum: $(m.value)"
-                continue 
-            end
-        end
-        if(m.value > max_val)
-            n_max += 1
-        end
-    end
-
-    return n_max
+    return number_of_lmax(get_BEC_slice(context);
+                          n_atoms = n_atoms,
+                          condensation_threshold = condensation_threshold)
 end
 
 function number_of_lmax(slice::IsoBECSlice; n_atoms::Int64 = 1, condensation_threshold = nothing)

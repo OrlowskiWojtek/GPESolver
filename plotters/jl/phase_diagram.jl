@@ -1,6 +1,7 @@
 using DataFrames
 using CSV
 using Glob
+using CairoMakie
 
 include("context.jl")
 include("files.jl")
@@ -117,6 +118,8 @@ function segmentize_dataframe(df)
 end
 
 function plot_segments(segments)
+    CairoMakie.activate!()
+
     fig = Figure();
     ax = Axis(fig[1, 1],
               xlabel="N/10³",
@@ -224,6 +227,13 @@ function get_heights(segments)
             context = load_from_text(psi_file)
             heights = get_BEC_heights(context, atom_number)
 
+            for height in heights
+                println("atoms:", atom_number)
+                max = argmax(abs.(context.psi[height.i, height.j, :]).^2)
+                println(context.z[max])
+                println(context.z)
+            end
+
             push!(seg_heights, heights)
         end
 
@@ -234,6 +244,8 @@ function get_heights(segments)
 end
 
 function plot_heights(segments, seg_heights)
+    CairoMakie.activate!()
+
     fig = Figure(size = (600,600))
     ax = Axis(fig[1, 1],
               xlabel="N/10⁴",
@@ -274,6 +286,8 @@ function plot_heights(segments, seg_heights)
 end
 
 function plot_rhomax(segments, seg_rhos)
+    CairoMakie.activate!()
+
     fig = Figure(size = (600,600))
     ax = Axis(fig[1, 1],
               xlabel="N/10⁴",
@@ -374,6 +388,8 @@ function save_heights(seg_heights::Vector{Vector{Vector{BECHeight}}}, segments::
 end
 
 function plot_df(df)
+    CairoMakie.activate!()
+
     fig = Figure();
     ax = Axis(fig[1,1], xlabel = "N / 10^3", ylabel = "E/N [nK]")
 
@@ -386,6 +402,19 @@ function plot_df(df)
     axislegend()
 
     fig
+end
+
+function plot_maxima_threshold(atoms, maxs, maxs_atoms, maxs_atoms_per_bec)
+    CairoMakie.activate!()
+
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    scatter!(ax, atoms, maxs, label = "max", markersize = 10)
+    scatter!(ax, atoms, maxs_atoms, label = "max atoms", markersize = 8)
+    scatter!(ax, atoms, maxs_atoms_per_bec, label = "max atoms / bec", markersize = 6)
+    axislegend(ax)
+
+    return fig
 end
 
 ##
@@ -462,16 +491,7 @@ for atom_folder in 1:50
 end
 
 ##
-GLMakie.activate!()
-
-fig = Figure();
-ax = Axis(fig[1,1]);
-scatter!(ax, atoms, maxs, label = "max", markersize = 10);
-scatter!(ax, atoms, maxs_atoms, label = "max atoms", markersize = 8);
-scatter!(ax, atoms, maxs_atoms_per_bec, label = "max atoms / bec", markersize = 6);
-#vlines!(ax, [6], color = :black)
-
-axislegend()
+fig = plot_maxima_threshold(atoms, maxs, maxs_atoms, maxs_atoms_per_bec)
 display(fig)
 
 ##

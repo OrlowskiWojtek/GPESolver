@@ -1,5 +1,3 @@
-using GLMakie
-
 include("files.jl")
 include("plots.jl")
 include("animate.jl")
@@ -215,4 +213,3 @@ for (idx, file) in enumerate(files)
 
     save(filename, fig)
 end
-

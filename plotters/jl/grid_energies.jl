@@ -1,4 +1,4 @@
-using GLMakie, CairoMakie, LaTeXStrings
+using CairoMakie, LaTeXStrings
 
 include("files.jl")
 include("plots.jl")
@@ -7,7 +7,10 @@ include("units.jl")
 
 ##
 
-const BASE_DIR = "../../build/run_check_size_bigger_grid"
+const BASE_DIR = "../../build/run_check_size_cutoff"
+
+# Energy conversion constant (same as in phase diagram)
+const ENERGY_CONV = 27211.4 * 11.6 * 1e9 / 20_000
 
 """
     find_grid_sizes(results::Dict)
@@ -65,16 +68,13 @@ function load_all_grid_energies(base_dir::String)
                     e_bmf = energies.e_bmf[n],
                     e_tot = energies.e_tot[n]
                 )
-                println("Loaded: $(xy_size)xy, $(z_size)z -> E_tot = $(energies.e_tot[n])")
+                println("Loaded: $(xy_size)xy, $(z_size)z -> E_tot = $(energies.e_tot[n] * ENERGY_CONV)")
             end
         end
     end
     
     return results
 end
-
-# Energy conversion constant (same as in phase diagram)
-const ENERGY_CONV = 27211.4 * 11.6 * 1e9 / 20_000
 
 # Available energy types
 const ENERGY_TYPES = (:e_tot, :e_kin, :e_pot, :e_int, :e_ext, :e_bmf)
@@ -241,8 +241,8 @@ visualize_grid_bmf(args...; kwargs...) = visualize_grid_convergence(args...; ene
 
 ## Run visualization
 
-fig = visualize_grid_total(BASE_DIR)
-#save("size.pdf", fig)
+fig = visualize_grid_total(BASE_DIR);
+save("size.pdf", fig)
 
 ## Plotting profiles for 1x1 configuration (2 droplets)
 
@@ -318,68 +318,68 @@ end
 
 ##
 
-with_theme(
-    Theme(
-        palette=(color = cgrad(:gnuplot, 3, categorical = true),),
-        Lines = (cycle = [:color],)
-    )
-) do
-        fig = Figure(size = (600, 900));
-        ax = Axis(fig[1,1],
-                  xlabel = "z [nm]",
-                  ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
-                  xticklabelsize=18,
-                  yticklabelsize=18,
-                  xlabelsize=20,
-                  ylabelsize=20,
-                  xtickalign=0,
-                  ytickalign=0,
-                  #yscale = log10,
-                  )
-
-        files = [
-            # 16800 18000 19200 20400
-            # 7440 10800 11520 13440 14400 15360 16800
-            "../../build/run_check_size_bigger_grid/7440xy/16800z/initial_state.gpe.dat",
-            "../../build/run_check_size_bigger_grid/16800xy/20400z/initial_state.gpe.dat",
-        ]
-
-        #for (i, file) in enumerate(files)
-        #    visualize_profile_x!(ax, file, 20000)
-        #end
-        smaller = visualize_profile_x!(ax, files[1], 20000)
-        larger = visualize_profile_x!(ax, files[2], 20000)
-
-        scatter!(ax, smaller[1], smaller[2]; markersize = 9, label = smaller[3], marker = :xcross)
-        scatter!(ax, larger[1], larger[2]; markersize = 9, label = larger[3], marker = :xcross)
-
-        diff = Vector{Float64}(undef, length(smaller[1]))
-        begin_idx = findfirst(==(smaller[1][begin]), larger[1])
-        for i in eachindex(diff)
-            diff[i] = larger[2][begin_idx + i - 1] - smaller[2][i]
-        end
-
-        ax_diff = Axis(fig[2,1],
-                  xlabel = "x [nm]",
-                  ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
-                  xticklabelsize=18,
-                  yticklabelsize=18,
-                  xlabelsize=20,
-                  ylabelsize=20,
-                  xtickalign=0,
-                  ytickalign=0,
-                  )
-        
-        hidexdecorations!(ax, grid = false)
-        linkxaxes!(ax, ax_diff)
-
-        #scatter!(ax, smaller[1], smaller[2]; markersize = 7, marker = :xcross)
-        #scatter!(ax, larger[1], larger[2]; markersize = 7, marker = :xcross)
-        scatter!(ax_diff, smaller[1], diff; markersize = 9, marker = :xcross, color = 3)
-
-        #ylims!(ax, 1e-4, 1e4)
-
-        axislegend(ax,position = :lt, merge = true)
-        save("plots/profiles/size_x_profile_biggest_lowest.pdf", fig)
-        fig
-    end
+#with_theme(
+#    Theme(
+#        palette=(color = cgrad(:gnuplot, 3, categorical = true),),
+#        Lines = (cycle = [:color],)
+#    )
+#) do
+#        fig = Figure(size = (600, 900));
+#        ax = Axis(fig[1,1],
+#                  xlabel = "z [nm]",
+#                  ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
+#                  xticklabelsize=18,
+#                  yticklabelsize=18,
+#                  xlabelsize=20,
+#                  ylabelsize=20,
+#                  xtickalign=0,
+#                  ytickalign=0,
+#                  #yscale = log10,
+#                  )
+#
+#        files = [
+#            # 16800 18000 19200 20400
+#            # 7440 10800 11520 13440 14400 15360 16800
+#            "../../build/run_check_size_bigger_grid/7440xy/16800z/initial_state.gpe.dat",
+#            "../../build/run_check_size_bigger_grid/16800xy/20400z/initial_state.gpe.dat",
+#        ]
+#
+#        #for (i, file) in enumerate(files)
+#        #    visualize_profile_x!(ax, file, 20000)
+#        #end
+#        smaller = visualize_profile_x!(ax, files[1], 20000)
+#        larger = visualize_profile_x!(ax, files[2], 20000)
+#
+#        scatter!(ax, smaller[1], smaller[2]; markersize = 9, label = smaller[3], marker = :xcross)
+#        scatter!(ax, larger[1], larger[2]; markersize = 9, label = larger[3], marker = :xcross)
+#
+#        diff = Vector{Float64}(undef, length(smaller[1]))
+#        begin_idx = findfirst(==(smaller[1][begin]), larger[1])
+#        for i in eachindex(diff)
+#            diff[i] = larger[2][begin_idx + i - 1] - smaller[2][i]
+#        end
+#
+#        ax_diff = Axis(fig[2,1],
+#                  xlabel = "x [nm]",
+#                  ylabel = L"\rho \;\mathrm{[\mu m ^{-3}]}",
+#                  xticklabelsize=18,
+#                  yticklabelsize=18,
+#                  xlabelsize=20,
+#                  ylabelsize=20,
+#                  xtickalign=0,
+#                  ytickalign=0,
+#                  )
+#
+#        hidexdecorations!(ax, grid = false)
+#        linkxaxes!(ax, ax_diff)
+#
+#        #scatter!(ax, smaller[1], smaller[2]; markersize = 7, marker = :xcross)
+#        #scatter!(ax, larger[1], larger[2]; markersize = 7, marker = :xcross)
+#        scatter!(ax_diff, smaller[1], diff; markersize = 9, marker = :xcross, color = 3)
+#
+#        #ylims!(ax, 1e-4, 1e4)
+#
+#        axislegend(ax,position = :lt, merge = true)
+#        save("plots/profiles/size_x_profile_biggest_lowest.pdf", fig)
+#        fig
+#    end

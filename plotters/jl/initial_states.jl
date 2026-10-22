@@ -2,7 +2,6 @@ using DataFrames
 using CSV
 using CairoMakie
 
-CairoMakie.activate!()
 DATA_FILE = "energies.txt"
 
 #= LOADS DATAFRAME AND SELECTS SEGMENTS FOR LOWEST ENERGY
@@ -37,47 +36,38 @@ end
 
 ##
 
-segments = load_energy_dataframe(DATA_FILE)
+function plot_lowest_energy_segments(segments)
+    CairoMakie.activate!()
 
-##
+    fig = Figure()
+    ax = Axis(fig[1, 1], xlabel="Number of atoms/10³", ylabel="Energy per atom (nK)", title="Energies for Lowest Energy State")
 
-# Add vertical lines at change points
+    conversion = 27211.4 * 11.6 * 10^9
+    labels = ["Total", "Kinetic", "Potential", "Interaction"]
+    fields = [:e_total, :e_kin, :e_pot, :e_tot_ext]
+    colors = [:black, :orange, :red, :blue]
+    legend_drawn = fill(false, length(fields))
 
-fig = Figure();
-ax = Axis(fig[1, 1], xlabel="Number of atoms/10³", ylabel="Energy per atom (nK)", title="Energies for Lowest Energy State")
-
-conv = 27211.4 * 11.6*10^9
-labels = ["Total", "Kinetic", "Potential", "Interaction"]
-fields = [:e_total, :e_kin, :e_pot, :e_tot_ext]
-colors = [:black, :orange, :red, :blue]
-# For legend: only label the first segment for each energy type
-legend_drawn = fill(false, length(fields))
-
-for seg in segments
-    for (i, (field, label)) in enumerate(zip(fields, labels))
-        lines!(
-            ax,
-            seg.atom_number,
-            seg[!, field] * conv ./ (seg.atom_number * 10^3),
-            color = colors[i],
-            label = legend_drawn[i] ? nothing : label
-        )
-        legend_drawn[i] = true
+    for segment in segments
+        for (i, (field, label)) in enumerate(zip(fields, labels))
+            lines!(ax,
+                   segment.atom_number,
+                   segment[!, field] .* conversion ./ (segment.atom_number .* 10^3),
+                   color = colors[i],
+                   label = legend_drawn[i] ? nothing : label)
+            legend_drawn[i] = true
+        end
     end
+
+    for segment in segments
+        change_point = segment.atom_number[end] + 0.5
+        vlines!(ax, [change_point], color=:red, linestyle=:dash, linewidth=2)
+    end
+
+    Legend(fig[2, 1], ax, orientation=:horizontal, tellwidth=false)
+    return fig
 end
 
-for seg in segments
-    change_point = seg.atom_number[end] + 0.5
-    vlines!(ax, [change_point], color=:red, linestyle=:dash, linewidth=2)
-end
-
-max_energy = maximum(df.e_total ./ (df.atom_number * 10^3)) * conv
-
-#text!(ax, 20, max_energy / 3., text="III", color=:black, fontsize=24)
-#text!(ax, 32, max_energy / 3., text="IV", color=:black, fontsize=24)
-#text!(ax, 43, max_energy / 3., text="V", color=:black, fontsize=24)
-
-Legend(fig[2, 1], ax, orientation=:horizontal, tellwidth=false)
-
-fig
+segments = load_energy_dataframe(DATA_FILE)
+fig = plot_lowest_energy_segments(segments)
 #save("lowest_energy_all_components.pdf", fig)

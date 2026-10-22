@@ -50,6 +50,8 @@ function gather_energy(dist_dir::String)
 end
 
 function plot_energies(df)
+    CairoMakie.activate!()
+
     fig = Figure();
     ax  = Axis(fig[1,1],
                title = "N = 4e4",
