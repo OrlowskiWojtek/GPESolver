@@ -13,12 +13,14 @@
  */
 class CUFFTPoissonSolver : public AbstractPoissonSolver, CUFFTAbstractGPUSolver {
 public:
-    CUFFTPoissonSolver(wavefun_gpu_t *psi, pote_gpu_t *fi3d);
+    CUFFTPoissonSolver(wavefun_gpu_t *psi, pote_gpu_t *fi3d, int n_atoms);
     ~CUFFTPoissonSolver();
 
     void execute() override;
 
 private:
+    double n_atoms;
+
     void prepare_transforms() override;
     void prepare_containers() override;
 };

@@ -105,10 +105,10 @@ void GpuITBinaryGrossPitaevskiSolver::prepare_fft() {
     // of atoms = 40000 (
     cudaSetDevice(0);
     poisson_solver_a = std::make_unique<CUFFTPoissonSolver>(
-        &m_data_a_0.cpsi_gpu, &m_data_a_0.fi3d_gpu);
+        &m_data_a_0.cpsi_gpu, &m_data_a_0.fi3d_gpu, p_mix->spec_a.n_atoms);
     cudaSetDevice(1);
     poisson_solver_b = std::make_unique<CUFFTPoissonSolver>(
-        &m_data_b_1.cpsi_gpu, &m_data_b_1.fi3d_gpu);
+        &m_data_b_1.cpsi_gpu, &m_data_b_1.fi3d_gpu, p_mix->spec_b.n_atoms);
     cudaSetDevice(0);
 };
 

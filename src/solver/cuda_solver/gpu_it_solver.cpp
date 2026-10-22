@@ -32,7 +32,7 @@ void GpuITGrossPitaevskiSolver::init_containers() {
 }
 
 void GpuITGrossPitaevskiSolver::prepare_fft() {
-    poisson_solver = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
+    poisson_solver = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu, params->n_atoms);
 }
 
 void GpuITGrossPitaevskiSolver::calc_fi3d() {

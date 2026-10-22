@@ -1,13 +1,17 @@
 #include "solver/fft_solvers/gpu/cufft_poisson_solver.hpp"
+#include "nvtx3/nvToolsExt.h"
 #include "output.hpp"
 #include "parameters/parameters.hpp"
 #include <cmath>
-#include "nvtx3/nvToolsExt.h"
 
 #include "solver/fft_solvers/gpu/cuda_fft_kernels.hpp"
 
-CUFFTPoissonSolver::CUFFTPoissonSolver(wavefun_gpu_t *psi, pote_gpu_t *fi3d)
-    : CUFFTAbstractGPUSolver(psi, fi3d) {
+CUFFTPoissonSolver::CUFFTPoissonSolver(wavefun_gpu_t *psi,
+                                       pote_gpu_t *fi3d,
+                                       int n_atoms)
+    : CUFFTAbstractGPUSolver(psi, fi3d)
+    , n_atoms(n_atoms) {
+
     prepare();
 }
 
@@ -23,7 +27,7 @@ void CUFFTPoissonSolver::prepare_containers() {
     double dkx = 2. * M_PI / (nx * dx);
     double dky = 2. * M_PI / (ny * dy);
     double dkz = 2. * M_PI / (nz * dz);
-    double Rc = p->Rc;
+    double Rc  = p->Rc;
 
     int N = nx * ny * (nz / 2 + 1);
 
@@ -42,11 +46,10 @@ void CUFFTPoissonSolver::prepare_containers() {
 
                 if (k2 > 1e-30) {
                     // Cutoff potential introduced in [1]
-                    real(h_Vdip_k[idx]) = (kz * kz / k2 - 1. / 3.) 
-                        * (1. 
-                        + 3. * (cos(kk * Rc) / (kk * kk      * Rc * Rc))
-                        - 3. * (sin(kk * Rc) / (kk * kk * kk * Rc * Rc * Rc))
-                        );
+                    real(h_Vdip_k[idx]) =
+                        (kz * kz / k2 - 1. / 3.) *
+                        (1. + 3. * (cos(kk * Rc) / (kk * kk * Rc * Rc)) -
+                         3. * (sin(kk * Rc) / (kk * kk * kk * Rc * Rc * Rc)));
 
                     imag(h_Vdip_k[idx]) = 0.0;
                 } else {
@@ -63,7 +66,8 @@ void CUFFTPoissonSolver::prepare_containers() {
         OutputFormatter::printError(cudaGetErrorString(err));
     }
 
-    cudaMemcpy(d_Vdip_k, h_Vdip_k, N * sizeof(complex_type), cudaMemcpyHostToDevice);
+    cudaMemcpy(
+        d_Vdip_k, h_Vdip_k, N * sizeof(complex_type), cudaMemcpyHostToDevice);
 }
 
 void CUFFTPoissonSolver::execute() {
@@ -74,7 +78,7 @@ void CUFFTPoissonSolver::execute() {
     int N_out = nx * ny * (nz / 2 + 1);
 
     launch_kernel_fill_from_psi(
-        d_rho_r, psi->data(), p->nx, p->ny, p->nz, nx, ny, nz, p->n_atoms);
+        d_rho_r, psi->data(), p->nx, p->ny, p->nz, nx, ny, nz, n_atoms);
 
     nvtxRangePushA("D2Z transform");
     //  Forward FFT

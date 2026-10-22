@@ -99,11 +99,11 @@ void GpuITBinaryGrossPitaevskiSolver::calc_energy() {
                                      std::string(cudaGetErrorString(err)));
         }
 
-        ene.e_kin = energies[0];
-        ene.e_pot = energies[1];
-        ene.e_int = energies[2];
-        ene.e_ext = energies[3];
-        ene.e_bmf = energies[4];
+        ene.e_kin = energies[0] * params->get_dxdydz();
+        ene.e_pot = energies[1] * params->get_dxdydz();
+        ene.e_int = energies[2] * params->get_dxdydz();
+        ene.e_ext = energies[3] * params->get_dxdydz();
+        ene.e_bmf = energies[4] * params->get_dxdydz();
         ene.sum();
 
         enes.push_back(ene);
@@ -116,9 +116,11 @@ void GpuITBinaryGrossPitaevskiSolver::prepare_fft() {
     // ok, for now, normalization is broken, however assuming, that all number
     // of atoms = 40000
     poisson_solver_a = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu_a,
-                                                            &m_data.fi3d_gpu_a);
+                                                            &m_data.fi3d_gpu_a,
+                                                            p_mix->spec_a.n_atoms);
     poisson_solver_b = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu_b,
-                                                            &m_data.fi3d_gpu_b);
+                                                            &m_data.fi3d_gpu_b,
+                                                            p_mix->spec_b.n_atoms);
 };
 
 void GpuITBinaryGrossPitaevskiSolver::import_pote() {

@@ -4,8 +4,11 @@
 #include "parameters/parameters.hpp"
 #include <cmath>
 
-FFTWPoissonSolver::FFTWPoissonSolver(wavefunction_t *psi, potential_t *fi3d)
-    : FFTWAbstractCPUSolver(psi, fi3d) {
+FFTWPoissonSolver::FFTWPoissonSolver(wavefunction_t *psi,
+                                     potential_t *fi3d,
+                                     int n_atoms)
+    : FFTWAbstractCPUSolver(psi, fi3d)
+    , n_atoms(n_atoms) {
     prepare();
 }
 
@@ -22,7 +25,7 @@ void FFTWPoissonSolver::prepare_containers() {
     double dky = 2. * M_PI / (ny * dy);
     double dkz = 2. * M_PI / (nz * dz);
 
-    int N = nx * ny * (nz / 2 + 1);
+    int N     = nx * ny * (nz / 2 + 1);
     double Rc = p->Rc;
 
     h_Vdip_k = new complex_type[N];
@@ -39,10 +42,10 @@ void FFTWPoissonSolver::prepare_containers() {
                 double kk = std::sqrt(k2);
 
                 if (k2 > 1e-30) {
-                    real(h_Vdip_k[idx]) = (kz * kz / k2 - 1. / 3.)
-                        * (1. 
-                        + 3. * (cos(kk * Rc) / (kk * kk      * Rc * Rc))
-                        - 3. * (sin(kk * Rc) / (kk * kk * kk * Rc * Rc * Rc)));
+                    real(h_Vdip_k[idx]) =
+                        (kz * kz / k2 - 1. / 3.) *
+                        (1. + 3. * (cos(kk * Rc) / (kk * kk * Rc * Rc)) -
+                         3. * (sin(kk * Rc) / (kk * kk * kk * Rc * Rc * Rc)));
                     imag(h_Vdip_k[idx]) = 0.0;
                 } else {
                     real(h_Vdip_k[idx]) = 0.0;
@@ -66,7 +69,7 @@ void FFTWPoissonSolver::execute() {
             for (int k = 0; k < nz; ++k) {
                 size_t idx = (i * ny + j) * nz + k;
                 if (i < nx / 2 && j < ny / 2 && k < nz / 2) {
-                    h_rho_r[idx] = std::norm(rpsi(i, j, k)) * p->n_atoms;
+                    h_rho_r[idx] = std::norm(rpsi(i, j, k)) * n_atoms;
                 } else {
                     h_rho_r[idx] = 0;
                 }
@@ -122,6 +125,7 @@ void FFTWPoissonSolver::prepare_transforms() {
     fftw_plan_with_nthreads(FFTW_N_THREADS);
     plan_bwd = fftw_plan_dft_c2r_3d(nx, ny, nz, h_rho_k, h_rho_r, FFTW_MEASURE);
 
-    OutputFormatter::printInfo("Planned FFTW with " + std::to_string(FFTW_N_THREADS) +
+    OutputFormatter::printInfo("Planned FFTW with " +
+                               std::to_string(FFTW_N_THREADS) +
                                " threads (Poisson).");
 }

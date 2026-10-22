@@ -32,7 +32,7 @@ void GpuRTGrossPitaevskiSolver::init_containers() {
 }
 
 void GpuRTGrossPitaevskiSolver::prepare_fft() {
-    poisson_solver = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
+    poisson_solver = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu, params->n_atoms);
     rt_split_solver =
         std::make_unique<CUFFTRealTimeSplitSolver>(&m_data.cpsi_gpu, &m_data.fi3d_gpu);
 }

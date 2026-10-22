@@ -393,7 +393,6 @@ void kernel_calc_enes(
     const int idx_kp1 = idx + 1;
     const int idx_km1 = idx - 1;
 
-    const double volume = dx * dy * dz;
     const cuDoubleComplex a = psi_a[idx];
     const cuDoubleComplex b = psi_b[idx];
 
@@ -428,26 +427,26 @@ void kernel_calc_enes(
         -n_atoms_b * (lap_b.x * b.x + lap_b.y * b.y) / (2.0 * m_b);
 
     const double contact_a =
-        0.5 * density_a * (g11 * rho_a + g12 * rho_b);
+        0.5 * density_a * (g11 * density_a + g12 * density_b);
     const double contact_b =
-        0.5 * density_b * (g22 * rho_b + g12 * rho_a);
+        0.5 * density_b * (g22 * density_b + g12 * density_a);
 
     // kinetic
-    atomicAdd(&d_energy_a[0], kinetic_a * volume);
+    atomicAdd(&d_energy_a[0], kinetic_a);
+    atomicAdd(&d_energy_b[0], kinetic_b);
     // potential
-    atomicAdd(&d_energy_a[1], rho_a * pote[idx] * volume);
+    atomicAdd(&d_energy_a[1], rho_a * pote[idx]);
+    atomicAdd(&d_energy_b[1], rho_b * pote[idx]);
     // contact
-    atomicAdd(&d_energy_a[2], contact_a * volume);
+    atomicAdd(&d_energy_a[2], contact_a);
+    atomicAdd(&d_energy_b[2], contact_b);
     // dipolar
-    atomicAdd(&d_energy_a[3], 0.5 * rho_a * fi3d_a[idx] * volume);
+    atomicAdd(&d_energy_a[3], 0.5 * rho_a * fi3d_a[idx]);
+    atomicAdd(&d_energy_b[3], 0.5 * rho_b * fi3d_b[idx]);
     // LHY
     atomicAdd(&d_energy_a[4], 0.4 * rho_a * flhy_a[idx]);
-
-    atomicAdd(&d_energy_b[0], kinetic_b * volume);
-    atomicAdd(&d_energy_b[1], rho_b * pote[idx] * volume);
-    atomicAdd(&d_energy_b[2], 0.5 * rho_b * fi3d_b[idx] * volume);
-    atomicAdd(&d_energy_b[3], contact_b * volume);
     atomicAdd(&d_energy_b[4], 0.4 * rho_b * flhy_b[idx]);
+
 }
 
 void launch_kernel_calc_enes(
