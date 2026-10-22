@@ -14,10 +14,8 @@ public:
 private:
     BinaryMixtureParameters* p_mix;
 
-    //! Data for first component 'a' of a condensate
-    GPUSolverData m_data_a;
-    //! Data for second component 'b' of a condensate
-    GPUSolverData m_data_b;
+    //! Data for both components of the condensate
+    GPUBinarySolverData m_data;
 
     double *d_norm_a;
     double *d_norm_b;

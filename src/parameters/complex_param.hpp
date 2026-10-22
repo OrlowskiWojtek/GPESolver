@@ -2,7 +2,6 @@
 #define COMPLEX_PARAMS_HPP
 
 #include <string>
-#include <stdexcept>
 
 class AbstractParam {
 public:
@@ -14,8 +13,9 @@ public:
 class CalcStrategy : public AbstractParam {
 public:
     enum class Type {
-        IMAGINARY_TIME, //!< Run imaginary time evolution
-        REAL_TIME      //!< Run real time evolution
+        IMAGINARY_TIME,        //!< Run imaginary time evolution
+        REAL_TIME,             //!< Run real time evolution
+        BINARY_IMAGINARY_TIME, //!< Run imaginary time evolution
     };
 
     std::string to_string() override {
@@ -24,6 +24,8 @@ public:
             return "IT";
         case Type::REAL_TIME:
             return "RT";
+        case Type::BINARY_IMAGINARY_TIME:
+            return "BIT";
         }
 
         return "";
@@ -34,6 +36,8 @@ public:
             type = CalcStrategy::Type::IMAGINARY_TIME;
         if (str == "RT")
             type = CalcStrategy::Type::REAL_TIME;
+        if (str == "BIT")
+            type = CalcStrategy::Type::BINARY_IMAGINARY_TIME;
     }
 
     Type type = CalcStrategy::Type::IMAGINARY_TIME;

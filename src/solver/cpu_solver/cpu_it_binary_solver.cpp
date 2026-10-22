@@ -27,8 +27,6 @@ CpuITBinaryGrossPitaevskiSolver::CpuITBinaryGrossPitaevskiSolver(
     AbstractSimulationMediator *mediator)
     : AbstractGrossPitaevskiSolver(mediator)
     , p_mix(BinaryMixtureParameters::getInstance()) {
-
-    p_mix->set_to_default();
 }
 
 void CpuITBinaryGrossPitaevskiSolver::init_containers() {

@@ -55,8 +55,27 @@ void SimulationManager::on_params_loaded() {
 
     p_sctx->initialize();
     m_gpe_solver->initialize();
-    m_initializer->initialize_wavefunction();
-    m_initializer->initialize_potential();
+
+    PotentialInitConfig pote_conf = {
+        .key = params->wvf_key,
+        .add_random_noise = params->add_random_pote_noise,
+    };
+
+    m_initializer->initialize_potential(pote_conf);
+
+    if(params->calc_strategy.type == CalcStrategy::Type::BINARY_IMAGINARY_TIME) {   
+        auto* p_mix_params = BinaryMixtureParameters::getInstance();
+
+
+
+    }
+
+    WavefunctionInitConfig wvf_conf = {
+        .key = params->wvf_key,
+        .add_random_noise = params->add_random_noise,
+    };
+
+    m_initializer->initialize_wavefunction(wvf_conf);
 }
 
 void SimulationManager::on_data_loaded(const wavefunction_t &wvf) {
@@ -75,10 +94,6 @@ void SimulationManager::on_pote_initialized(const potential_t &pote) {
 void SimulationManager::on_pote_changed(const potential_t &pote) {
     m_file_manager->save_pote_to_text_file(pote, "changed_potential");
     m_gpe_solver->load_pote(pote);
-}
-
-void SimulationManager::request_free_potential() {
-    m_initializer->change_potential("MEXICAN_FREE");
 }
 
 void SimulationManager::request_load_from_text(wavefunction_t &wvf) {

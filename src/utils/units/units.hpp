@@ -21,6 +21,9 @@ public:
 
     static double freq_Hz_to_au(double Hz);
     static double freq_au_to_Hz(double au);
+    
+    static double moment_muB_to_au(double muB);
+    static double moment_au_to_muB(double au);
 };
 
 #endif

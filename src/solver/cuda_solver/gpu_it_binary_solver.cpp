@@ -14,8 +14,6 @@ GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
     if (!initialize_gauss()) {
         throw std::runtime_error("Can't copy static arrays onto GPU");
     }
-
-    p_mix->set_to_default();
 }
 
 GpuITBinaryGrossPitaevskiSolver::~GpuITBinaryGrossPitaevskiSolver() {
@@ -28,8 +26,7 @@ void GpuITBinaryGrossPitaevskiSolver::init_containers() {
     size_t ny = params->ny;
     size_t nz = params->nz;
 
-    m_data_a.allocate(nx, ny, nz);
-    m_data_b.allocate(nx, ny, nz);
+    m_data.allocate(nx, ny, nz);
 
     flhy_a = GpuArray<double>(nx, ny, nz);
     flhy_b = GpuArray<double>(nx, ny, nz);
@@ -45,35 +42,35 @@ void GpuITBinaryGrossPitaevskiSolver::calc_norm() {
 
     // TODO: move into common kernel of two
     launch_kernel_calc_norm(
-        m_data_a.cpsi_gpu.data(), d_norm_a, params->get_dxdydz(), N);
+        m_data.cpsi_gpu_a.data(), d_norm_a, params->get_dxdydz(), N);
     launch_kernel_calc_norm(
-        m_data_b.cpsi_gpu.data(), d_norm_b, params->get_dxdydz(), N);
+        m_data.cpsi_gpu_b.data(), d_norm_b, params->get_dxdydz(), N);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::normalize() {
     const int N = params->nx * params->ny * params->nz;
 
     // TODO: move into common kernel of two
-    launch_kernel_normalize(m_data_a.cpsi_gpu.data(), d_norm_a, N);
-    launch_kernel_normalize(m_data_b.cpsi_gpu.data(), d_norm_b, N);
+    launch_kernel_normalize(m_data.cpsi_gpu_a.data(), d_norm_a, N);
+    launch_kernel_normalize(m_data.cpsi_gpu_b.data(), d_norm_b, N);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::calc_energy() {
     nvtxRangePushA("CalcEnergyMix");
 
-    launch_kernel_calc_enes(m_data_a.cpsi_gpu.data(),
-                            m_data_b.cpsi_gpu.data(),
-                            m_data_a.pote_gpu.data(),
-                            m_data_a.fi3d_gpu.data(),
-                            m_data_b.fi3d_gpu.data(),
+    launch_kernel_calc_enes(m_data.cpsi_gpu_a.data(),
+                            m_data.cpsi_gpu_b.data(),
+                            m_data.pote_gpu.data(),
+                            m_data.fi3d_gpu_a.data(),
+                            m_data.fi3d_gpu_b.data(),
                             flhy_a.data(),
                             flhy_b.data(),
                             d_energy_a.get_data(),
                             d_energy_b.get_data(),
-                            p_mix->m_a,
-                            p_mix->m_b,
-                            p_mix->n_atoms_a,
-                            p_mix->n_atoms_b,
+                            p_mix->spec_a.mass,
+                            p_mix->spec_b.mass,
+                            p_mix->spec_a.n_atoms,
+                            p_mix->spec_b.n_atoms,
                             p_mix->g11,
                             p_mix->g12,
                             p_mix->g22,
@@ -118,59 +115,58 @@ void GpuITBinaryGrossPitaevskiSolver::calc_energy() {
 void GpuITBinaryGrossPitaevskiSolver::prepare_fft() {
     // ok, for now, normalization is broken, however assuming, that all number
     // of atoms = 40000
-    poisson_solver_a = std::make_unique<CUFFTPoissonSolver>(&m_data_a.cpsi_gpu,
-                                                            &m_data_a.fi3d_gpu);
-    poisson_solver_b = std::make_unique<CUFFTPoissonSolver>(&m_data_b.cpsi_gpu,
-                                                            &m_data_b.fi3d_gpu);
+    poisson_solver_a = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu_a,
+                                                            &m_data.fi3d_gpu_a);
+    poisson_solver_b = std::make_unique<CUFFTPoissonSolver>(&m_data.cpsi_gpu_b,
+                                                            &m_data.fi3d_gpu_b);
 };
 
 void GpuITBinaryGrossPitaevskiSolver::import_pote() {
-    if (m_data_a.pote_gpu.size() != buf_data->pote.size())
+    if (m_data.pote_gpu.size() != buf_data->pote.size())
         throw std::runtime_error("bad potential import");
 
-    m_data_a.pote_gpu.copy_from_host(buf_data->pote.get_data());
-    m_data_b.pote_gpu.copy_from_host(buf_data->pote.get_data());
+    m_data.pote_gpu.copy_from_host(buf_data->pote.get_data());
 };
 
 void GpuITBinaryGrossPitaevskiSolver::import_data() {
-    static int wavefunction_load_count = 0;
+    //static int wavefunction_load_count = 0;
 
-    const bool load_to_a = (wavefunction_load_count % 2 == 0);
-    auto &target         = load_to_a ? m_data_a : m_data_b;
+    //const bool load_to_a = (wavefunction_load_count % 2 == 0);
+    //auto &target         = load_to_a ? m_data_a : m_data_b;
 
-    if (target.cpsi_gpu.size() != buf_data->cpsi.size() ||
-        target.cpsii_gpu.size() != buf_data->cpsii.size())
-        throw std::runtime_error("bad wavefunction import");
+    //if (target.cpsi_gpu.size() != buf_data->cpsi.size() ||
+    //    target.cpsii_gpu.size() != buf_data->cpsii.size())
+    //    throw std::runtime_error("bad wavefunction import");
 
-    target.cpsi_gpu.copy_from_host(
-        reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
-    target.cpsii_gpu.copy_from_host(
-        reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
+    //target.cpsi_gpu.copy_from_host(
+    //    reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
+    //target.cpsii_gpu.copy_from_host(
+    //    reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
 
-    wavefunction_load_count++;
+    //wavefunction_load_count++;
 
-    OutputFormatter::printInfo(std::string("Loading to wavefunction: ") +
-                               std::string(load_to_a ? "a" : "b"));
+    //OutputFormatter::printInfo(std::string("Loading to wavefunction: ") +
+    //                           std::string(load_to_a ? "a" : "b"));
 };
 
 //! \todo Task -> how to export cpsi_b?
 void GpuITBinaryGrossPitaevskiSolver::export_data() {
-    static int export_a_counter = 0;
+    //static int export_a_counter = 0;
 
-    const bool export_to_a = (export_a_counter % 2 == 0);
+    //const bool export_to_a = (export_a_counter % 2 == 0);
 
-    auto &target = export_to_a ? m_data_a : m_data_b;
+    //auto &target = export_to_a ? m_data_a : m_data_b;
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
-    // TODO: add event on copy end and then write data.
-    target.cpsi_gpu.copy_to_host(
-        reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
+    //// TODO: add event on copy end and then write data.
+    //target.cpsi_gpu.copy_to_host(
+    //    reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
 
-    OutputFormatter::printInfo(std::string("Exporting wavefunction: ") +
-                               std::string(export_to_a ? "a" : "b"));
+    //OutputFormatter::printInfo(std::string("Exporting wavefunction: ") +
+    //                           std::string(export_to_a ? "a" : "b"));
 
-    export_a_counter++;
+    //export_a_counter++;
 };
 
 const int GpuITBinaryGrossPitaevskiSolver::iter_per_summary() const {
@@ -186,19 +182,19 @@ void GpuITBinaryGrossPitaevskiSolver::iterate() {
 }
 
 void GpuITBinaryGrossPitaevskiSolver::imag_iter_full_step() {
-    launch_kernel_imag_time_iteration(m_data_a.cpsi_gpu.data(),
-                                      m_data_b.cpsi_gpu.data(),
-                                      m_data_a.pote_gpu.data(),
-                                      m_data_a.fi3d_gpu.data(),
-                                      m_data_b.fi3d_gpu.data(),
+    launch_kernel_imag_time_iteration(m_data.cpsi_gpu_a.data(),
+                                      m_data.cpsi_gpu_b.data(),
+                                      m_data.pote_gpu.data(),
+                                      m_data.fi3d_gpu_a.data(),
+                                      m_data.fi3d_gpu_b.data(),
                                       flhy_a.data(),
                                       flhy_b.data(),
-                                      p_mix->m_a,
-                                      p_mix->m_b,
-                                      p_mix->n_atoms_a,
-                                      p_mix->n_atoms_b,
-                                      p_mix->n_atoms_a * 1.5,
-                                      p_mix->n_atoms_b * 1.5,
+                                      p_mix->spec_a.mass,
+                                      p_mix->spec_b.mass,
+                                      p_mix->spec_a.n_atoms,
+                                      p_mix->spec_b.n_atoms,
+                                      p_mix->spec_a.n_atoms * 1.5,
+                                      p_mix->spec_b.n_atoms * 1.5,
                                       p_mix->cdd11,
                                       p_mix->cdd12,
                                       p_mix->cdd22,
@@ -224,14 +220,14 @@ void GpuITBinaryGrossPitaevskiSolver::finish() {
 }
 
 void GpuITBinaryGrossPitaevskiSolver::calc_lhy() {
-    launch_kernel_calc_lhy(m_data_a.cpsi_gpu.data(),
-                           m_data_b.cpsi_gpu.data(),
+    launch_kernel_calc_lhy(m_data.cpsi_gpu_a.data(),
+                           m_data.cpsi_gpu_b.data(),
                            flhy_a.data(),
                            flhy_b.data(),
-                           p_mix->m_a,
-                           p_mix->m_b,
-                           p_mix->n_atoms_a,
-                           p_mix->n_atoms_b,
+                           p_mix->spec_a.mass,
+                           p_mix->spec_b.mass,
+                           p_mix->spec_a.n_atoms,
+                           p_mix->spec_b.n_atoms,
                            p_mix->g11,
                            p_mix->g12,
                            p_mix->g22,

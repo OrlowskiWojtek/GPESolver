@@ -2,11 +2,13 @@
 #include "context/context.hpp"
 #include "output.hpp"
 #include "parameters/potentials.hpp"
+#include "parameters/binary_parameters.hpp"
 #include "parameters/wavefunctions.hpp"
 #include "units.hpp"
 #include <fstream>
 
 const char FileManager::PARAMS_FILENAME[]          = "gpe_params.json";
+const char FileManager::BINARY_PARAMS_FILENAME[]   = "binary_gpe_params.json";
 const char FileManager::TEXT_FILE_EXTENSION[]      = ".gpe.dat";
 const char FileManager::BINARY_FILE_EXTENSION[]    = ".gpe.bin";
 const char FileManager::ENERGIES_FILENAME[]        = "energy.gpe.dat";
@@ -35,9 +37,14 @@ void FileManager::load_params() {
 
     try {
         load_all_v1(j);
+
+        if (params->calc_strategy.type == CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+            load_binary_parameters();
+        }
     } catch (const std::exception &e) {
-        OutputFormatter::printWarning("Can't load using input using v1 format, reason:\n" +
-                                      std::string(e.what()));
+        OutputFormatter::printWarning(
+            "Can't load using input using v1 format, reason:\n" +
+            std::string(e.what()));
         throw e;
     }
 
@@ -45,7 +52,8 @@ void FileManager::load_params() {
     mediator->on_params_loaded();
 }
 
-void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filename) {
+void FileManager::save_to_text_file(const wavefunction_t &psi,
+                                    std::string filename) {
     filename.append(TEXT_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to text file: " + std::string(filename));
 
@@ -60,7 +68,8 @@ void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filen
     double dz = UnitConverter::len_au_to_nm(params->dz);
 
     if (!file.is_open()) {
-        OutputFormatter::printError("Can't open initial state file for writing.");
+        OutputFormatter::printError(
+            "Can't open initial state file for writing.");
         return;
     }
 
@@ -70,7 +79,8 @@ void FileManager::save_to_text_file(const wavefunction_t &psi, std::string filen
     for (int i = 0; i < nx; i++) {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
-                file << psi(i, j, k).real() << "\t" << psi(i, j, k).imag() << "\n";
+                file << psi(i, j, k).real() << "\t" << psi(i, j, k).imag()
+                     << "\n";
             }
         }
     }
@@ -85,7 +95,8 @@ void FileManager::load_from_text_file(std::string filename) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
-        throw std::runtime_error("Could not open initial state file for reading.");
+        throw std::runtime_error(
+            "Could not open initial state file for reading.");
     }
 
     int nx;
@@ -95,7 +106,8 @@ void FileManager::load_from_text_file(std::string filename) {
     file >> nx >> ny >> nz;
 
     if (nx != params->nx || ny != params->ny || nz != params->nz) {
-        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+        throw std::runtime_error(
+            "Grid dimensions in the file do not match current parameters.");
     }
 
     double dx;
@@ -109,7 +121,8 @@ void FileManager::load_from_text_file(std::string filename) {
 
     if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dy) > 1e-3 ||
         std::abs(dz - params->dz) > 1e-3) {
-        throw std::runtime_error("Grid size in the file do not match current parameters.");
+        throw std::runtime_error(
+            "Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx, ny, nz);
@@ -128,15 +141,16 @@ void FileManager::load_from_text_file(std::string filename) {
     mediator->on_data_loaded(psi_loading_buffer);
 }
 
-void FileManager::load_from_text_file(std::string filename,
-                                      std::function<void(wavefunction_t &)> callback) {
+void FileManager::load_from_text_file(
+    std::string filename, std::function<void(wavefunction_t &)> callback) {
     filename.append(TEXT_FILE_EXTENSION);
     OutputFormatter::printInfo("Loading from text file: " + filename);
 
     std::ifstream file(filename);
 
     if (!file.is_open()) {
-        throw std::runtime_error("Could not open initial state file for reading.");
+        throw std::runtime_error(
+            "Could not open initial state file for reading.");
     }
 
     int nx;
@@ -145,7 +159,8 @@ void FileManager::load_from_text_file(std::string filename,
     file >> nx >> ny >> nz;
 
     if (nx != params->nx || ny != params->ny || nz != params->nz) {
-        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+        throw std::runtime_error(
+            "Grid dimensions in the file do not match current parameters.");
     }
 
     double dx;
@@ -159,7 +174,8 @@ void FileManager::load_from_text_file(std::string filename,
 
     if (std::abs(dx - params->dx) > 1e-3 || std::abs(dy - params->dy) > 1e-3 ||
         std::abs(dz - params->dz) > 1e-3) {
-        throw std::runtime_error("Grid size in the file do not match current parameters.");
+        throw std::runtime_error(
+            "Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx, ny, nz);
@@ -196,13 +212,15 @@ void FileManager::check_params() {
 
     if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) ||
         !is_fft_compatible(params->nz)) {
-        OutputFormatter::printWarning("Grid dimensions may be slow for FFTW. Consider using "
-                                      "dimensions that factor into small primes (2, 3, 5, 7).");
+        OutputFormatter::printWarning(
+            "Grid dimensions may be slow for FFTW. Consider using "
+            "dimensions that factor into small primes (2, 3, 5, 7).");
     }
 }
 
 bool FileManager::is_fft_compatible(int n) {
-    // Check if n has only small prime factors (2, 3, 5, 7) which are efficient for FFTW
+    // Check if n has only small prime factors (2, 3, 5, 7) which are efficient
+    // for FFTW
     int temp = n;
     while (temp % 2 == 0)
         temp /= 2;
@@ -215,7 +233,8 @@ bool FileManager::is_fft_compatible(int n) {
     return temp == 1;
 }
 
-void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string filename) {
+void FileManager::save_to_binary_file(const wavefunction_t &psi,
+                                      std::string filename) {
     filename.append(BINARY_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to binary file: " + filename);
 
@@ -230,7 +249,8 @@ void FileManager::save_to_binary_file(const wavefunction_t &psi, std::string fil
     double dz = UnitConverter::len_au_to_nm(params->dz);
 
     if (!file.is_open()) {
-        OutputFormatter::printError("Could not open last state file for writing.");
+        OutputFormatter::printError(
+            "Could not open last state file for writing.");
         return;
     }
 
@@ -269,8 +289,10 @@ void FileManager::load_from_binary_file(std::string filename) {
     file.read(reinterpret_cast<char *>(&ny_file), sizeof(int));
     file.read(reinterpret_cast<char *>(&nz_file), sizeof(int));
 
-    if (nx_file != params->nx || ny_file != params->ny || nz_file != params->nz) {
-        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    if (nx_file != params->nx || ny_file != params->ny ||
+        nz_file != params->nz) {
+        throw std::runtime_error(
+            "Grid dimensions in the file do not match current parameters.");
     }
 
     double dx_file, dy_file, dz_file;
@@ -282,9 +304,11 @@ void FileManager::load_from_binary_file(std::string filename) {
     dy_file = UnitConverter::len_nm_to_au(dy_file);
     dz_file = UnitConverter::len_nm_to_au(dz_file);
 
-    if (std::abs(dx_file - params->dx) > 1e-3 || std::abs(dy_file - params->dy) > 1e-3 ||
+    if (std::abs(dx_file - params->dx) > 1e-3 ||
+        std::abs(dy_file - params->dy) > 1e-3 ||
         std::abs(dz_file - params->dz) > 1e-3) {
-        throw std::runtime_error("Grid size in the file do not match current parameters.");
+        throw std::runtime_error(
+            "Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx_file, ny_file, nz_file);
@@ -301,8 +325,8 @@ void FileManager::load_from_binary_file(std::string filename) {
     mediator->on_data_loaded(psi_loading_buffer);
 }
 
-void FileManager::load_from_binary_file(std::string filename,
-                                        std::function<void(wavefunction_t &)> callback) {
+void FileManager::load_from_binary_file(
+    std::string filename, std::function<void(wavefunction_t &)> callback) {
     filename.append(BINARY_FILE_EXTENSION);
     OutputFormatter::printInfo("Loading from binary file: " + filename);
 
@@ -317,8 +341,10 @@ void FileManager::load_from_binary_file(std::string filename,
     file.read(reinterpret_cast<char *>(&ny_file), sizeof(int));
     file.read(reinterpret_cast<char *>(&nz_file), sizeof(int));
 
-    if (nx_file != params->nx || ny_file != params->ny || nz_file != params->nz) {
-        throw std::runtime_error("Grid dimensions in the file do not match current parameters.");
+    if (nx_file != params->nx || ny_file != params->ny ||
+        nz_file != params->nz) {
+        throw std::runtime_error(
+            "Grid dimensions in the file do not match current parameters.");
     }
 
     double dx_file, dy_file, dz_file;
@@ -330,9 +356,11 @@ void FileManager::load_from_binary_file(std::string filename,
     dy_file = UnitConverter::len_nm_to_au(dy_file);
     dz_file = UnitConverter::len_nm_to_au(dz_file);
 
-    if (std::abs(dx_file - params->dx) > 1e-3 || std::abs(dy_file - params->dy) > 1e-3 ||
+    if (std::abs(dx_file - params->dx) > 1e-3 ||
+        std::abs(dy_file - params->dy) > 1e-3 ||
         std::abs(dz_file - params->dz) > 1e-3) {
-        throw std::runtime_error("Grid size in the file do not match current parameters.");
+        throw std::runtime_error(
+            "Grid size in the file do not match current parameters.");
     }
 
     psi_loading_buffer.resize(nx_file, ny_file, nz_file);
@@ -359,8 +387,9 @@ void FileManager::save_energies(const energies_container_t &energies) {
 
     int iter = 0;
     for (auto &enes : energies) {
-        file << iter << "\t" << enes.e_kin << "\t" << enes.e_pot << "\t" << enes.e_int << "\t"
-             << enes.e_ext << "\t" << enes.e_bmf << "\t" << enes.e_total << std::endl;
+        file << iter << "\t" << enes.e_kin << "\t" << enes.e_pot << "\t"
+             << enes.e_int << "\t" << enes.e_ext << "\t" << enes.e_bmf << "\t"
+             << enes.e_total << std::endl;
         iter++;
     }
 
@@ -377,7 +406,8 @@ void FileManager::save_energies_bin(const energies_container_t &energies) {
     std::ofstream file(FILENAME, std::ios::out | std::ios::binary);
 
     if (!file.is_open()) {
-        OutputFormatter::printError("Could not open last state file for writing.");
+        OutputFormatter::printError(
+            "Could not open last state file for writing.");
         return;
     }
 
@@ -404,7 +434,8 @@ void FileManager::save_energies_bin(const energies_container_t &energies) {
     file.close();
 }
 
-void FileManager::save_pote_to_text_file(const potential_t &pote, std::string filename) {
+void FileManager::save_pote_to_text_file(const potential_t &pote,
+                                         std::string filename) {
     filename.append(TEXT_FILE_EXTENSION);
     OutputFormatter::printInfo("Saving to text file: " + std::string(filename));
 
@@ -419,7 +450,8 @@ void FileManager::save_pote_to_text_file(const potential_t &pote, std::string fi
     double dz = UnitConverter::len_au_to_nm(params->dz);
 
     if (!file.is_open()) {
-        OutputFormatter::printError("Can't open initial state file for writing.");
+        OutputFormatter::printError(
+            "Can't open initial state file for writing.");
         return;
     }
 
@@ -451,7 +483,8 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->n_gauss_max = j["initial_maximas"];
 
         if (params->n_gauss_max <= 0) {
-            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+            throw std::runtime_error(
+                "Number of Gaussian maxima must be positive.");
         }
 
         CHECK_REQUIRED(j, "dd");
@@ -467,7 +500,8 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->n_gauss_max = j["initial_maximas"];
 
         if (params->n_gauss_max <= 0) {
-            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+            throw std::runtime_error(
+                "Number of Gaussian maxima must be positive.");
         }
     }
 
@@ -476,7 +510,8 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->n_gauss_max = j["initial_maximas"];
 
         if (params->n_gauss_max <= 0) {
-            throw std::runtime_error("Number of Gaussian maxima must be positive.");
+            throw std::runtime_error(
+                "Number of Gaussian maxima must be positive.");
         }
     }
 
@@ -490,7 +525,7 @@ void FileManager::load_initialization(nlohmann::json &j) {
         params->bec_droplets_z = j["bec_droplets_z"];
     }
 
-    params->add_random_noise = j.value("add_random_noise", false);
+    params->add_random_noise      = j.value("add_random_noise", false);
     params->add_random_pote_noise = j.value("add_random_pote_noise", false);
 
     if (params->wvf_key == "BINARY_FILE" || params->wvf_key == "TEXT_FILE") {
@@ -510,7 +545,8 @@ void FileManager::load_potential(nlohmann::json &j) {
     }
 
     if (params->pote_key == "MEXICAN" || params->pote_key == "MEXICAN_FREE" ||
-        params->pote_key == "MEXICAN_ASYMETRIC" || params->pote_key == "MEXICAN_ASYMETRIC_FREE") {
+        params->pote_key == "MEXICAN_ASYMETRIC" ||
+        params->pote_key == "MEXICAN_ASYMETRIC_FREE") {
 
         CHECK_REQUIRED(j, "dd");
         params->dd = UnitConverter::len_nm_to_au(j["dd"]);
@@ -614,4 +650,69 @@ void FileManager::load_all_v0(nlohmann::json &j) {
     params->nx = j["nx"];
     params->ny = j["ny"];
     params->nz = j["nz"];
+}
+
+void FileManager::load_binary_parameters() {
+    OutputFormatter::printInfo("Loading binary mixture parameters from: " +
+                                std::string(BINARY_PARAMS_FILENAME));
+
+    std::ifstream file(BINARY_PARAMS_FILENAME);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open binary parameters file.");
+    }
+
+    nlohmann::json j;
+    file >> j;
+
+    CHECK_REQUIRED(j, "species");
+    CHECK_REQUIRED(j["species"], "a");
+    CHECK_REQUIRED(j["species"], "b");
+    CHECK_REQUIRED(j, "scattering_lengths");
+
+    const auto &species = j["species"];
+    const auto &scattering = j["scattering_lengths"];
+
+    CHECK_REQUIRED(species["a"], "mass_Da");
+    CHECK_REQUIRED(species["a"], "n_atoms");
+    CHECK_REQUIRED(species["a"], "magnetic_moment_muB");
+    CHECK_REQUIRED(species["b"], "mass_Da");
+    CHECK_REQUIRED(species["b"], "n_atoms");
+    CHECK_REQUIRED(species["b"], "magnetic_moment_muB");
+
+    CHECK_REQUIRED(scattering, "aa");
+    CHECK_REQUIRED(scattering, "bb");
+    CHECK_REQUIRED(scattering, "ab");
+
+    SpeciesParameters spec_a;
+    SpeciesParameters spec_b;
+
+    spec_a.mass =
+        UnitConverter::mass_Da_to_au(species["a"]["mass_Da"].get<double>());
+    spec_a.n_atoms =
+        species["a"]["n_atoms"].get<std::size_t>();
+    spec_a.magnetic_moment =
+        UnitConverter::moment_muB_to_au(species["a"]["magnetic_moment_muB"].get<double>());
+
+    spec_b.mass =
+        UnitConverter::mass_Da_to_au(species["b"]["mass_Da"].get<double>());
+    spec_b.n_atoms =
+        species["b"]["n_atoms"].get<int>();
+    spec_b.magnetic_moment =
+        UnitConverter::moment_muB_to_au(species["b"]["magnetic_moment_muB"].get<double>());
+
+    if (spec_a.mass <= 0.0 || spec_b.mass <= 0.0 ||
+        spec_a.n_atoms == 0 || spec_b.n_atoms == 0) {
+        throw std::runtime_error("Species masses and atom counts must be positive.");
+    }
+
+    auto *binary_params = BinaryMixtureParameters::getInstance();
+    binary_params->spec_a = spec_a;
+    binary_params->spec_b = spec_b;
+
+    // Values in a0 are numerically in atomic units of length.
+    binary_params->s11 = scattering["aa"].get<double>();
+    binary_params->s22 = scattering["bb"].get<double>();
+    binary_params->s12 = scattering["ab"].get<double>();
+
+    binary_params->precompute();
 }

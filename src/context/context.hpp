@@ -2,6 +2,7 @@
 #define SIMULATION_CONTEXT_HPP
 
 #include "mat3d/stdmat3d.hpp"
+#include "parameters/binary_parameters.hpp"
 #ifdef USE_CUDA
 #include "mat3d/gpu_3d_array.hpp"
 #include <cuComplex.h>
@@ -26,24 +27,32 @@ struct BECEnergies {
     }
 };
 
-
-using wavefunction_t       = StdMat3D<std::complex<double>>;
-using potential_t          = StdMat3D<double>;
+using wavefunction_t = StdMat3D<std::complex<double>>;
+using potential_t    = StdMat3D<double>;
 
 #ifdef USE_CUDA
-using wavefun_gpu_t       = GpuArray<cuDoubleComplex>;
-using pote_gpu_t          = GpuArray<double>;
+using wavefun_gpu_t = GpuArray<cuDoubleComplex>;
+using pote_gpu_t    = GpuArray<double>;
 #endif
 
 using energies_container_t = std::vector<BECEnergies>;
 using energies_t           = BECEnergies;
 
+//! State of both condensates in a mixture
+struct BinaryMixtureState {
+    //! Wavefunction of A condensate
+    wavefunction_t spec_a;
+    //! Wavefunction of B condensate
+    wavefunction_t spec_b;
+};
+
 //! Class SimulationContext.
 //!
-//! \brief  used to store basic simulation containters like arrays of grid spaces;
+//! \brief  used to store basic simulation containters like arrays of grid
+//! spaces;
 class SimulationContext {
 public:
-    static SimulationContext* getInstance();
+    static SimulationContext *getInstance();
 
     //! Initialize vectors based on loaded parameters.
     void initialize();
@@ -69,7 +78,7 @@ private:
     std::vector<double> z_vec;
 
     SimulationContext();
-    static SimulationContext* instance;
+    static SimulationContext *instance;
 };
 
 #endif

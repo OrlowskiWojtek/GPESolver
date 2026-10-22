@@ -10,41 +10,34 @@ DataInitializer::DataInitializer(AbstractSimulationMediator *_mediator)
     , p_sctx(SimulationContext::getInstance()) {
 }
 
-void DataInitializer::initialize_wavefunction() {
+void DataInitializer::initialize_wavefunction(
+    const WavefunctionInitConfig &conf) {
     OutputFormatter::printInfo("Initializing wavefunction");
 
-    if (params->wvf_key == "BINARY_FILE") {
+    if (conf.key == "BINARY_FILE") {
         init_from_binary_file();
-    } else if (params->wvf_key == "TEXT_FILE") {
+    } else if (conf.key == "TEXT_FILE") {
         init_from_text_file();
     } else {
-        init_wavefunction();
+        init_wavefunction(conf);
     }
 
-    if (params->add_random_noise) {
+    if (conf.add_random_noise) {
         add_initial_noise();
     }
 
     p_mediator->on_data_initialized(_data);
-    
-    // TODO: remove/fix (ONLY FOR BINARY MIXTURES)
-    // params->wvf_key = "GAUSS";
-    // params->n_gauss_max = 4;
-    // init_wavefunction();
-    // p_mediator->on_data_initialized(_data);
 }
 
-void DataInitializer::initialize_potential() {
+void DataInitializer::initialize_potential(const PotentialInitConfig &conf) {
     OutputFormatter::printInfo("Initializing potential");
 
-    init_pote();
+    init_pote(conf);
 
-    if(params->add_random_pote_noise) {
+    if (conf.add_random_noise) {
         OutputFormatter::printInfo("Adding random noise to potential");
         add_initial_pote_noise();
     }
-
-    std::cout << _pote(50,50,10) << std::endl;
 
     p_mediator->on_pote_initialized(_pote);
 }
@@ -57,12 +50,12 @@ void DataInitializer::init_from_binary_file() {
     p_mediator->request_load_from_binary(_data);
 }
 
-void DataInitializer::init_pote() {
+void DataInitializer::init_pote(const PotentialInitConfig &conf) {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
 
-    _pote_func = PotentialRegistry::instance().get_function(params->pote_key);
+    _pote_func = PotentialRegistry::instance().get_function(conf.key);
     _pote.resize(nx, ny, nz);
 
     for (int i = 0; i < nx; i++) {
@@ -78,12 +71,12 @@ void DataInitializer::init_pote() {
     }
 }
 
-void DataInitializer::init_wavefunction() {
+void DataInitializer::init_wavefunction(const WavefunctionInitConfig &conf) {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
 
-    _data_func = InitializerRegistry::instance().get_function(params->wvf_key);
+    _data_func = InitializerRegistry::instance().get_function(conf.key);
     _data.resize(nx, ny, nz);
 
     for (int i = 1; i < nx - 1; i++) {
@@ -99,20 +92,13 @@ void DataInitializer::init_wavefunction() {
     }
 }
 
-void DataInitializer::change_potential(std::string pote_key) {
-    params->pote_key = pote_key;
-
-    init_pote();
-    p_mediator->on_pote_changed(_pote);
-}
-
 void DataInitializer::add_initial_noise() {
     const int nx = params->nx;
     const int ny = params->ny;
     const int nz = params->nz;
 
     // default seed explicitly added
-    const unsigned int seed = 5489;
+    const unsigned int seed  = 5489;
     const double noise_level = 0.05;
 
     std::mt19937 rng(seed);
@@ -135,7 +121,7 @@ void DataInitializer::add_initial_pote_noise() {
     const int nz = params->nz;
 
     // default seed explicitly added
-    const unsigned int seed = 5489u;
+    const unsigned int seed  = 5489u;
     const double noise_level = 0.05;
 
     std::mt19937 rng(seed);
@@ -145,7 +131,7 @@ void DataInitializer::add_initial_pote_noise() {
         for (int j = 0; j < ny; j++) {
             for (int k = 0; k < nz; k++) {
                 double rand_real = dist(rng);
-                               
+
                 _pote(i, j, k) *= (1. + rand_real);
             }
         }

@@ -23,11 +23,13 @@ public:
 #ifdef USE_CUDA
         switch (params->calc_strategy.type) {
         case CalcStrategy::Type::IMAGINARY_TIME:
-            //return std::make_unique<GpuITBinaryGrossPitaevskiSolver>(mediator);
             return std::make_unique<GpuITGrossPitaevskiSolver>(mediator);
             break;
         case CalcStrategy::Type::REAL_TIME:
             return std::make_unique<GpuRTGrossPitaevskiSolver>(mediator);
+            break;
+        case CalcStrategy::Type::BINARY_IMAGINARY_TIME:
+            return std::make_unique<GpuITBinaryGrossPitaevskiSolver>(mediator);
             break;
         }
 
@@ -36,12 +38,13 @@ public:
 #else
         switch (params->calc_strategy.type) {
         case CalcStrategy::Type::IMAGINARY_TIME:
-            return std::make_unique<CpuITBinaryGrossPitaevskiSolver>(mediator);
-            //return std::make_unique<CpuITGrossPitaevskiSolver>(mediator);
-            //return std::make_unique<CpuITSplitGrossPitaevskiSolver>(mediator);
+            return std::make_unique<CpuITGrossPitaevskiSolver>(mediator);
             break;
         case CalcStrategy::Type::REAL_TIME:
             return std::make_unique<CpuRTGrossPitaevskiSolver>(mediator);
+            break;
+        case CalcStrategy::Type::BINARY_IMAGINARY_TIME:
+            return std::make_unique<CpuITBinaryGrossPitaevskiSolver>(mediator);
             break;
         }
 

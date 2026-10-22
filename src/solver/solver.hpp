@@ -42,9 +42,6 @@ protected:
     void summarize_energies();
     void summarize_iter(int current_iter);
 
-    //! CPU data buffer for file saving and program integration
-    std::unique_ptr<CPUSolverData> buf_data;
-
     virtual void iterate()                     = 0;
     virtual void adjust(int iter)              = 0;
     virtual void finish()                      = 0;
@@ -59,6 +56,9 @@ protected:
 
     //! prepare fft transformers
     virtual void prepare_fft() = 0;
+
+    //! CPU data buffer for file saving and program integration
+    std::unique_ptr<CPUSolverData> buf_data;
 
     //! Data transfer between solver and base class data.
     virtual void export_data() = 0; // derived -> base

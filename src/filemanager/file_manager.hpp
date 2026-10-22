@@ -76,6 +76,9 @@ public:
 private:
     //! \brief Name of the parameters file.
     static const char PARAMS_FILENAME[];
+    //! \brief Name of the binary parameters file.
+    //! Loaded if chosen solver is Binary solver
+    static const char BINARY_PARAMS_FILENAME[];
     //! \brief Name of the energies file.
     static const char ENERGIES_FILENAME[];
     //! \brief Name of the energies binary file.
@@ -96,6 +99,9 @@ private:
     void load_potential(nlohmann::json &);
     void load_box(nlohmann::json &);
     void load_simulation(nlohmann::json &);
+    
+    //! \brief Load binary parameters used in simulation
+    void load_binary_parameters();
 
     //! \brief Loading version v0, all parameters required even if not used
     void load_all_v0(nlohmann::json &);

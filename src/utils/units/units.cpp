@@ -39,3 +39,10 @@ double UnitConverter::freq_Hz_to_au(double Hz) {
 double UnitConverter::freq_au_to_Hz(double au) {
     return au / (4.1356e-12 / 27211.6);
 }
+
+double UnitConverter::moment_muB_to_au(double muB){
+    return muB / 2.;
+}
+double UnitConverter::moment_au_to_muB(double au){
+    return au * 2.;
+}

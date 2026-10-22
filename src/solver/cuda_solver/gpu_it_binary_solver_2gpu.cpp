@@ -27,8 +27,6 @@ GpuITBinaryGrossPitaevskiSolver::GpuITBinaryGrossPitaevskiSolver(
     if (!initialize_gauss()) {
         throw std::runtime_error("Can't copy static arrays onto GPU");
     }
-
-    p_mix->set_to_default();
 }
 
 GpuITBinaryGrossPitaevskiSolver::~GpuITBinaryGrossPitaevskiSolver() {

@@ -21,3 +21,22 @@ public:
     GpuArray<double> fi3d_gpu;
     GpuArray<double> pote_gpu;
 };
+
+class GPUBinarySolverData : public ISolverData {
+public:
+    void allocate(size_t nx, size_t ny, size_t nz) override {
+        cpsi_gpu_a  = GpuArray<cuDoubleComplex>(nx, ny, nz);
+        fi3d_gpu_a  = GpuArray<double>(nx, ny, nz);
+        cpsi_gpu_b  = GpuArray<cuDoubleComplex>(nx, ny, nz);
+        fi3d_gpu_b  = GpuArray<double>(nx, ny, nz);
+        pote_gpu  = GpuArray<double>(nx, ny, nz);
+    }
+
+    GpuArray<cuDoubleComplex> cpsi_gpu_a;
+    GpuArray<double> fi3d_gpu_a;
+
+    GpuArray<cuDoubleComplex> cpsi_gpu_b;
+    GpuArray<double> fi3d_gpu_b;
+
+    GpuArray<double> pote_gpu;
+};
