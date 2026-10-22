@@ -159,13 +159,13 @@ void kernel_imag_time_iteration(
 
     // ======== nonlinear part ============
 
-    const double density_a = psi_a.x * psi_a.x + psi_a.y * psi_a.y;
-    const double density_b = psi_b.x * psi_b.x + psi_b.y * psi_b.y;
+    const double rho_a = n_atoms_a * (psi_a.x * psi_a.x + psi_a.y * psi_a.y);
+    const double rho_b = n_atoms_b * (psi_b.x * psi_b.x + psi_b.y * psi_b.y);
 
     const double V_a_contact =
-        ggp_11 * n_atoms_a * density_a + ggp_12 * n_atoms_b * density_b;
+        ggp_11 * rho_a + ggp_12 * rho_b;
     const double V_b_contact =
-        ggp_22 * n_atoms_b * density_b + ggp_12 * n_atoms_a * density_a;
+        ggp_22 * rho_b + ggp_12 * rho_a;
     const double V_a_lhy = flhy_a[idx];
     const double V_b_lhy = flhy_b[idx];
     
@@ -427,9 +427,9 @@ void kernel_calc_enes(
         -n_atoms_b * (lap_b.x * b.x + lap_b.y * b.y) / (2.0 * m_b);
 
     const double contact_a =
-        0.5 * density_a * (g11 * density_a + g12 * density_b);
+        0.5 * rho_a * (g11 * rho_a + g12 * rho_b);
     const double contact_b =
-        0.5 * density_b * (g22 * density_b + g12 * density_a);
+        0.5 * rho_b * (g22 * rho_b + g12 * rho_a);
 
     // kinetic
     atomicAdd(&d_energy_a[0], kinetic_a);

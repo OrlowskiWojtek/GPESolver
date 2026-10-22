@@ -38,7 +38,7 @@ void SimulationManager::save_checkpoint(const wavefunction_t &wvf) {
 
 void SimulationManager::save_binary_checkpoint(
     const BinaryMixtureState &state) {
-    save_binary_state(state, "wavefunction_");
+    save_binary_state(state, "wavefunction");
     checkpoint_counter++;
 }
 
