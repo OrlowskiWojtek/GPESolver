@@ -69,6 +69,16 @@ make
 At the start program reads input parameters file `gpe_params.json`.
 Example input file has been shown below:
 
+Print starter configurations to stdout with:
+
+```bash
+./GrossPitaevskiSolver --print_default_json > gpe_params.json
+./GrossPitaevskiSolver --print_default_binary_json > binary_gpe_params.json
+```
+
+The binary-specific file is only needed when `gpe_params.json` selects
+`"calc_strategy": "BIT"`.
+
 ```gpe_params.json
 {
     "dx": 120.0,
@@ -112,6 +122,37 @@ Parameters can be described as:
 | `fftw_threads` | number of threads used for FFTW in CPU version. | - |
 | `load_filename` | filename without extension in case of initializing with file (both binary and text). | - |
 | `dd` | distance between double-well minimas. Used in MEXICAN hat potential | nm |
+
+### Binary-mixture input
+
+Set `calc_strategy` to `BIT` in `gpe_params.json` to load the additional
+`binary_gpe_params.json` file. For this calculation, `gpe_params.json` contains
+the shared grid, potential, run controls, and `m` (currently used to construct
+the shared external potential); single-species fields such as `n_atoms` and
+`edd` are not required. The binary file contains the two species, interactions,
+and independent initialization settings for components `a` and `b`:
+
+```json
+{
+  "species": {
+    "a": { "mass_Da": 164, "n_atoms": 20000, "magnetic_moment_muB": 7 },
+    "b": { "mass_Da": 162, "n_atoms": 20000, "magnetic_moment_muB": 7 }
+  },
+  "scattering_lengths": { "aa": 91, "bb": 220, "ab": 105 },
+  "initialization": {
+    "a": { "strategy": "GAUSS", "add_random_noise": true },
+    "b": { "strategy": "BINARY_FILE", "load_filename": "component_b_start" }
+  }
+}
+```
+
+Initialization strategies accept the same strategy-specific fields as single
+BEC initialization (for example, `initial_maximas` for `MULTIPLE_GAUSS`, or
+`bec_droplets_x/y/z` for `SETUP_GAUSS`). `MULTIPLE_GAUSS` also takes its own
+`dd` in nanometers. `RANDOM_GAUSS` optionally accepts a per-component
+`random_seed`. File-based component names omit the `.gpe.dat` or `.gpe.bin`
+extension, as in single-BEC loading. Saved component wavefunctions use `_a` and
+`_b` filename suffixes.
 
 Potential options:
 - HARMONIC (harmonic in every direction)

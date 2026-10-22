@@ -129,45 +129,30 @@ void GpuITBinaryGrossPitaevskiSolver::import_pote() {
 };
 
 void GpuITBinaryGrossPitaevskiSolver::import_data() {
-    //static int wavefunction_load_count = 0;
+}
 
-    //const bool load_to_a = (wavefunction_load_count % 2 == 0);
-    //auto &target         = load_to_a ? m_data_a : m_data_b;
+void GpuITBinaryGrossPitaevskiSolver::import_binary_data() {
+    if (m_data.cpsi_gpu_a.size() != binary_buf_data.spec_a.size() ||
+        m_data.cpsi_gpu_b.size() != binary_buf_data.spec_b.size()) {
+        throw std::runtime_error("Binary wavefunction dimensions do not match solver arrays.");
+    }
 
-    //if (target.cpsi_gpu.size() != buf_data->cpsi.size() ||
-    //    target.cpsii_gpu.size() != buf_data->cpsii.size())
-    //    throw std::runtime_error("bad wavefunction import");
+    m_data.cpsi_gpu_a.copy_from_host(reinterpret_cast<const cuDoubleComplex*>(
+        binary_buf_data.spec_a.get_data()));
+    m_data.cpsi_gpu_b.copy_from_host(reinterpret_cast<const cuDoubleComplex*>(
+        binary_buf_data.spec_b.get_data()));
+}
 
-    //target.cpsi_gpu.copy_from_host(
-    //    reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
-    //target.cpsii_gpu.copy_from_host(
-    //    reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
-
-    //wavefunction_load_count++;
-
-    //OutputFormatter::printInfo(std::string("Loading to wavefunction: ") +
-    //                           std::string(load_to_a ? "a" : "b"));
-};
-
-//! \todo Task -> how to export cpsi_b?
 void GpuITBinaryGrossPitaevskiSolver::export_data() {
-    //static int export_a_counter = 0;
+    export_binary_data();
+}
 
-    //const bool export_to_a = (export_a_counter % 2 == 0);
-
-    //auto &target = export_to_a ? m_data_a : m_data_b;
-
-    //cudaDeviceSynchronize();
-
-    //// TODO: add event on copy end and then write data.
-    //target.cpsi_gpu.copy_to_host(
-    //    reinterpret_cast<cuDoubleComplex *>(buf_data->cpsi.get_data()));
-
-    //OutputFormatter::printInfo(std::string("Exporting wavefunction: ") +
-    //                           std::string(export_to_a ? "a" : "b"));
-
-    //export_a_counter++;
-};
+void GpuITBinaryGrossPitaevskiSolver::export_binary_data() {
+    m_data.cpsi_gpu_a.copy_to_host(reinterpret_cast<cuDoubleComplex*>(
+        binary_buf_data.spec_a.get_data()));
+    m_data.cpsi_gpu_b.copy_to_host(reinterpret_cast<cuDoubleComplex*>(
+        binary_buf_data.spec_b.get_data()));
+}
 
 const int GpuITBinaryGrossPitaevskiSolver::iter_per_summary() const {
     return 100;
@@ -215,8 +200,8 @@ void GpuITBinaryGrossPitaevskiSolver::adjust(int /*iter*/) {
 }
 
 void GpuITBinaryGrossPitaevskiSolver::finish() {
-    export_data();
-    p_mediator->save_initial_state(buf_data->cpsi);
+    export_binary_data();
+    p_mediator->save_binary_initial_state(binary_buf_data);
 }
 
 void GpuITBinaryGrossPitaevskiSolver::calc_lhy() {

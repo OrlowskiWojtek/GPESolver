@@ -3,6 +3,7 @@
 /*! File containing initial wavefunctions for solver */
 
 #include "context/context.hpp"
+#include "parameters/init_parameters.hpp"
 #include "parameters/parameters.hpp"
 #include <algorithm>
 #include <cassert>
@@ -10,6 +11,8 @@
 #include <complex>
 #include <functional>
 #include <iostream>
+#include <map>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -18,7 +21,8 @@ class InitializerRegistry {
 public:
     using WavRegisterKey = std::string;
     using WavID          = unsigned int;
-    using init_func_t    = std::function<std::complex<double>(double, double, double)>;
+    using init_func_t = std::function<std::complex<double>(
+        double, double, double, const WavefunctionInitConfig&)>;
 
     struct InitializerInfo {
         WavRegisterKey key;
@@ -89,18 +93,19 @@ static unsigned int WavID = 0;
         return 0.;                                                                                 \
     }();
 
-REGISTER_INITIALIZER(COS, [](double x, double y, double z) -> std::complex<double> {
+REGISTER_INITIALIZER(COS, [](double x, double y, double z, const WavefunctionInitConfig& conf) -> std::complex<double> {
     auto params = PhysicalParameters::getInstance();
 
     double rrr   = (static_cast<int>(params->nx / 2) * params->dx);
-    double cos_x = std::cos(2 * M_PI * (x - params->dd) / rrr);
+    const double dd = conf.dd > 0.0 ? conf.dd : params->dd;
+    double cos_x = std::cos(2 * M_PI * (x - dd) / rrr);
     double cos_y = std::cos(2 * M_PI * y / rrr);
     double cos_z = std::cos(1 * M_PI * z / rrr);
 
     return std::complex<double>(cos_x * cos_y * cos_z, 0.);
 });
 
-REGISTER_INITIALIZER(GAUSS, [](double x, double y, double z) -> std::complex<double> {
+REGISTER_INITIALIZER(GAUSS, [](double x, double y, double z, const WavefunctionInitConfig&) -> std::complex<double> {
     auto params    = PhysicalParameters::getInstance();
     double sigma_x = (params->nx * params->dx) / 10.;
     double sigma_y = (params->ny * params->dy) / 10.;
@@ -112,16 +117,17 @@ REGISTER_INITIALIZER(GAUSS, [](double x, double y, double z) -> std::complex<dou
     return std::complex<double>(val, 0.);
 });
 
-REGISTER_INITIALIZER(MULTIPLE_GAUSS, [](double x, double y, double z) {
+REGISTER_INITIALIZER(MULTIPLE_GAUSS, [](double x, double y, double z, const WavefunctionInitConfig& conf) {
     auto params = PhysicalParameters::getInstance();
     auto sctx   = SimulationContext::getInstance();
 
-    int n_maximas = params->n_gauss_max;
+    int n_maximas = conf.n_gauss_max;
+    const double dd = conf.dd > 0.0 ? conf.dd : params->dd;
     std::vector<double> centers_x(n_maximas);
     std::vector<double> centers_y(n_maximas);
 
     for (int idx = 0; idx < n_maximas; idx++) {
-        centers_x[idx] = idx % 2 ? params->dd : -params->dd;
+        centers_x[idx] = idx % 2 ? dd : -dd;
 
         if (n_maximas % 2 == 1) {
             int center_y_idx = n_maximas / 2;
@@ -152,25 +158,25 @@ REGISTER_INITIALIZER(MULTIPLE_GAUSS, [](double x, double y, double z) {
 });
 
 REGISTER_INITIALIZER(
-    SETUP_GAUSS, ([](double x, double y, double z) {
+    SETUP_GAUSS, ([](double x, double y, double z, const WavefunctionInitConfig& conf) {
         auto params = PhysicalParameters::getInstance();
 
-        int n_maximas = params->bec_droplets_x * params->bec_droplets_y * params->bec_droplets_z;
+        int n_maximas = conf.bec_droplets_x * conf.bec_droplets_y * conf.bec_droplets_z;
         std::vector<std::tuple<double, double, double>> centers(n_maximas);
 
         double x_tot = params->nx * params->dx;
         double y_tot = params->ny * params->dy;
         double z_tot = params->nz * params->dz;
 
-        for (int i = 0; i < params->bec_droplets_x; i++) {
-            for (int j = 0; j < params->bec_droplets_y; j++) {
-                for (int k = 0; k < params->bec_droplets_z; k++) {
-                    int idx = i * params->bec_droplets_y * params->bec_droplets_z +
-                              j * params->bec_droplets_z + k;
+        for (int i = 0; i < conf.bec_droplets_x; i++) {
+            for (int j = 0; j < conf.bec_droplets_y; j++) {
+                for (int k = 0; k < conf.bec_droplets_z; k++) {
+                    int idx = i * conf.bec_droplets_y * conf.bec_droplets_z +
+                              j * conf.bec_droplets_z + k;
 
-                    double spacing_x = x_tot / static_cast<double>(params->bec_droplets_x + 1);
-                    double spacing_y = y_tot / static_cast<double>(params->bec_droplets_y + 1);
-                    double spacing_z = z_tot / static_cast<double>(params->bec_droplets_z + 1);
+                    double spacing_x = x_tot / static_cast<double>(conf.bec_droplets_x + 1);
+                    double spacing_y = y_tot / static_cast<double>(conf.bec_droplets_y + 1);
+                    double spacing_z = z_tot / static_cast<double>(conf.bec_droplets_z + 1);
 
                     double cx = -x_tot / 2 + spacing_x * (i + 1);
                     double cy = -y_tot / 2 + spacing_y * (j + 1);
@@ -195,10 +201,10 @@ REGISTER_INITIALIZER(
     }));
 
 //! Initialize with Gaussians on a circle with R = (lx + ly) / 20
-REGISTER_INITIALIZER(CYLINDRICAL_GAUSS, [](double x, double y, double z) {
+REGISTER_INITIALIZER(CYLINDRICAL_GAUSS, [](double x, double y, double z, const WavefunctionInitConfig& conf) {
     auto params = PhysicalParameters::getInstance();
 
-    int n_maximas = params->n_gauss_max;
+    int n_maximas = conf.n_gauss_max;
     std::vector<double> centers_x(n_maximas);
     std::vector<double> centers_y(n_maximas);
 
@@ -230,32 +236,34 @@ REGISTER_INITIALIZER(CYLINDRICAL_GAUSS, [](double x, double y, double z) {
 });
 
 //! Initialize with the centers inside the circle with R = (lx + ly) / 20.
-REGISTER_INITIALIZER(RANDOM_GAUSS, [](double x, double y, double z) {
+REGISTER_INITIALIZER(RANDOM_GAUSS, ([](double x, double y, double z, const WavefunctionInitConfig& conf) {
     auto params = PhysicalParameters::getInstance();
 
-    int n_maximas = params->n_gauss_max;
-    static bool init = true;
-
-    static std::vector<double> centers_x(n_maximas);
-    static std::vector<double> centers_y(n_maximas);
-    if(init){
+    int n_maximas = conf.n_gauss_max;
+    using centers_t = std::pair<std::vector<double>, std::vector<double>>;
+    static std::map<std::pair<int, unsigned int>, centers_t> centers_by_config;
+    const auto key = std::make_pair(n_maximas, conf.random_seed);
+    auto centers_it = centers_by_config.find(key);
+    if (centers_it == centers_by_config.end()) {
         double lx     = params->dx * params->nx;
         double ly     = params->dy * params->ny;
         double R      = (lx + ly / 2.) / 10.;
+        centers_t centers{std::vector<double>(n_maximas),
+                          std::vector<double>(n_maximas)};
+        std::mt19937 rng(conf.random_seed);
+        std::uniform_real_distribution<double> radius_dist(0.0, R);
+        std::uniform_real_distribution<double> angle_dist(0.0, 2.0 * M_PI);
 
         for (int idx = 0; idx < n_maximas; idx++) {
-            double r = rand() / (RAND_MAX + 1.) * R;
-            double theta = rand() / (RAND_MAX + 1.) * 2. * M_PI;
-
-            double x = r * std::cos(theta);
-            double y = r * std::sin(theta);
-
-            centers_x[idx] = x;
-            centers_y[idx] = y;
+            const double radius = radius_dist(rng);
+            const double angle = angle_dist(rng);
+            centers.first[idx] = radius * std::cos(angle);
+            centers.second[idx] = radius * std::sin(angle);
         }
-
-        init = false;
+        centers_it = centers_by_config.emplace(key, std::move(centers)).first;
     }
+    const auto& centers_x = centers_it->second.first;
+    const auto& centers_y = centers_it->second.second;
 
     double sigma_x = (params->nx * params->dx) / 20.;
     double sigma_y = (params->ny * params->dy) / 20.;
@@ -268,15 +276,15 @@ REGISTER_INITIALIZER(RANDOM_GAUSS, [](double x, double y, double z) {
                std::exp(-0.5 * z * z / (sigma_z * sigma_z));
     }
     return std::complex<double>(val, 0.);
-});
+}));
 
 //! TODO: workaround this structure, these are valid, however need different place to be
-REGISTER_INITIALIZER(TEXT_FILE, [](double x, double y, double z) -> std::complex<double> {
+REGISTER_INITIALIZER(TEXT_FILE, [](double x, double y, double z, const WavefunctionInitConfig&) -> std::complex<double> {
 
     return std::complex<double>(0., 0.);
 });
 
-REGISTER_INITIALIZER(BINARY_FILE, [](double x, double y, double z) -> std::complex<double> {
+REGISTER_INITIALIZER(BINARY_FILE, [](double x, double y, double z, const WavefunctionInitConfig&) -> std::complex<double> {
     return std::complex<double>(0., 0.);
 });
 

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "filemanager/file_manager.hpp"
 #include "nlohmann/json.hpp"
+#include <sstream>
 
 // Fixtures for common test setup
 class FileManagerTest : public ::testing::Test {
@@ -40,6 +41,34 @@ protected:
         delete fileManager;
     }
 };
+
+TEST(FileManagerDefaultsTest, DefaultJsonMatchesSingleSolverLoaderRequirements) {
+    std::ostringstream output;
+    FileManager::print_default_json(output);
+    const auto config = nlohmann::json::parse(output.str());
+
+    EXPECT_EQ(config.at("calc_strategy"), "IT");
+    EXPECT_TRUE(config.contains("iter_total"));
+    EXPECT_TRUE(config.contains("n_atoms"));
+    EXPECT_TRUE(config.contains("m"));
+    EXPECT_TRUE(config.contains("edd"));
+    EXPECT_TRUE(config.contains("init_strategy"));
+    EXPECT_TRUE(config.contains("pote_strategy"));
+    EXPECT_TRUE(config.contains("nx"));
+    EXPECT_TRUE(config.contains("dx"));
+}
+
+TEST(FileManagerDefaultsTest, DefaultBinaryJsonMatchesBinaryLoaderRequirements) {
+    std::ostringstream output;
+    FileManager::print_default_binary_json(output);
+    const auto config = nlohmann::json::parse(output.str());
+
+    EXPECT_TRUE(config.at("species").contains("a"));
+    EXPECT_TRUE(config.at("species").contains("b"));
+    EXPECT_TRUE(config.contains("scattering_lengths"));
+    EXPECT_EQ(config.at("initialization").at("a").at("strategy"), "GAUSS");
+    EXPECT_EQ(config.at("initialization").at("b").at("strategy"), "GAUSS");
+}
 
 // ============================================
 // load_box tests
@@ -110,6 +139,15 @@ TEST_F(FileManagerTest, LoadSimulation_MissingMass_Throws) {
     j.erase("m");
 
     EXPECT_THROW(fileManager->load_simulation(j), std::runtime_error);
+}
+
+TEST_F(FileManagerTest, LoadSimulation_BinaryDoesNotRequireSingleSpeciesFields) {
+    nlohmann::json j = validJson;
+    j["calc_strategy"] = "BIT";
+    j.erase("n_atoms");
+    j.erase("edd");
+
+    EXPECT_NO_THROW(fileManager->load_simulation(j));
 }
 
 TEST_F(FileManagerTest, LoadSimulation_OptionalFftwThreads_UsesDefault) {
@@ -215,6 +253,25 @@ TEST_F(FileManagerTest, LoadInitialization_FromTextFile_WithLoadFilename_Success
     j["load_filename"] = "test.gpe.dat";
 
     EXPECT_NO_THROW(fileManager->load_initialization(j));
+}
+
+TEST_F(FileManagerTest, LoadWavefunctionInitialization_BinaryFileSuccess) {
+    nlohmann::json j = {
+        {"strategy", "BINARY_FILE"},
+        {"load_filename", "component_a_start"},
+        {"add_random_noise", true}
+    };
+
+    const auto conf = fileManager->load_wavefunction_initialization(j, "species a");
+    EXPECT_EQ(conf.key, "BINARY_FILE");
+    EXPECT_EQ(conf.load_filename, "component_a_start");
+    EXPECT_TRUE(conf.add_random_noise);
+}
+
+TEST_F(FileManagerTest, LoadWavefunctionInitialization_FileMissingFilenameThrows) {
+    nlohmann::json j = {{"strategy", "TEXT_FILE"}};
+    EXPECT_THROW(fileManager->load_wavefunction_initialization(j, "species b"),
+                 std::runtime_error);
 }
 
 // ============================================

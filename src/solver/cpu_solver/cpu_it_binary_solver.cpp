@@ -100,8 +100,8 @@ void CpuITBinaryGrossPitaevskiSolver::imag_iter_linear_step() {
     const double dz = params->dz;
     const double dt = params->time_dt;
 
-    const double m_a   = p_mix->m_a;
-    const double m_b   = p_mix->m_b;
+    const double m_a   = p_mix->spec_a.mass;
+    const double m_b   = p_mix->spec_b.mass;
     const double cdd11 = p_mix->cdd11;
     const double cdd12 = p_mix->cdd12;
     const double cdd22 = p_mix->cdd22;
@@ -165,8 +165,8 @@ void CpuITBinaryGrossPitaevskiSolver::imag_iter_nonlinear_step() {
     const double ggp11 = p_mix->g11;
     const double ggp22 = p_mix->g22;
     const double ggp12 = p_mix->g12;
-    const double na    = p_mix->n_atoms_a;
-    const double nb    = p_mix->n_atoms_b;
+    const double na    = p_mix->spec_a.n_atoms;
+    const double nb    = p_mix->spec_b.n_atoms;
 
     const auto *__restrict__ p_flhy_a = flhy_a.get_data_restrict();
     const auto *__restrict__ p_flhy_b = flhy_b.get_data_restrict();
@@ -215,30 +215,23 @@ void CpuITBinaryGrossPitaevskiSolver::import_pote() {
 };
 
 void CpuITBinaryGrossPitaevskiSolver::import_data() {
-    static int wavefunction_load_count = 0;
+}
 
-    const bool load_to_a = (wavefunction_load_count % 2 == 0);
-    auto &target         = load_to_a ? m_data_a : m_data_b;
+void CpuITBinaryGrossPitaevskiSolver::import_binary_data() {
+    m_data_a.cpsi = binary_buf_data.spec_a;
+    m_data_a.cpsii = binary_buf_data.spec_a;
+    m_data_b.cpsi = binary_buf_data.spec_b;
+    m_data_b.cpsii = binary_buf_data.spec_b;
+}
 
-    target.cpsi  = buf_data->cpsi;
-    target.cpsii = buf_data->cpsi;
-
-    wavefunction_load_count++;
-
-    std::cout << std::boolalpha << load_to_a << std::endl;
-};
-
-//! \todo Task -> how to export cpsi_b?
 void CpuITBinaryGrossPitaevskiSolver::export_data() {
-    static int export_a_counter = 0;
+    export_binary_data();
+}
 
-    const bool export_to_a = (export_a_counter % 2 == 0);
-
-    auto &target   = export_to_a ? m_data_a : m_data_b;
-    buf_data->cpsi = target.cpsi;
-
-    export_a_counter++;
-};
+void CpuITBinaryGrossPitaevskiSolver::export_binary_data() {
+    binary_buf_data.spec_a = m_data_a.cpsi;
+    binary_buf_data.spec_b = m_data_b.cpsi;
+}
 
 const int CpuITBinaryGrossPitaevskiSolver::iter_per_summary() const {
     return 100;
@@ -258,8 +251,8 @@ void CpuITBinaryGrossPitaevskiSolver::adjust(int /*iter*/) {
 }
 
 void CpuITBinaryGrossPitaevskiSolver::finish() {
-    export_data();
-    p_mediator->save_initial_state(buf_data->cpsi);
+    export_binary_data();
+    p_mediator->save_binary_initial_state(binary_buf_data);
 }
 
 void CpuITBinaryGrossPitaevskiSolver::calc_lhy() {
@@ -273,8 +266,8 @@ void CpuITBinaryGrossPitaevskiSolver::calc_lhy() {
     auto *fa = flhy_a.get_data_restrict();
     auto *fb = flhy_b.get_data_restrict();
 
-    const auto na = p_mix->n_atoms_a;
-    const auto nb = p_mix->n_atoms_b;
+    const auto na = p_mix->spec_a.n_atoms;
+    const auto nb = p_mix->spec_b.n_atoms;
 
     for (int i = 1; i < nx - 1; ++i) {
         for (int j = 1; j < ny - 1; ++j) {
@@ -292,8 +285,8 @@ void CpuITBinaryGrossPitaevskiSolver::calc_lhy() {
 void CpuITBinaryGrossPitaevskiSolver::lhy_point(double n1, double n2, double &mu1, double &mu2) {
     // Easily precomputable
     constexpr double four_third_pi2 = 4.0 / (3.0 * M_PI * M_PI);
-    const double factor_m1          = four_third_pi2 * std::pow(p_mix->m_a, 1.5);
-    const double factor_m2          = four_third_pi2 * std::pow(p_mix->m_b, 1.5);
+    const double factor_m1          = four_third_pi2 * std::pow(p_mix->spec_a.mass, 1.5);
+    const double factor_m2          = four_third_pi2 * std::pow(p_mix->spec_b.mass, 1.5);
 
     mu1 = mu2 = 0.0;
     for (int k = 0; k < 8; ++k) {

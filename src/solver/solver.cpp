@@ -4,6 +4,7 @@
 #include "parameters/parameters.hpp"
 #include "units.hpp"
 #include <chrono>
+#include <stdexcept>
 
 AbstractGrossPitaevskiSolver::AbstractGrossPitaevskiSolver(AbstractSimulationMediator *mediator)
     : params(PhysicalParameters::getInstance())
@@ -14,12 +15,13 @@ AbstractGrossPitaevskiSolver::AbstractGrossPitaevskiSolver(AbstractSimulationMed
 
 void AbstractGrossPitaevskiSolver::initialize() {
     buf_data->allocate(params->nx, params->ny, params->nz);
+    if (params->calc_strategy.type == CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        binary_buf_data.spec_a.resize(params->nx, params->ny, params->nz);
+        binary_buf_data.spec_b.resize(params->nx, params->ny, params->nz);
+    }
     init_containers();
 
     prepare_fft();
-
-    calc_norm();
-    normalize();
 }
 
 void AbstractGrossPitaevskiSolver::solve() {
@@ -31,9 +33,14 @@ void AbstractGrossPitaevskiSolver::solve() {
         iterate();
 
         if (iter % iter_per_summary() == 0) {
-            if(params->save_data) { 
-                export_data();
-                p_mediator->save_checkpoint(buf_data->cpsi);
+            if(params->save_data) {
+                if (params->calc_strategy.type == CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+                    export_binary_data();
+                    p_mediator->save_binary_checkpoint(binary_buf_data);
+                } else {
+                    export_data();
+                    p_mediator->save_checkpoint(buf_data->cpsi);
+                }
             }
             calc_energy();
             summarize_energies();
@@ -61,6 +68,25 @@ void AbstractGrossPitaevskiSolver::load_buffer(const wavefunction_t &wvf) {
     import_data();
     calc_norm();
     normalize();
+}
+
+void AbstractGrossPitaevskiSolver::load_binary_buffer(const BinaryMixtureState& state) {
+    if (params->calc_strategy.type != CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        throw std::runtime_error("Binary wavefunctions provided to a single-species solver.");
+    }
+
+    binary_buf_data = state;
+    import_binary_data();
+    calc_norm();
+    normalize();
+}
+
+void AbstractGrossPitaevskiSolver::export_binary_data() {
+    throw std::runtime_error("This solver does not support binary wavefunctions.");
+}
+
+void AbstractGrossPitaevskiSolver::import_binary_data() {
+    throw std::runtime_error("This solver does not support binary wavefunctions.");
 }
 
 void AbstractGrossPitaevskiSolver::load_pote(const potential_t &pote_initialized) {

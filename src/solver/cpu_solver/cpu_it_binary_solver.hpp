@@ -40,6 +40,8 @@ private:
     void import_pote() override;
     void import_data() override;
     void export_data() override;
+    void import_binary_data() override;
+    void export_binary_data() override;
 
     void calc_energy() override;
     void init_containers() override;

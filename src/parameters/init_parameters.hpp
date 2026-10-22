@@ -7,6 +7,8 @@ struct WavefunctionInitConfig {
     std::string key;
     bool add_random_noise = false;
     std::string load_filename;
+    double dd = 0.0;
+    unsigned int random_seed = 5489u;
 
     int n_gauss_max = 0;
     int bec_droplets_x = 0;

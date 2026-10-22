@@ -15,18 +15,43 @@ void DataInitializer::initialize_wavefunction(
     OutputFormatter::printInfo("Initializing wavefunction");
 
     if (conf.key == "BINARY_FILE") {
-        init_from_binary_file();
+        init_from_binary_file(conf, _data);
     } else if (conf.key == "TEXT_FILE") {
-        init_from_text_file();
+        init_from_text_file(conf, _data);
     } else {
-        init_wavefunction(conf);
+        init_wavefunction(conf, _data);
     }
 
     if (conf.add_random_noise) {
-        add_initial_noise();
+        add_initial_noise(_data);
     }
 
     p_mediator->on_data_initialized(_data);
+}
+
+void DataInitializer::initialize_binary_wavefunctions(
+    const WavefunctionInitConfig& conf_a,
+    const WavefunctionInitConfig& conf_b) {
+    OutputFormatter::printInfo("Initializing binary mixture components");
+
+    auto initialize_component = [this](const WavefunctionInitConfig& conf,
+                                       wavefunction_t& target) {
+        if (conf.key == "BINARY_FILE") {
+            init_from_binary_file(conf, target);
+        } else if (conf.key == "TEXT_FILE") {
+            init_from_text_file(conf, target);
+        } else {
+            init_wavefunction(conf, target);
+        }
+
+        if (conf.add_random_noise) {
+            add_initial_noise(target);
+        }
+    };
+
+    initialize_component(conf_a, _binary_data.spec_a);
+    initialize_component(conf_b, _binary_data.spec_b);
+    p_mediator->on_binary_data_initialized(_binary_data);
 }
 
 void DataInitializer::initialize_potential(const PotentialInitConfig &conf) {
@@ -42,12 +67,14 @@ void DataInitializer::initialize_potential(const PotentialInitConfig &conf) {
     p_mediator->on_pote_initialized(_pote);
 }
 
-void DataInitializer::init_from_text_file() {
-    p_mediator->request_load_from_text(_data);
+void DataInitializer::init_from_text_file(const WavefunctionInitConfig& conf,
+                                          wavefunction_t& target) {
+    p_mediator->request_load_from_text(conf.load_filename, target);
 }
 
-void DataInitializer::init_from_binary_file() {
-    p_mediator->request_load_from_binary(_data);
+void DataInitializer::init_from_binary_file(const WavefunctionInitConfig& conf,
+                                            wavefunction_t& target) {
+    p_mediator->request_load_from_binary(conf.load_filename, target);
 }
 
 void DataInitializer::init_pote(const PotentialInitConfig &conf) {
@@ -71,13 +98,14 @@ void DataInitializer::init_pote(const PotentialInitConfig &conf) {
     }
 }
 
-void DataInitializer::init_wavefunction(const WavefunctionInitConfig &conf) {
+void DataInitializer::init_wavefunction(const WavefunctionInitConfig &conf,
+                                       wavefunction_t& target) {
     int nx = params->nx;
     int ny = params->ny;
     int nz = params->nz;
 
     _data_func = InitializerRegistry::instance().get_function(conf.key);
-    _data.resize(nx, ny, nz);
+    target.resize(nx, ny, nz);
 
     for (int i = 1; i < nx - 1; i++) {
         for (int j = 1; j < ny - 1; j++) {
@@ -86,13 +114,13 @@ void DataInitializer::init_wavefunction(const WavefunctionInitConfig &conf) {
                 double y = p_sctx->get_y(j);
                 double z = p_sctx->get_z(k);
 
-                _data(i, j, k) = _data_func(x, y, z);
+                target(i, j, k) = _data_func(x, y, z, conf);
             }
         }
     }
 }
 
-void DataInitializer::add_initial_noise() {
+void DataInitializer::add_initial_noise(wavefunction_t& target) {
     const int nx = params->nx;
     const int ny = params->ny;
     const int nz = params->nz;
@@ -109,7 +137,7 @@ void DataInitializer::add_initial_noise() {
             for (int k = 1; k < nz - 1; k++) {
                 double rand_real = dist(rng);
 
-                _data(i, j, k) *= (1 + rand_real);
+                target(i, j, k) *= (1 + rand_real);
             }
         }
     }

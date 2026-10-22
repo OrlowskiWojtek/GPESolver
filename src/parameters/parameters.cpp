@@ -32,19 +32,21 @@ void PhysicalParameters::set_default_values() {
 }
 
 void PhysicalParameters::init_parameters() {
-    aa = m * std::pow(omega_x, 2) / 4. / std::pow(dd, 2);
+    aa = dd > 0.0 ? m * std::pow(omega_x, 2) / 4. / std::pow(dd, 2) : 0.0;
     b  = 0.5 * m * std::pow(omega_x, 2);
 
     dxdydz = dx * dy * dz;
 
-    add = 131.;
-    cdd = 12. * M_PI * add / m;
+    if (calc_strategy.type != CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        add = 131.;
+        cdd = 12. * M_PI * add / m;
 
-    double a = add / edd; // ![1]
+        double a = add / edd; // ![1]
 
-    ggp11 = 4. * M_PI * a / m;
-    gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
-    w_15  = std::pow(n_atoms, 1.5);
+        ggp11 = 4. * M_PI * a / m;
+        gamma = 128. * std::sqrt(M_PI) * std::pow(a, 2.5) / 3. / m * (1. + 1.5 * std::pow(edd, 2));
+        w_15  = std::pow(n_atoms, 1.5);
+    }
 
 
     double lx = nx * dx;
@@ -70,6 +72,12 @@ double PhysicalParameters::get_dxdydz() {
 void PhysicalParameters::print_initialization_parameters() {
     OutputFormatter::printBorderLine();
     OutputFormatter::printBoxedMessage("Initialization method:");
+    if (calc_strategy.type == CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        OutputFormatter::printBoxedMessage(
+            "Per-component initialization: binary_gpe_params.json");
+        OutputFormatter::printBorderLine();
+        return;
+    }
     OutputFormatter::printBoxedMessage(wvf_key);
     if (wvf_key == "MULTIPLE_GAUSS") {
         OutputFormatter::printBoxedMessage("Number of initial maximas:");
@@ -122,16 +130,19 @@ void PhysicalParameters::print_simulation_parameters() {
 
     OutputFormatter::printBoxedMessage("SIMULATION PARAMETERS");
 
-    OutputFormatter::printBoxedMessage("Mass (Da): ", UnitConverter::mass_au_to_Da(m));
-    OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
-    OutputFormatter::printBoxedMessage("Scattering length (nm): ",
-                                       UnitConverter::len_au_to_nm(add));
+    OutputFormatter::printBoxedMessage("Potential mass (Da): ",
+                                       UnitConverter::mass_au_to_Da(m));
+    if (calc_strategy.type != CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        OutputFormatter::printBoxedMessage("Number of atoms: ", n_atoms);
+        OutputFormatter::printBoxedMessage("Scattering length (nm): ",
+                                           UnitConverter::len_au_to_nm(add));
 
-    OutputFormatter::printBoxedMessage("Dipole-dipole interaction");
-    OutputFormatter::printBoxedMessage("Cdd (au): ", cdd);
-    OutputFormatter::printBoxedMessage("epsilon_dd: ", edd);
-    OutputFormatter::printBoxedMessage("epsilon_dd_start: ", edd_start);
-    OutputFormatter::printBoxedMessage("epsilon_dd_stop: ", edd_stop);
+        OutputFormatter::printBoxedMessage("Dipole-dipole interaction");
+        OutputFormatter::printBoxedMessage("Cdd (au): ", cdd);
+        OutputFormatter::printBoxedMessage("epsilon_dd: ", edd);
+        OutputFormatter::printBoxedMessage("epsilon_dd_start: ", edd_start);
+        OutputFormatter::printBoxedMessage("epsilon_dd_stop: ", edd_stop);
+    }
 
     OutputFormatter::printBoxedMessage("ITERATIONS");
     OutputFormatter::printBoxedMessage("TOTAL -  " + std::to_string(iter_total));

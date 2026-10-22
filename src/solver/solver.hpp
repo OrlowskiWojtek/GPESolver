@@ -21,6 +21,7 @@ public:
     void initialize();
 
     void load_buffer(const wavefunction_t &);
+    virtual void load_binary_buffer(const BinaryMixtureState&);
     void load_pote(const potential_t &);
 
 protected:
@@ -59,11 +60,14 @@ protected:
 
     //! CPU data buffer for file saving and program integration
     std::unique_ptr<CPUSolverData> buf_data;
+    BinaryMixtureState binary_buf_data;
 
     //! Data transfer between solver and base class data.
     virtual void export_data() = 0; // derived -> base
     virtual void import_data() = 0; // base -> derived
     virtual void import_pote() = 0; // base -> derived
+    virtual void export_binary_data();
+    virtual void import_binary_data();
 };
 
 #define MEASURE_TIME(func, ...)                                                                    \

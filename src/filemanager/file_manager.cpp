@@ -6,6 +6,7 @@
 #include "parameters/wavefunctions.hpp"
 #include "units.hpp"
 #include <fstream>
+#include <ostream>
 
 const char FileManager::PARAMS_FILENAME[]          = "gpe_params.json";
 const char FileManager::BINARY_PARAMS_FILENAME[]   = "binary_gpe_params.json";
@@ -13,6 +14,52 @@ const char FileManager::TEXT_FILE_EXTENSION[]      = ".gpe.dat";
 const char FileManager::BINARY_FILE_EXTENSION[]    = ".gpe.bin";
 const char FileManager::ENERGIES_FILENAME[]        = "energy.gpe.dat";
 const char FileManager::BINARY_ENERGIES_FILENAME[] = "energy.gpe.bin";
+
+void FileManager::print_default_json(std::ostream& out) {
+    const nlohmann::json config = {
+        {"calc_strategy", "IT"},
+        {"iter_total", 10000},
+        {"time_step", 1.0e10},
+        {"save_data", false},
+        {"fftw_n_threads", 4},
+        {"n_atoms", 40000.0},
+        {"m", 163.929},
+        {"edd", 1.45},
+        {"init_strategy", "GAUSS"},
+        {"add_random_noise", false},
+        {"add_random_pote_noise", false},
+        {"pote_strategy", "HARMONIC"},
+        {"omega_x", 60.0},
+        {"omega_y", 60.0},
+        {"omega_z", 120.0},
+        {"dx", 150.0},
+        {"dy", 150.0},
+        {"dz", 200.0},
+        {"nx", 81},
+        {"ny", 81},
+        {"nz", 41},
+    };
+
+    out << config.dump(4) << '\n';
+}
+
+void FileManager::print_default_binary_json(std::ostream& out) {
+    const nlohmann::json config = {
+        {"species",
+         {{"a", {{"mass_Da", 164.0},
+                 {"n_atoms", 20000},
+                 {"magnetic_moment_muB", 7.0}}},
+          {"b", {{"mass_Da", 162.0},
+                 {"n_atoms", 20000},
+                 {"magnetic_moment_muB", 7.0}}}}},
+        {"scattering_lengths", {{"aa", 91.0}, {"bb", 220.0}, {"ab", 105.0}}},
+        {"initialization",
+         {{"a", {{"strategy", "GAUSS"}, {"add_random_noise", false}}},
+          {"b", {{"strategy", "GAUSS"}, {"add_random_noise", false}}}}},
+    };
+
+    out << config.dump(4) << '\n';
+}
 
 FileManager::FileManager(AbstractSimulationMediator *mediator)
     : mediator(mediator)
@@ -203,11 +250,13 @@ void FileManager::check_params() {
     if (params->dx <= 0 || params->dy <= 0 || params->dz <= 0) {
         throw std::runtime_error("Grid spacings must be positive.");
     }
-    if (params->n_atoms <= 0) {
-        throw std::runtime_error("Number of atoms must be positive.");
+    if (params->calc_strategy.type != CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        if (params->n_atoms <= 0) {
+            throw std::runtime_error("Number of atoms must be positive.");
+        }
     }
     if (params->m <= 0) {
-        throw std::runtime_error("Mass must be positive.");
+        throw std::runtime_error("Mass must be positive for the external potential.");
     }
 
     if (!is_fft_compatible(params->nx) || !is_fft_compatible(params->ny) ||
@@ -470,6 +519,11 @@ void FileManager::save_pote_to_text_file(const potential_t &pote,
 }
 
 void FileManager::load_initialization(nlohmann::json &j) {
+    if (params->calc_strategy.type == CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        params->add_random_pote_noise = j.value("add_random_pote_noise", false);
+        return;
+    }
+
     CHECK_REQUIRED(j, "init_strategy");
 
     params->wvf_key = j["init_strategy"];
@@ -579,28 +633,32 @@ void FileManager::load_box(nlohmann::json &j) {
 void FileManager::load_simulation(nlohmann::json &j) {
     CHECK_REQUIRED(j, "calc_strategy");
     CHECK_REQUIRED(j, "iter_total");
-    CHECK_REQUIRED(j, "n_atoms");
-    CHECK_REQUIRED(j, "m");
 
     params->calc_strategy.from_string(j["calc_strategy"]);
     params->iter_total = j["iter_total"];
-    params->n_atoms    = j["n_atoms"];
-    params->m          = UnitConverter::mass_Da_to_au(j["m"]);
 
-    if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
-        CHECK_REQUIRED(j, "edd");
-    }
+    CHECK_REQUIRED(j, "m");
+    params->m = UnitConverter::mass_Da_to_au(j["m"]);
 
-    if (j.contains("edd")) {
-        params->const_edd = true;
-        params->edd       = j["edd"];
-    } else {
-        CHECK_REQUIRED(j, "edd_start");
-        CHECK_REQUIRED(j, "edd_stop");
+    if (params->calc_strategy.type != CalcStrategy::Type::BINARY_IMAGINARY_TIME) {
+        CHECK_REQUIRED(j, "n_atoms");
+        params->n_atoms = j["n_atoms"];
 
-        params->const_edd = false;
-        params->edd_start = j["edd_start"];
-        params->edd_stop  = j["edd_stop"];
+        if (params->calc_strategy.type == CalcStrategy::Type::IMAGINARY_TIME) {
+            CHECK_REQUIRED(j, "edd");
+        }
+
+        if (j.contains("edd")) {
+            params->const_edd = true;
+            params->edd       = j["edd"];
+        } else {
+            CHECK_REQUIRED(j, "edd_start");
+            CHECK_REQUIRED(j, "edd_stop");
+
+            params->const_edd = false;
+            params->edd_start = j["edd_start"];
+            params->edd_stop  = j["edd_stop"];
+        }
     }
 
     params->time_dt   = j.value("time_step", 1e10);
@@ -614,8 +672,8 @@ void FileManager::load_simulation(nlohmann::json &j) {
 }
 
 void FileManager::load_all_v1(nlohmann::json &j) {
-    load_initialization(j);
     load_simulation(j);
+    load_initialization(j);
     load_box(j);
     load_potential(j);
 }
@@ -668,6 +726,9 @@ void FileManager::load_binary_parameters() {
     CHECK_REQUIRED(j["species"], "a");
     CHECK_REQUIRED(j["species"], "b");
     CHECK_REQUIRED(j, "scattering_lengths");
+    CHECK_REQUIRED(j, "initialization");
+    CHECK_REQUIRED(j["initialization"], "a");
+    CHECK_REQUIRED(j["initialization"], "b");
 
     const auto &species = j["species"];
     const auto &scattering = j["scattering_lengths"];
@@ -714,5 +775,68 @@ void FileManager::load_binary_parameters() {
     binary_params->s22 = scattering["bb"].get<double>();
     binary_params->s12 = scattering["ab"].get<double>();
 
+    binary_params->init_a =
+        load_wavefunction_initialization(j["initialization"]["a"], "species a");
+    binary_params->init_b =
+        load_wavefunction_initialization(j["initialization"]["b"], "species b");
+
     binary_params->precompute();
+}
+
+WavefunctionInitConfig FileManager::load_wavefunction_initialization(
+    const nlohmann::json& j, const std::string& label) {
+    CHECK_REQUIRED(j, "strategy");
+
+    WavefunctionInitConfig conf;
+    conf.key = j["strategy"].get<std::string>();
+    if (!InitializerRegistry::instance().contains(conf.key)) {
+        throw std::runtime_error("Unknown initialization strategy for " + label + ": " + conf.key);
+    }
+
+    conf.add_random_noise = j.value("add_random_noise", false);
+    conf.random_seed = j.value("random_seed", conf.random_seed);
+
+    if (conf.key == "MULTIPLE_GAUSS" || conf.key == "CYLINDRICAL_GAUSS" ||
+        conf.key == "RANDOM_GAUSS") {
+        CHECK_REQUIRED(j, "initial_maximas");
+        conf.n_gauss_max = j["initial_maximas"].get<int>();
+        if (conf.n_gauss_max <= 0) {
+            throw std::runtime_error("initial_maximas for " + label + " must be positive.");
+        }
+    }
+
+    if (conf.key == "MULTIPLE_GAUSS") {
+        CHECK_REQUIRED(j, "dd");
+        conf.dd = UnitConverter::len_nm_to_au(j["dd"].get<double>());
+        if (conf.dd <= 0.0) {
+            throw std::runtime_error("dd for " + label + " must be positive.");
+        }
+    }
+
+    if (conf.key == "SETUP_GAUSS") {
+        CHECK_REQUIRED(j, "bec_droplets_x");
+        CHECK_REQUIRED(j, "bec_droplets_y");
+        CHECK_REQUIRED(j, "bec_droplets_z");
+        conf.bec_droplets_x = j["bec_droplets_x"].get<int>();
+        conf.bec_droplets_y = j["bec_droplets_y"].get<int>();
+        conf.bec_droplets_z = j["bec_droplets_z"].get<int>();
+        if (conf.bec_droplets_x <= 0 || conf.bec_droplets_y <= 0 ||
+            conf.bec_droplets_z <= 0) {
+            throw std::runtime_error("Droplet counts for " + label + " must be positive.");
+        }
+    }
+
+    if (j.contains("dd")) {
+        conf.dd = UnitConverter::len_nm_to_au(j["dd"].get<double>());
+        if (conf.dd <= 0.0) {
+            throw std::runtime_error("dd for " + label + " must be positive.");
+        }
+    }
+
+    if (conf.key == "BINARY_FILE" || conf.key == "TEXT_FILE") {
+        CHECK_REQUIRED(j, "load_filename");
+        conf.load_filename = j["load_filename"].get<std::string>();
+    }
+
+    return conf;
 }

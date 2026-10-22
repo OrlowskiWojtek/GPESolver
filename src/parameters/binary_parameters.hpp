@@ -2,6 +2,7 @@
 #define BINARY_MIXTURE_PARAMETERS_HPP
 
 #include <cmath>
+#include "parameters/init_parameters.hpp"
 
 //! \brief SpeciesPamateres for single species of atoms.
 //! All in atomic units.
@@ -26,6 +27,9 @@ struct BinaryMixtureParameters {
 
     SpeciesParameters spec_a;
     SpeciesParameters spec_b;
+
+    WavefunctionInitConfig init_a;
+    WavefunctionInitConfig init_b;
 
     double s11 = 0.0; // Scattering lengths in a0 (atomic units of length)
     double s22 = 0.0;

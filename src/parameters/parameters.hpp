@@ -35,7 +35,7 @@ struct PhysicalParameters {
     //! x^4 term
     double aa;
     // Distance between potential minima
-    double dd;
+    double dd = 0.0;
     //! Used in mexican hat potential in x direction.
     //! x^2 term
     double b;
@@ -90,15 +90,15 @@ struct PhysicalParameters {
 
     //! Number of gaussian maximas to initialize
     //! Used only if initializing from multiple gaussians.
-    int n_gauss_max;
+    int n_gauss_max = 0;
 
     //! Used only if initializion from setup gauss
     //! Initial number of droplets in x dimension
-    int bec_droplets_x;
+    int bec_droplets_x = 0;
     //! Initial number of droplets in y dimension
-    int bec_droplets_y;
+    int bec_droplets_y = 0;
     //! Initial number of droplets in z dimension
-    int bec_droplets_z;
+    int bec_droplets_z = 0;
 
     //! Filename to load data from.
     //! Used only when initializing from file.

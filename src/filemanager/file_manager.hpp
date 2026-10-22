@@ -9,7 +9,9 @@
 #include "manager/sim_mediator.hpp"
 #include "nlohmann/json.hpp"
 #include "parameters/parameters.hpp"
+#include "parameters/binary_parameters.hpp"
 #include <functional>
+#include <iosfwd>
 
 //! \class FileManager
 //!
@@ -28,6 +30,11 @@ public:
 
     //! \brief Loads parameters from file.
     void load_params();
+
+    //! Print valid default configuration JSON to the given output stream.
+    static void print_default_json(std::ostream& out);
+    //! Print valid default binary-mixture configuration JSON to the given stream.
+    static void print_default_binary_json(std::ostream& out);
 
     //! \brief Saves energies to ASCII file.
     //! \param energies Container of energies to save.
@@ -102,6 +109,8 @@ private:
     
     //! \brief Load binary parameters used in simulation
     void load_binary_parameters();
+    WavefunctionInitConfig load_wavefunction_initialization(const nlohmann::json&,
+                                                            const std::string& label);
 
     //! \brief Loading version v0, all parameters required even if not used
     void load_all_v0(nlohmann::json &);
@@ -150,6 +159,9 @@ private:
     FRIEND_TEST(FileManagerTest, LoadPotential_WrongPoteStrategy_Throws);
     FRIEND_TEST(FileManagerTest, LoadSimulation_EraseEddThrow);
     FRIEND_TEST(FileManagerTest, LoadSimulation_EraseEddNoThrow);
+    FRIEND_TEST(FileManagerTest, LoadSimulation_BinaryDoesNotRequireSingleSpeciesFields);
+    FRIEND_TEST(FileManagerTest, LoadWavefunctionInitialization_BinaryFileSuccess);
+    FRIEND_TEST(FileManagerTest, LoadWavefunctionInitialization_FileMissingFilenameThrows);
 #endif
 };
 
